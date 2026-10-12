@@ -6,6 +6,7 @@ import { pathToFileURL } from 'node:url';
 import { assertContained } from '../src/paths.mjs';
 import { loadProgress, saveProgress } from '../src/state/store.mjs';
 import { reconcile } from '../src/state/reconcile.mjs';
+import { fingerprintRepository, repositoryDirty } from '../src/state/fingerprint.mjs';
 
 const operations = new Set([
   'start', 'design', 'plan', 'execute', 'investigate', 'review', 'verify',
@@ -32,10 +33,15 @@ async function currentRepositories(root, saved) {
     const target = path.resolve(root, repo.path);
     await assertContained(root, target);
     const head = git(target, 'rev-parse', 'HEAD');
-    const status = git(target, 'status', '--porcelain');
-    if (head === null || status === null) continue;
+    if (head === null) continue;
     const branch = git(target, 'symbolic-ref', '--short', 'HEAD') ?? 'HEAD';
-    result.push({ id: repo.id, branch, head, dirty: status.length > 0 });
+    try {
+      const dirty = await repositoryDirty(target);
+      const fingerprint = await fingerprintRepository(target);
+      result.push({ id: repo.id, branch, head, dirty, fingerprint });
+    } catch (error) {
+      result.push({ id: repo.id, error: error.message });
+    }
   }
   return result;
 }
@@ -48,7 +54,13 @@ async function runStateOperation(argv, cwd) {
     try { record = JSON.parse(await readFile(path.resolve(cwd, file), 'utf8')); }
     catch (error) { throw new Error(`Cannot read checkpoint JSON: ${error.message}`, { cause: error }); }
     if (record.taskId !== taskId) throw new TypeError('Checkpoint taskId does not match input record');
-    const saved = await saveProgress(cwd, record, { expectedRevision });
+    const current = await currentRepositories(cwd, record);
+    if (current.length !== record.repos.length || current.some(repo => repo.error)) {
+      throw new Error('Cannot checkpoint: inspect missing or unreadable repositories');
+    }
+    const byId = new Map(current.map(repo => [repo.id, repo]));
+    const snapshot = { ...record, repos: record.repos.map(repo => ({ ...repo, ...byId.get(repo.id) })) };
+    const saved = await saveProgress(cwd, snapshot, { expectedRevision });
     process.stdout.write(JSON.stringify(saved) + '\n');
     return 0;
   }

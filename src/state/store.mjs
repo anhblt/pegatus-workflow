@@ -22,6 +22,7 @@ export function validateProgress(record) {
   if (record.approvedScopeHash !== null && !record.approvals.some(a => a.kind === 'design' && a.scopeHash === record.approvedScopeHash)) throw new TypeError('Approved scope requires design approval');
   if (!Array.isArray(record.tasks) || record.tasks.some(t => !object(t) || !nonempty(t.id) || !nonempty(t.status))) throw new TypeError('Invalid tasks');
   if (!Array.isArray(record.repos) || record.repos.some(r => !object(r) || !nonempty(r.id) || !relativeRepoPath(r.path) || !nonempty(r.branch) || !nonempty(r.head) || typeof r.dirty !== 'boolean')) throw new TypeError('Invalid repos.path or fingerprint');
+  if (record.repos.some(r => r.fingerprint !== undefined && (typeof r.fingerprint !== 'string' || !/^[a-f0-9]{64}$/.test(r.fingerprint)))) throw new TypeError('Invalid repos fingerprint');
   if (new Set(record.repos.map(r => r.id)).size !== record.repos.length) throw new TypeError('Duplicate repository IDs');
   if (!object(record.context) || !object(record.verification)) throw new TypeError('Invalid context or verification');
   if (record.nextAction !== null && !nonempty(record.nextAction)) throw new TypeError('Invalid nextAction');
@@ -59,25 +60,28 @@ export async function loadProgress(root, taskId) {
   return value;
 }
 
-function checkApprovals(existing, record, { approvalEvent, trustedCoordinator }) {
+function checkApprovals(existing, record, { approvalEvent, scopeEvent, trustedCoordinator }) {
   const prior = existing ?? { ...record, approvedScopeHash: null, approvals: [] };
-  if (approvalEvent !== undefined) {
-    if (!trustedCoordinator) throw new Error('Approval event requires trusted coordinator input');
-    const authorized = transition(prior, approvalEvent, { trustedCoordinator: true });
+  if (approvalEvent !== undefined && scopeEvent !== undefined) throw new Error('Only one coordinator event is allowed per checkpoint');
+  const event = approvalEvent ?? scopeEvent;
+  if (event !== undefined) {
+    if (!trustedCoordinator) throw new Error('Approval or scope event requires trusted coordinator input');
+    if (scopeEvent !== undefined && scopeEvent.type !== 'scopeChanged') throw new TypeError('scopeEvent must be scopeChanged');
+    if (approvalEvent !== undefined && approvalEvent.type !== 'approvalGranted') throw new TypeError('approvalEvent must be approvalGranted');
+    const authorized = transition(prior, event, { trustedCoordinator: true });
     if (JSON.stringify(authorized.approvals) !== JSON.stringify(record.approvals)
       || authorized.approvedScopeHash !== record.approvedScopeHash) {
-      throw new Error('Approval fields do not match coordinator approval event');
+      throw new Error('Approval fields do not match coordinator event');
     }
     return;
   }
-  const oldApprovals = prior.approvals.map(item => JSON.stringify(item));
-  if (record.approvals.some(item => !oldApprovals.includes(JSON.stringify(item)))
-    || (record.approvedScopeHash !== null && record.approvedScopeHash !== prior.approvedScopeHash)) {
-    throw new Error('Checkpoint cannot add approval without coordinator approval event');
+  if (JSON.stringify(record.approvals) !== JSON.stringify(prior.approvals)
+    || record.approvedScopeHash !== prior.approvedScopeHash) {
+    throw new Error('Checkpoint cannot change approval without a coordinator event');
   }
 }
 
-export async function saveProgress(root, record, { expectedRevision, approvalEvent, trustedCoordinator = false } = {}) {
+export async function saveProgress(root, record, { expectedRevision, approvalEvent, scopeEvent, trustedCoordinator = false, renameFile = rename } = {}) {
   validateProgress(record);
   if (!Number.isSafeInteger(expectedRevision) || expectedRevision < 0) throw new TypeError('expectedRevision must be a nonnegative integer');
   const location = await paths(root, record.taskId);
@@ -94,14 +98,14 @@ export async function saveProgress(root, record, { expectedRevision, approvalEve
     if (existing && existing.taskId !== record.taskId) throw new Error('Progress taskId does not match path');
     const revision = existing?.revision ?? 0;
     if (revision !== expectedRevision || record.revision !== expectedRevision) throw new Error(`Progress revision conflict: expected ${expectedRevision}, found ${revision}`);
-    checkApprovals(existing, record, { approvalEvent, trustedCoordinator });
+    checkApprovals(existing, record, { approvalEvent, scopeEvent, trustedCoordinator });
     const next = { ...record, revision: revision + 1 };
     temp = path.join(location.dir, `.progress-${randomUUID()}.tmp`);
     await assertContained(root, temp);
     const output = await open(temp, 'wx');
     try { await output.writeFile(JSON.stringify(next, null, 2) + '\n'); await output.sync(); }
     finally { await output.close(); }
-    await rename(temp, location.progress);
+    await renameFile(temp, location.progress);
     temp = undefined;
     return next;
   } finally {

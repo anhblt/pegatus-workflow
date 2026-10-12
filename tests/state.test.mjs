@@ -32,6 +32,16 @@ test('concurrent stale writer cannot overwrite a checkpoint', async () => fixtur
   assert.equal((await loadProgress(root, 'TASK-1')).revision, 1);
 }));
 
+test('competing checkpoints have exactly one winner and leave a complete record', async () => fixture(async root => {
+  const candidates = ['worker A', 'worker B'].map(nextAction => saveProgress(root, { ...record(), nextAction }, { expectedRevision: 0 }));
+  const results = await Promise.allSettled(candidates);
+  assert.equal(results.filter(result => result.status === 'fulfilled').length, 1);
+  assert.equal(results.filter(result => result.status === 'rejected').length, 1);
+  const saved = await loadProgress(root, 'TASK-1');
+  assert.equal(saved.revision, 1);
+  assert.ok(['worker A', 'worker B'].includes(saved.nextAction));
+}));
+
 test('existing lock blocks checkpoint until explicit recovery', async () => fixture(async root => {
   const dir = path.join(root, '.pegatus', 'work', 'TASK-1');
   await mkdir(dir, { recursive: true });
@@ -47,6 +57,16 @@ test('an interrupted temporary write does not replace the last checkpoint', asyn
   assert.deepEqual(await loadProgress(root, 'TASK-1'), first);
 }));
 
+test('rename failure preserves the previous progress and releases the lock', async () => fixture(async root => {
+  const first = await saveProgress(root, record(), { expectedRevision: 0 });
+  await assert.rejects(saveProgress(root, { ...first, nextAction: 'changed' }, {
+    expectedRevision: 1, renameFile: async () => { throw new Error('injected rename failure'); },
+  }), /injected rename failure/);
+  assert.deepEqual(await loadProgress(root, 'TASK-1'), first);
+  const retry = await saveProgress(root, { ...first, nextAction: 'retry' }, { expectedRevision: 1 });
+  assert.equal(retry.revision, 2);
+}));
+
 test('invalid replacement leaves the last valid checkpoint intact', async () => fixture(async root => {
   const first = await saveProgress(root, record(), { expectedRevision: 0 });
   await assert.rejects(saveProgress(root, { ...first, taskId: '../escape' }, { expectedRevision: 1 }), /taskId/i);
@@ -56,6 +76,11 @@ test('invalid replacement leaves the last valid checkpoint intact', async () => 
 test('checkpoint rejects repository paths that escape the workspace', async () => fixture(async root => {
   const unsafe = { ...record(), repos: [{ id: 'backend', path: '../outside', branch: 'main', head: 'abc', dirty: false }] };
   await assert.rejects(saveProgress(root, unsafe, { expectedRevision: 0 }), /repos.*path/i);
+}));
+
+test('checkpoint rejects malformed repository content fingerprints', async () => fixture(async root => {
+  const invalid = { ...record(), repos: [{ id: 'backend', path: 'backend', branch: 'main', head: 'abc', dirty: true, fingerprint: 'not-a-hash' }] };
+  await assert.rejects(saveProgress(root, invalid, { expectedRevision: 0 }), /fingerprint/i);
 }));
 
 test('corrupt JSON and unknown schema fail explicitly', async () => fixture(async root => {
@@ -91,4 +116,17 @@ test('ordinary checkpoint cannot manufacture approvals but preserves existing on
   const approved = await saveProgress(root, invented, { expectedRevision: 1, approvalEvent: { type: 'approvalGranted', kind: 'design', scopeHash: 's1', evidence: 'user chat' }, trustedCoordinator: true });
   const repeated = await saveProgress(root, approved, { expectedRevision: 2 });
   assert.deepEqual(repeated.approvals, approved.approvals);
+}));
+
+test('ordinary checkpoint cannot clear approval for unchanged scope', async () => fixture(async root => {
+  const first = await saveProgress(root, record(), { expectedRevision: 0 });
+  const event = { type: 'approvalGranted', kind: 'design', scopeHash: 's1', evidence: 'user chat' };
+  const authorized = transition(first, event, { trustedCoordinator: true });
+  const approved = await saveProgress(root, authorized, { expectedRevision: 1, approvalEvent: event, trustedCoordinator: true });
+  await assert.rejects(saveProgress(root, { ...approved, approvedScopeHash: null, approvals: [] }, { expectedRevision: 2 }), /approval/i);
+  assert.deepEqual(await loadProgress(root, 'TASK-1'), approved);
+  const scopeEvent = { type: 'scopeChanged', scopeHash: 's2' };
+  const changed = transition(approved, scopeEvent);
+  const saved = await saveProgress(root, changed, { expectedRevision: 2, scopeEvent, trustedCoordinator: true });
+  assert.equal(saved.approvedScopeHash, null);
 }));

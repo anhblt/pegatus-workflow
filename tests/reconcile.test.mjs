@@ -34,6 +34,24 @@ test('new commit or dirty state invalidates verification evidence', () => {
   assert.ok(result.nextActions.some(item => /verification/i.test(item)));
 });
 
+test('edited already-dirty content blocks resume despite matching branch, HEAD and dirty flag', () => {
+  const saved = record();
+  saved.repos[0].dirty = true;
+  saved.repos[0].fingerprint = 'before';
+  const result = reconcile(saved, [{ id: 'backend', branch: 'main', head: 'abc', dirty: true, fingerprint: 'after' }]);
+  assert.equal(result.status, 'blocked');
+  assert.ok(result.discrepancies.some(item => item.type === 'contentChanged'));
+  assert.ok(result.nextActions.some(item => /verification/i.test(item)));
+});
+
+test('legacy dirty checkpoint without content fingerprint cannot resume as verified', () => {
+  const saved = record();
+  saved.repos[0].dirty = true;
+  const result = reconcile(saved, [{ id: 'backend', branch: 'main', head: 'abc', dirty: true, fingerprint: 'current' }]);
+  assert.equal(result.status, 'blocked');
+  assert.ok(result.discrepancies.some(item => item.type === 'fingerprintUnavailable'));
+});
+
 test('missing repository and incomplete task are surfaced', () => {
   const result = reconcile(record(), []);
   assert.equal(result.status, 'blocked');
