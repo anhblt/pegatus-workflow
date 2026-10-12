@@ -38,17 +38,19 @@ function commandSpec(value, label) {
   if (/[\r\n|&;<>`]/.test(executable) || (executable.includes(' ') && !/[\\/]/.test(executable))) {
     throw new TypeError(`${label}.command must be one executable, with shell syntax in args`);
   }
-  if (!Array.isArray(value.args) || value.args.some(arg => typeof arg !== 'string' || arg.includes('\0'))) {
+  if (!Array.isArray(value.args) || Array.from(value.args).some(arg => typeof arg !== 'string' || arg.includes('\0'))) {
     throw new TypeError(`${label}.args must be a string array`);
   }
   relativeRoot(value.cwd, `${label}.cwd`);
-  if (!Array.isArray(value.requires) || value.requires.some(item => !nonempty(item))) {
+  if (!Array.isArray(value.requires) || Array.from(value.requires).some(item => !nonempty(item))) {
     throw new TypeError(`${label}.requires must be a string array`);
   }
-  const base = path.win32.basename(executable).toLowerCase();
-  const isShell = ['bash', 'sh', 'zsh', 'pwsh', 'powershell', 'cmd', 'cmd.exe'].includes(base);
-  if (isShell && value.shell !== base) throw new TypeError(`${label}.shell must explicitly declare ${base}`);
-  if (value.shell !== undefined && (!nonempty(value.shell) || value.shell !== base || !isShell)) {
+  const base = path.win32.basename(executable).toLowerCase().replace(/\.exe$/, '');
+  const isShell = ['bash', 'sh', 'zsh', 'pwsh', 'powershell', 'cmd'].includes(base);
+  const declaredShell = nonempty(value.shell) && !/[\\/]/.test(value.shell)
+    ? value.shell.trim().toLowerCase().replace(/\.exe$/, '') : null;
+  if (isShell && declaredShell !== base) throw new TypeError(`${label}.shell must explicitly declare ${base}`);
+  if (value.shell !== undefined && (!isShell || declaredShell !== base)) {
     throw new TypeError(`${label}.shell must match a supported shell executable`);
   }
 }
@@ -66,7 +68,7 @@ function validate(config) {
     ids.add(repository.id);
     relativeRoot(repository.path, `${label}.path`);
     if (!Array.isArray(repository.verify)) throw new TypeError(`${label}.verify must be an array`);
-    repository.verify.forEach((command, commandIndex) => commandSpec(command, `${label}.verify[${commandIndex}]`));
+    Array.from(repository.verify).forEach((command, commandIndex) => commandSpec(command, `${label}.verify[${commandIndex}]`));
   }
   if (config.knowledge !== null) {
     if (!isObject(config.knowledge)) throw new TypeError('knowledge must be an object or null');
@@ -76,7 +78,7 @@ function validate(config) {
     }
     if (config.knowledge.discovery !== undefined) {
       if (!Array.isArray(config.knowledge.discovery)) throw new TypeError('knowledge.discovery must be an array');
-      config.knowledge.discovery.forEach((value, index) => commandSpec(value, `knowledge.discovery[${index}]`));
+      Array.from(config.knowledge.discovery).forEach((value, index) => commandSpec(value, `knowledge.discovery[${index}]`));
     }
   }
   if (!isObject(config.hostModels)) throw new TypeError('hostModels must be an object');

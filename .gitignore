@@ -1,3 +1,4 @@
 node_modules/
+.superpowers/
 .pegatus/work/*/evidence/tmp/
 *.log

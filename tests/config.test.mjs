@@ -62,3 +62,33 @@ test('verification commands require executable and argument arrays', () => {
     { command: 'bash', args: ['-lc', 'echo ok'], cwd: '.', requires: [], shell: 'bash' },
   ]) }));
 });
+
+test('shell executables with exe suffix require an explicit matching shell', () => {
+  const repository = command => ({ repositories: [{ id: 'api', path: 'api', verify: [{
+    command, args: ['-c', 'echo ok'], cwd: '.', requires: [],
+  }] }] });
+  for (const executable of ['pwsh.exe', 'powershell.exe', 'bash.exe', 'sh.exe', 'zsh.exe', 'cmd.exe']) {
+    assert.throws(() => resolveConfig({ project: repository(executable) }), /shell/i, executable);
+    const project = repository(executable);
+    project.repositories[0].verify[0].shell = executable.slice(0, -4);
+    assert.doesNotThrow(() => resolveConfig({ project }), executable);
+  }
+});
+
+test('sparse argument arrays are rejected as malformed commands', () => {
+  const args = new Array(1);
+  const project = { repositories: [{ id: 'api', path: 'api', verify: [
+    { command: 'dotnet', args, cwd: '.', requires: [] },
+  ] }] };
+  assert.throws(() => resolveConfig({ project }), /args/i);
+});
+
+test('sparse prerequisites and verification entries are rejected', () => {
+  const command = { command: 'dotnet', args: ['test'], cwd: '.', requires: new Array(1) };
+  assert.throws(() => resolveConfig({ project: { repositories: [
+    { id: 'api', path: 'api', verify: [command] },
+  ] } }), /requires/i);
+  assert.throws(() => resolveConfig({ project: { repositories: [
+    { id: 'api', path: 'api', verify: new Array(1) },
+  ] } }), /command/i);
+});
