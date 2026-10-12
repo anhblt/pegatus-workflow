@@ -83,6 +83,11 @@ test('checkpoint rejects malformed repository content fingerprints', async () =>
   await assert.rejects(saveProgress(root, invalid, { expectedRevision: 0 }), /fingerprint/i);
 }));
 
+test('checkpoint rejects malformed dirty-submodule paths', async () => fixture(async root => {
+  const invalid = { ...record(), repos: [{ id: 'backend', path: 'backend', branch: 'main', head: 'abc', dirty: true, dirtySubmodules: ['../outside'] }] };
+  await assert.rejects(saveProgress(root, invalid, { expectedRevision: 0 }), /dirtySubmodules/i);
+}));
+
 test('corrupt JSON and unknown schema fail explicitly', async () => fixture(async root => {
   const dir = path.join(root, '.pegatus', 'work', 'TASK-1');
   await mkdir(dir, { recursive: true });

@@ -3,6 +3,7 @@ import { spawnSync } from 'node:child_process';
 import { createReadStream } from 'node:fs';
 import { lstat, readlink, realpath } from 'node:fs/promises';
 import path from 'node:path';
+import { assertContained } from '../paths.mjs';
 
 const scratch = file => file === '.pegatus/work' || file.startsWith('.pegatus/work/')
   || file === '.superpowers' || file.startsWith('.superpowers/');
@@ -57,4 +58,23 @@ export async function repositoryDirty(repo) {
   if (result.status === 0) return false;
   if (result.status === 1) return true;
   throw new Error(`Git diff failed in ${repo}: ${result.error?.message ?? result.stderr.trim()}`);
+}
+
+export async function dirtySubmodules(repo) {
+  await assertRepoRoot(repo);
+  const staged = git(repo, ['ls-files', '--stage', '-z'], { encoding: 'buffer' }).toString('utf8').split('\0').filter(Boolean);
+  const dirty = [];
+  for (const item of staged) {
+    const match = /^160000 [a-f0-9]{40,64} [0-3]\t(.+)$/.exec(item);
+    if (!match || scratch(match[1])) continue;
+    const target = path.join(repo, ...match[1].split('/'));
+    try {
+      await assertContained(repo, target);
+      const status = spawnSync('git', ['-C', target, 'status', '--porcelain', '--untracked-files=all'], { encoding: 'utf8', windowsHide: true });
+      if (status.status !== 0 || status.stdout.length > 0) dirty.push(match[1]);
+    } catch {
+      dirty.push(match[1]);
+    }
+  }
+  return dirty;
 }

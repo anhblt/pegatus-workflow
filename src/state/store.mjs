@@ -23,6 +23,7 @@ export function validateProgress(record) {
   if (!Array.isArray(record.tasks) || record.tasks.some(t => !object(t) || !nonempty(t.id) || !nonempty(t.status))) throw new TypeError('Invalid tasks');
   if (!Array.isArray(record.repos) || record.repos.some(r => !object(r) || !nonempty(r.id) || !relativeRepoPath(r.path) || !nonempty(r.branch) || !nonempty(r.head) || typeof r.dirty !== 'boolean')) throw new TypeError('Invalid repos.path or fingerprint');
   if (record.repos.some(r => r.fingerprint !== undefined && (typeof r.fingerprint !== 'string' || !/^[a-f0-9]{64}$/.test(r.fingerprint)))) throw new TypeError('Invalid repos fingerprint');
+  if (record.repos.some(r => r.dirtySubmodules !== undefined && (!Array.isArray(r.dirtySubmodules) || r.dirtySubmodules.some(item => !relativeRepoPath(item))))) throw new TypeError('Invalid repos dirtySubmodules');
   if (new Set(record.repos.map(r => r.id)).size !== record.repos.length) throw new TypeError('Duplicate repository IDs');
   if (!object(record.context) || !object(record.verification)) throw new TypeError('Invalid context or verification');
   if (record.nextAction !== null && !nonempty(record.nextAction)) throw new TypeError('Invalid nextAction');

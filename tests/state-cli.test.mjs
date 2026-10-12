@@ -69,3 +69,29 @@ test('CLI resume detects a second edit to an already dirty source file', async (
     assert.ok(JSON.parse(resumed.stdout).reconciliation.discrepancies.some(item => item.type === 'contentChanged'));
   } finally { await rm(root, { recursive: true, force: true }); }
 });
+
+test('CLI resume blocks a dirty submodule whose content cannot be compared', async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'pegatus-submodule-'));
+  try {
+    const source = path.join(root, 'source-repo');
+    const repo = path.join(root, 'repo');
+    await mkdir(source);
+    await mkdir(repo);
+    git(source, 'init', '-b', 'main');
+    await writeFile(path.join(source, 'source.txt'), 'base\n');
+    git(source, 'add', 'source.txt');
+    git(source, '-c', 'user.name=Test', '-c', 'user.email=test@example.com', 'commit', '-m', 'initial');
+    git(repo, 'init', '-b', 'main');
+    git(repo, '-c', 'protocol.file.allow=always', 'submodule', 'add', source, 'module');
+    git(repo, '-c', 'user.name=Test', '-c', 'user.email=test@example.com', 'commit', '-am', 'add module');
+    await writeFile(path.join(repo, 'module', 'source.txt'), 'first edit\n');
+    const input = path.join(root, 'input.json');
+    await writeFile(input, JSON.stringify({ ...record(), repos: [{ id: 'repo', path: 'repo', branch: 'main', head: git(repo, 'rev-parse', 'HEAD'), dirty: true }] }));
+    const checkpoint = invoke(root, 'checkpoint', 'TASK-1', '--file', input, '--expected-revision', '0');
+    assert.equal(checkpoint.status, 0, checkpoint.stderr);
+    await writeFile(path.join(repo, 'module', 'source.txt'), 'second edit\n');
+    const resumed = invoke(root, 'resume', 'TASK-1');
+    assert.equal(resumed.status, 3, resumed.stderr);
+    assert.ok(JSON.parse(resumed.stdout).reconciliation.discrepancies.some(item => item.type === 'dirtySubmoduleUnverifiable'));
+  } finally { await rm(root, { recursive: true, force: true }); }
+});

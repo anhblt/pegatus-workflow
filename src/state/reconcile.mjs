@@ -25,6 +25,10 @@ export function reconcile(record, currentRepos) {
     } else if (saved.fingerprint !== undefined && saved.fingerprint !== now.fingerprint) {
       discrepancies.push({ type: 'contentChanged', repoId: saved.id, expected: saved.fingerprint, actual: now.fingerprint ?? null });
     }
+    if ((saved.dirtySubmodules?.length ?? 0) > 0 || (now.dirtySubmodules?.length ?? 0) > 0) {
+      discrepancies.push({ type: 'dirtySubmoduleUnverifiable', repoId: saved.id,
+        expected: saved.dirtySubmodules ?? [], actual: now.dirtySubmodules ?? [] });
+    }
   }
   if (discrepancies.some(item => item.type !== 'missingRepository')) {
     nextActions.push('Reconcile repository changes before resuming dependent work');
