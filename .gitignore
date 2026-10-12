@@ -1,0 +1,3 @@
+node_modules/
+.pegatus/work/*/evidence/tmp/
+*.log

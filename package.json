@@ -1,0 +1,12 @@
+{
+  "name": "pegatus-v2",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "bin": { "pegatus": "bin/pegatus.mjs" },
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "test": "node --test",
+    "lint": "node bin/pegatus.mjs catalog lint"
+  }
+}
