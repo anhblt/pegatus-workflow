@@ -15,12 +15,13 @@ test('administration requires explicit root and host',async t=>{
   const options=await roots(t);
   await assert.rejects(runAdministration(['install','--host','codex'],options),/root/);
 });
-test('CLI default security blocks installs and doctor reports unavailable',async t=>{
+test('CLI default security scans installs and doctor reports explicit-call',async t=>{
   const options=await roots(t);delete options.securityPreflight;
   const args=['--host','codex','--scope','project','--root',options.cwd];
-  assert.equal((await runAdministration(['install',...args],options)).status,'blocked');
+  const installed=await runAdministration(['install',...args],options);
+  assert.equal(installed.status,'passed');assert.ok(installed.security.coverage.agentShield.length);
   const doctor=await runAdministration(['doctor',...args],options);
-  assert.equal(doctor.capabilities.security,'unavailable');assert.equal(doctor.installedVersion,null);
+  assert.equal(doctor.capabilities.security,'explicit-call');assert.equal(doctor.installedVersion,'0.0.0');
 });
 test('project configuration wins while user/project installations deduplicate',async t=>{
   const options=await roots(t),user=['--host','codex','--scope','user','--root',options.home];

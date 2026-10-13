@@ -11,6 +11,7 @@ import { loadCatalog } from '../src/catalog/manifest.mjs';
 import { lintCatalog } from '../src/catalog/lint.mjs';
 import { fileURLToPath } from 'node:url';
 import { runAdministration } from '../src/install/admin.mjs';
+import { scanAgentConfig } from '../src/security/agentshield.mjs';
 
 const operations = new Set([
   'start', 'design', 'plan', 'execute', 'investigate', 'review', 'verify',
@@ -95,6 +96,29 @@ export async function main(argv, { cwd, home, securityPreflight } = {}) {
       process.stdout.write(JSON.stringify(result)+'\n');
       return result.status==='blocked'?3:result.status==='failed'?1:0;
     } catch(error) { process.stderr.write(`${error.message}\n`);return 2; }
+  }
+  if (argv[0] === 'security') {
+    try {
+      const options={files:[]};
+      for(let index=1;index<argv.length;index+=2) {
+        const flag=argv[index],value=argv[index+1];
+        if(!value || value.startsWith('--')) throw new TypeError('Usage: pegatus security --root <explicit-root> --file <relative-config> [--file <relative-config> ...] [--exceptions <review.json>]');
+        if(flag==='--file') options.files.push(value);
+        else if(flag==='--root' && !options.root) options.root=path.resolve(cwd,value);
+        else if(flag==='--exceptions' && !options.exceptionsPath) options.exceptionsPath=value;
+        else throw new TypeError('Unsupported or duplicate security option');
+      }
+      if(!options.root || !options.files.length) throw new TypeError('Security requires explicit --root and --file scope');
+      if(options.exceptionsPath) {
+        const target=path.resolve(options.root,options.exceptionsPath);await assertContained(options.root,target);
+        const record=JSON.parse(await readFile(target,'utf8'));
+        if(record.schemaVersion!==1 || !Array.isArray(record.exceptions)) throw new TypeError('Invalid security exception review record');
+        options.exceptions=record.exceptions;
+      }
+      const result=await scanAgentConfig(options);
+      process.stdout.write(JSON.stringify(result)+'\n');
+      return result.status==='blocked'?3:result.status==='failed'?1:0;
+    } catch(error) {process.stderr.write(`${error.message}\n`);return 2;}
   }
   if (argv[0] === 'catalog') {
     if (argv[1] !== 'lint' || !(argv.length === 2 || argv.length === 4 && argv[2] === '--root')) {

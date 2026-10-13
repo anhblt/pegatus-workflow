@@ -9,6 +9,7 @@ import {generateHost} from '../adapters/capabilities.mjs';
 import {readOwnership,fileBytes,hashBytes,hostName} from './ownership.mjs';
 import {planInstall} from './plan.mjs';
 import {applyInstall,recoverInstall} from './apply.mjs';
+import {scanInstallPlan} from '../security/agentshield.mjs';
 
 const packageRoot=fileURLToPath(new URL('../../',import.meta.url));
 function argumentsFor(argv,cwd) {
@@ -45,13 +46,13 @@ async function runtimeCatalog() {
     }
   }
   await visit('src');await visit('bin');
-  for(const file of ['package.json','sources.lock.json']) catalog.files[file]=await readFile(path.join(packageRoot,file));
+  for(const file of ['package.json','package-lock.json','sources.lock.json']) catalog.files[file]=await readFile(path.join(packageRoot,file));
   return catalog;
 }
 /** Explicit roots are the only filesystem scopes inspected. project overrides user config.
  * securityPreflight is a Result or async (plan)=>Result supplied by the security adapter.
  */
-export async function runAdministration(argv,{cwd,securityPreflight}={}) {
+export async function runAdministration(argv,{cwd,securityPreflight=scanInstallPlan}={}) {
   const options=argumentsFor(argv,cwd),{operation,root,host,scope,userRoot}=options;
   await assertContained(root,root);
   const user=await configuration(scope==='user'?root:userRoot),project=scope==='project'?await configuration(root):{};
@@ -59,11 +60,11 @@ export async function runAdministration(argv,{cwd,securityPreflight}={}) {
   const generated=generateHost(catalog,{host,scope,root,models:config.hostModels[host]??{}});
   const current=await readOwnership(root,host),userLock=scope==='project' && userRoot && userRoot!==root?await readOwnership(userRoot,host):null;
   const version=JSON.parse(catalog.files['package.json'].toString('utf8')).version;
-  const details={capabilities:generated.capabilities,warnings:generated.warnings,snippets:generated.snippets};
+  const details={capabilities:{...generated.capabilities,security:'explicit-call'},warnings:generated.warnings.filter(w=>!w.startsWith('Security scanner unavailable')),snippets:generated.snippets};
   if(operation==='doctor') {
     const inherited=!current.files.length && Boolean(userLock?.files.length),effective=inherited?userLock:current,effectiveRoot=inherited?userRoot:root;
     const adapted=inherited?generateHost(catalog,{host,scope:'user',root:userRoot,models:resolveConfig({user}).hostModels[host]??{}}):generated;
-    return {status:'passed',evidence:[],reasons:[],capabilities:adapted.capabilities,warnings:adapted.warnings,snippets:adapted.snippets,
+    return {status:'passed',evidence:[],reasons:[],capabilities:{...adapted.capabilities,security:'explicit-call'},warnings:adapted.warnings.filter(w=>!w.startsWith('Security scanner unavailable')),snippets:adapted.snippets,
       installedVersion:effective.version??null,configuration:config,inherited,...(inherited?{inheritedRoot:userRoot}:{}),
       locations:effective.files.map(f=>({path:path.join(effectiveRoot,f.path),state:f.actualHash===null?'missing':f.actualHash===f.installedHash?'unchanged':'edited',inherited})),
       commandLocations:effective.files.filter(f=>/\/(?:skills\/pegatus-|commands\/pegatus-|workflows\/pegatus-|global_workflows\/pegatus-)/.test(f.path)).map(f=>path.join(effectiveRoot,f.path)),
@@ -88,5 +89,5 @@ export async function runAdministration(argv,{cwd,securityPreflight}={}) {
   }
   const plan=planInstall(currentFiles,desired,{root,host,scope,version,expectedLockHash:owned.lockHash,sourceRevisions:catalog.sourceLock.sources.map(s=>({id:s.id,revision:s.revision}))});
   const security=typeof securityPreflight==='function'?await securityPreflight(plan):securityPreflight;
-  return {...await applyInstall(plan,{securityPreflight:security}),...details};
+  return {...await applyInstall(plan,{securityPreflight:security}),security,...details};
 }
