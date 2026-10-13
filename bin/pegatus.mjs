@@ -12,12 +12,76 @@ import { lintCatalog } from '../src/catalog/lint.mjs';
 import { fileURLToPath } from 'node:url';
 import { runAdministration } from '../src/install/admin.mjs';
 import { scanAgentConfig } from '../src/security/agentshield.mjs';
+import { dispatchEvent } from '../src/hooks/dispatch.mjs';
+import { activationFor, mapNativeEvent, nativeResponse } from '../src/hooks/operations.mjs';
 
 const operations = new Set([
   'start', 'design', 'plan', 'execute', 'investigate', 'review', 'verify',
   'checkpoint', 'resume', 'learn', 'memory', 'security', 'status',
   'install', 'update', 'doctor', 'uninstall', 'catalog',
+  'lifecycle', 'hook-native', 'hook-activation',
 ]);
+
+function flags(args, allowed) {
+  const options = { files: [] };
+  for (let index = 0; index < args.length; index += 2) {
+    const flag = args[index], value = args[index + 1];
+    if (!allowed.includes(flag) || !value || value.startsWith('--')) throw new TypeError('Invalid lifecycle options');
+    if (flag === '--config-file') options.files.push(value);
+    else {
+      const key = flag.slice(2).replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
+      if (options[key]) throw new TypeError('Duplicate lifecycle option');
+      options[key] = value;
+    }
+  }
+  return options;
+}
+
+async function nativeInput() {
+  const chunks = [];
+  let size = 0;
+  for await (const chunk of process.stdin) {
+    size += chunk.length;
+    if (size > 262144) throw new TypeError('Native hook input exceeds limit');
+    chunks.push(chunk);
+  }
+  return JSON.parse(Buffer.concat(chunks).toString('utf8'));
+}
+
+async function runLifecycleCommand(argv, cwd) {
+  const [operation, ...args] = argv;
+  if (operation === 'hook-activation') {
+    const options = flags(args, ['--host', '--root']);
+    if (!options.host || !options.root) throw new TypeError('Usage: pegatus hook-activation --host claude|codex --root <installed-root>');
+    process.stdout.write(JSON.stringify(activationFor(options.host, path.resolve(cwd, options.root))) + '\n');
+    return 0;
+  }
+  if (operation === 'hook-native') {
+    const options = flags(args, ['--host']);
+    if (!['claude', 'codex'].includes(options.host)) throw new TypeError('Usage: pegatus hook-native --host claude|codex');
+    let payload;
+    try { payload = await nativeInput(); }
+    catch { return 0; }
+    const binding = { root: process.env.PEGATUS_ROOT, taskId: process.env.PEGATUS_TASK_ID, eventId: process.env.PEGATUS_EVENT_ID };
+    if (!binding.root || !binding.taskId || (process.env.PEGATUS_SESSION_ID
+      && payload.session_id !== process.env.PEGATUS_SESSION_ID)) return 0;
+    const mapped = mapNativeEvent(options.host, payload, binding);
+    if (mapped.status === 'skipped') return 0;
+    const lifecycle = await dispatchEvent(mapped.event);
+    const response = nativeResponse(options.host, payload.hook_event_name, lifecycle);
+    if (response.stdout) process.stdout.write(response.stdout);
+    if (response.stderr) process.stderr.write(response.stderr);
+    return response.exitCode;
+  }
+  const options = flags(args, ['--root', '--task', '--event-id', '--type', '--config-file']);
+  if (!options.root || !options.task || !options.eventId || !options.type)
+    throw new TypeError('Usage: pegatus lifecycle --root <root> --task <task-id> --event-id <unique-id> --type <event> [--config-file <relative-file> ...]');
+  const request = { root: path.resolve(cwd, options.root), taskId: options.task, id: options.eventId, type: options.type };
+  if (options.files.length) request.affectedConfigFiles = options.files;
+  const outcome = await dispatchEvent(request);
+  process.stdout.write(JSON.stringify(outcome) + '\n');
+  return outcome.status === 'blocked' ? 3 : outcome.status === 'failed' ? 1 : 0;
+}
 
 function checkpointArgs(args) {
   if (args.length !== 5 || args[1] !== '--file' || args[3] !== '--expected-revision' || !/^\d+$/.test(args[4])) {
@@ -89,6 +153,10 @@ export async function main(argv, { cwd, home, securityPreflight } = {}) {
   if (!operations.has(argv[0])) {
     process.stderr.write(`Unknown operation: ${argv[0]}\n`);
     return 2;
+  }
+  if (['lifecycle', 'hook-native', 'hook-activation'].includes(argv[0])) {
+    try { return await runLifecycleCommand(argv, cwd); }
+    catch (error) { process.stderr.write(`${error.message}\n`); return 2; }
   }
   if (['install','update','doctor','uninstall'].includes(argv[0])) {
     try {

@@ -51,7 +51,7 @@ export function generateHost(catalog,{host,scope,root,models={}}) {
     add(file,`# Pegatus ${entry.id}\n\n${instructions(file,entry)}`);
   }
   if(!adapter.agents) warnings.push('Native custom agents and user-wide skill discovery are unverified; use portable role briefs and workflow references inline. Host default models retained.');
-  warnings.push('Native hook registration awaits the lifecycle adapter; use explicit checkpoint/resume/verify calls. Instruction-only guidance is not a security boundary.');
+  warnings.push('Hooks require opt-in host registration and explicit task/session binding; doctor provides a merge proposal. PreCompact and completion remain explicit lifecycle calls. Native advisory hooks are not a security boundary.');
   warnings.push('Security scanner unavailable until a passed injected preflight is supplied. Native host acceptance remains required on Windows and Linux.');
   const instruction=host==='claude'?'CLAUDE.md':host==='codex'?'AGENTS.md':scope==='user'?'.gemini/GEMINI.md':'your workspace instructions';
   snippets.push({instruction,content:`Follow Pegatus guidance in ${path.join(root,runtime,'catalog/context-protocol.md')}. Invoke the installed pegatus workflows explicitly; load relevant catalog skills and role briefs on demand. Existing solution instructions and host authority apply.`});

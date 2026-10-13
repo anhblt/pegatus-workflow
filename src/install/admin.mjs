@@ -10,6 +10,7 @@ import {readOwnership,fileBytes,hashBytes,hostName} from './ownership.mjs';
 import {planInstall} from './plan.mjs';
 import {applyInstall,recoverInstall} from './apply.mjs';
 import {scanInstallPlan} from '../security/agentshield.mjs';
+import {activationFor} from '../hooks/operations.mjs';
 
 const packageRoot=fileURLToPath(new URL('../../',import.meta.url));
 function argumentsFor(argv,cwd) {
@@ -49,6 +50,9 @@ async function runtimeCatalog() {
   for(const file of ['package.json','package-lock.json','sources.lock.json']) catalog.files[file]=await readFile(path.join(packageRoot,file));
   return catalog;
 }
+function hookActivation(host,root) {
+  try {return activationFor(host,root);} catch {return null;}
+}
 /** Explicit roots are the only filesystem scopes inspected. project overrides user config.
  * securityPreflight is a Result or async (plan)=>Result supplied by the security adapter.
  */
@@ -60,11 +64,13 @@ export async function runAdministration(argv,{cwd,securityPreflight=scanInstallP
   const generated=generateHost(catalog,{host,scope,root,models:config.hostModels[host]??{}});
   const current=await readOwnership(root,host),userLock=scope==='project' && userRoot && userRoot!==root?await readOwnership(userRoot,host):null;
   const version=JSON.parse(catalog.files['package.json'].toString('utf8')).version;
-  const details={capabilities:{...generated.capabilities,security:'explicit-call'},warnings:generated.warnings.filter(w=>!w.startsWith('Security scanner unavailable')),snippets:generated.snippets};
+  const details={capabilities:{...generated.capabilities,security:'explicit-call'},warnings:generated.warnings.filter(w=>!w.startsWith('Security scanner unavailable')),snippets:generated.snippets,
+    hookActivation:hookActivation(host,root)};
   if(operation==='doctor') {
     const inherited=!current.files.length && Boolean(userLock?.files.length),effective=inherited?userLock:current,effectiveRoot=inherited?userRoot:root;
     const adapted=inherited?generateHost(catalog,{host,scope:'user',root:userRoot,models:resolveConfig({user}).hostModels[host]??{}}):generated;
     return {status:'passed',evidence:[],reasons:[],capabilities:{...adapted.capabilities,security:'explicit-call'},warnings:adapted.warnings.filter(w=>!w.startsWith('Security scanner unavailable')),snippets:adapted.snippets,
+      hookActivation:hookActivation(host,effectiveRoot),
       installedVersion:effective.version??null,configuration:config,inherited,...(inherited?{inheritedRoot:userRoot}:{}),
       locations:effective.files.map(f=>({path:path.join(effectiveRoot,f.path),state:f.actualHash===null?'missing':f.actualHash===f.installedHash?'unchanged':'edited',inherited})),
       commandLocations:effective.files.filter(f=>/\/(?:skills\/pegatus-|commands\/pegatus-|workflows\/pegatus-|global_workflows\/pegatus-)/.test(f.path)).map(f=>path.join(effectiveRoot,f.path)),
