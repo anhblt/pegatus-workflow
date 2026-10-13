@@ -14,7 +14,7 @@ const learning = await import('../src/memory/learning.mjs').catch(error => {
   if (error.code !== 'ERR_MODULE_NOT_FOUND') throw error;
   return {};
 });
-const { proposeLesson, saveCandidate, listCandidates, reviewLesson, promoteLesson, retireLesson, collectLearning, validateReusableProposal } = learning;
+const { proposeLesson, saveCandidate, listCandidates, reviewLesson, recordReview, promoteLesson, retireLesson, collectLearning, validateReusableProposal } = learning;
 const input = (extra = {}) => ({ projectId: 'project-a', sourceTask: 'TASK-1', title: 'Contact transaction',
   content: 'Commit contact changes in one transaction.', paths: ['src/'], keywords: ['contact'],
   evidence: [{ path: '.pegatus/work/TASK-1/evidence/unit.json', outcome: 'passed' }],
@@ -350,4 +350,55 @@ test('reusable validation requires the actual proposal in a valid catalog', asyn
   const present = proposeLesson(input({ kind: 'skill', content: catalog.documents[asset.path] }));
   assert.equal(validateReusableProposal(present, catalog).status, 'passed');
   assert.equal(validateReusableProposal(present, { ...catalog, schemaVersion: 2 }).status, 'failed');
+});
+
+test('mixed-case explicit secret is redacted before keyword normalization and persistence', async t => {
+  const root = await fixture(t), destination = target(root);
+  const candidate = proposeLesson(input({ keywords: ['Contact', 'MiXeDSecret'], redactions: ['MiXeDSecret'] }));
+  assert.equal(candidate.redacted, true);
+  assert.doesNotMatch(JSON.stringify(candidate), /mixedsecret/i);
+  await saveCandidate(root, candidate);
+  const saved = await readFile(path.join(root, '.pegatus/work/TASK-1/lessons', `${candidate.id}.json`), 'utf8');
+  assert.doesNotMatch(saved, /mixedsecret/i);
+  await promote(candidate, destination);
+  const metadata = await readFile(path.join(root, `${destination.path}.json`), 'utf8');
+  assert.doesNotMatch(metadata, /mixedsecret/i);
+  assert.deepEqual(JSON.parse(metadata).keywords, ['[redacted]', 'contact']);
+});
+
+test('persisted rejection rejects approval through a stale candidate and keeps listing usable', async t => {
+  const root = await fixture(t), candidate = proposeLesson(input()), destination = target(root);
+  await saveCandidate(root, candidate);
+  await recordReview(root, candidate, approval(candidate, destination, {
+    decision: 'reject', reason: 'Not general enough',
+  }), { trustedCoordinator: true });
+  await assert.rejects(recordReview(root, candidate, approval(candidate, destination, {
+    reviewedAt: '2026-10-13T01:00:00.000Z',
+  }), { trustedCoordinator: true }), /stale|rejected/i);
+  const listed = await listCandidates(root, { taskId: 'TASK-1', projectId: 'project-a' });
+  assert.equal(listed.length, 1);
+  assert.equal(listed[0].status, 'rejected');
+  assert.equal(listed[0].reviews.length, 1);
+  await assert.rejects(recordReview(root, listed[0], approval(candidate, destination, {
+    reviewedAt: '2026-10-13T01:00:00.000Z',
+  }), { trustedCoordinator: true }), /rejected/i);
+});
+
+test('persisted approval requires current history for retirement and preserves review chronology', async t => {
+  const root = await fixture(t), candidate = proposeLesson(input()), destination = target(root);
+  await saveCandidate(root, candidate);
+  await recordReview(root, candidate, approval(candidate, destination), { trustedCoordinator: true });
+  const retire = approval(candidate, destination, {
+    decision: 'retire', reason: 'Superseded guidance', reviewedAt: '2026-10-13T01:00:00.000Z',
+  });
+  await assert.rejects(recordReview(root, candidate, retire, { trustedCoordinator: true }), /stale/i);
+  const [current] = await listCandidates(root, { taskId: 'TASK-1', projectId: 'project-a' });
+  await assert.rejects(recordReview(root, current, { ...retire, reviewedAt: '2026-10-12T00:00:00.000Z' }, {
+    trustedCoordinator: true,
+  }), /chronology|later/i);
+  const retired = await recordReview(root, current, retire, { trustedCoordinator: true });
+  assert.equal(retired.status, 'retired');
+  const listed = await listCandidates(root, { taskId: 'TASK-1', projectId: 'project-a' });
+  assert.equal(listed[0].status, 'retired');
+  assert.deepEqual(listed[0].reviews.map(review => review.decision), ['approve', 'retire']);
 });

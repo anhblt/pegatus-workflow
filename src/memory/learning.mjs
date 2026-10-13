@@ -70,7 +70,7 @@ export function proposeLesson(input, { existing = [] } = {}) {
   const candidate = { schemaVersion: 1, kind, projectId: input.projectId, sourceTask: input.sourceTask,
     title: redact(input.title, secrets), content: redact(input.content, secrets),
     paths: [...new Set(input.paths.map(normalize))].sort(),
-    keywords: [...new Set(input.keywords.map(value => redact(value.toLowerCase().trim(), secrets)))].sort(),
+    keywords: [...new Set(input.keywords.map(value => redact(value, secrets).toLowerCase().trim()))].sort(),
     evidence, freshness: { status: freshness.status, ...(freshness.branch ? { branch: freshness.branch } : {}) },
     redacted: false, approvalState: 'candidate', status: 'proposed', active: false, reviews: [], duplicateOf: null };
   if ([candidate.projectId, candidate.sourceTask, ...candidate.paths, candidate.freshness.branch ?? ''].some(value => redact(value, secrets) !== value))
@@ -177,10 +177,15 @@ export async function saveCandidate(root, candidate) {
 }
 
 export async function recordReview(root, candidate, review, options) {
-  const next = reviewLesson(candidate, review, options);
+  validateCandidate(candidate);
   const directory = await candidateDirectory(root, candidate.sourceTask);
-  const original = validateCandidate(JSON.parse(await readFile(await assertContained(root, path.join(directory, `${candidate.id}.json`)), 'utf8')));
-  if (original.contentHash !== candidate.contentHash) throw new Error('Candidate persistence mismatch');
+  const current = (await listCandidates(root, { taskId: candidate.sourceTask, projectId: candidate.projectId }))
+    .find(item => item.id === candidate.id);
+  if (!current || current.contentHash !== candidate.contentHash) throw new Error('Candidate persistence mismatch');
+  if (candidate.status !== current.status || candidate.approvalState !== current.approvalState
+    || JSON.stringify(candidate.reviews ?? []) !== JSON.stringify(current.reviews))
+    throw new Error('Stale candidate review history; reload the current persisted candidate');
+  const next = reviewLesson(current, review, options);
   const event = next.reviews.at(-1);
   const file = path.join(directory, `${candidate.id}.reviews`, `${hash(JSON.stringify(event))}.json`);
   try { await exclusive(root, file, JSON.stringify(event, null, 2) + '\n'); }
