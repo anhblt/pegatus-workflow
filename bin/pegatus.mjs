@@ -14,6 +14,7 @@ import { runAdministration } from '../src/install/admin.mjs';
 import { scanAgentConfig } from '../src/security/agentshield.mjs';
 import { dispatchEvent } from '../src/hooks/dispatch.mjs';
 import { activationFor, mapNativeEvent, nativeResponse } from '../src/hooks/operations.mjs';
+import { runLearningCommand, learningCollector } from '../src/memory/cli.mjs';
 
 const operations = new Set([
   'start', 'design', 'plan', 'execute', 'investigate', 'review', 'verify',
@@ -73,7 +74,7 @@ async function runLifecycleCommand(argv, cwd) {
     if (response.stderr) process.stderr.write(response.stderr);
     return response.exitCode;
   }
-  const options = flags(args, ['--root', '--task', '--event-id', '--type', '--config-file', '--action-ref', '--review-file']);
+  const options = flags(args, ['--root', '--task', '--event-id', '--type', '--config-file', '--action-ref', '--review-file', '--learning-file']);
   if (!options.root || !options.task || !options.eventId || !options.type)
     throw new TypeError('Usage: pegatus lifecycle --root <root> --task <task-id> --event-id <unique-id> --type <event> [--config-file <relative-file> ...] [--action-ref <ref> --review-file <review.json>]');
   if (options.type !== 'before-action' && (options.actionRef || options.reviewFile))
@@ -81,6 +82,10 @@ async function runLifecycleCommand(argv, cwd) {
   const request = { root: path.resolve(cwd, options.root), taskId: options.task, id: options.eventId, type: options.type };
   if (options.files.length) request.affectedConfigFiles = options.files;
   const deps = {};
+  if (options.learningFile) {
+    if (!['pre-compact', 'session-end'].includes(options.type)) throw new TypeError('Learning observations apply only to pre-compact or session-end');
+    deps.collectLearning = await learningCollector(request.root, options.learningFile);
+  }
   if (options.type === 'before-action') {
     request.actionRef = options.actionRef;
     if (options.reviewFile) {
@@ -177,6 +182,13 @@ export async function main(argv, { cwd, home, securityPreflight } = {}) {
   if (['lifecycle', 'hook-native', 'hook-activation'].includes(argv[0])) {
     try { return await runLifecycleCommand(argv, cwd); }
     catch (error) { process.stderr.write(`${error.message}\n`); return 2; }
+  }
+  if (['learn', 'memory'].includes(argv[0])) {
+    try {
+      const result = await runLearningCommand(argv, cwd);
+      process.stdout.write(JSON.stringify(result) + '\n');
+      return result.status === 'blocked' ? 3 : result.status === 'failed' ? 1 : 0;
+    } catch (error) { process.stderr.write(`${error.message}\n`); return 2; }
   }
   if (['install','update','doctor','uninstall'].includes(argv[0])) {
     try {

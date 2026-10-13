@@ -35,7 +35,7 @@ export async function indexMemory({ root, projectId }) {
         const sidecar = await assertContained(directory, `${entryPath}.json`);
         metadata = JSON.parse(await readFile(sidecar, 'utf8'));
         if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) throw new TypeError('Metadata must be an object');
-        if (metadata.approvalState !== 'approved' || metadata.projectId !== projectId || metadata.kind === 'lesson-candidate' || ['retired', 'superseded'].includes(metadata.status)) continue;
+        if (metadata.approvalState !== 'approved' || metadata.projectId !== projectId || ['lesson-candidate', 'skill-proposal', 'rule-proposal'].includes(metadata.kind) || ['retired', 'superseded'].includes(metadata.status)) continue;
         if (!Array.isArray(metadata.paths) || !metadata.paths.length || !metadata.paths.every(validScope) ||
             !Array.isArray(metadata.keywords) || !metadata.keywords.every(word => typeof word === 'string') ||
             typeof metadata.sourceTask !== 'string' || !metadata.sourceTask ||
@@ -58,7 +58,7 @@ export function selectMemory(entries, { projectId, paths = [], query = '', branc
   if (typeof projectId !== 'string' || !projectId.trim()) return [];
   const terms = new Set(words(query));
   return entries.filter(entry => entry.projectId === projectId && entry.approvalState === 'approved' &&
-    entry.kind !== 'lesson-candidate' &&
+    !['lesson-candidate', 'skill-proposal', 'rule-proposal'].includes(entry.kind) &&
     !['retired', 'superseded'].includes(entry.status) &&
     Array.isArray(entry.paths) && entry.paths.every(validScope) &&
     paths.some(target => validScope(target) && entry.paths.some(scope => scoped(normalize(target), normalize(scope)))) &&
