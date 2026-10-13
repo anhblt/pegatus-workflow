@@ -131,9 +131,28 @@ test('observed structured remediation retains shape and redacts its text',async 
   const finding={...observed.findings[0],fix:{description:'Review this change',before:'safe',after:'sk-proj-privatevalue12345678901234567890',auto:false}};
   const result=await scanAgentConfig({root:directory,files:['CLAUDE.md'],run:response(report(1,[finding]),2)});
   assert.equal(result.status,'blocked');
+  assert.equal(result.findings[0].remediation.description,'Review this change');
   assert.equal(result.findings[0].remediation.auto,false);
-  assert.equal(result.findings[0].remediation.after,'[REDACTED]');
+  assert.equal(result.findings[0].remediation.before,'[REDACTED SOURCE PREVIEW]');
+  assert.equal(result.findings[0].remediation.after,'[REDACTED SOURCE PREVIEW]');
   assert.doesNotMatch(JSON.stringify(result),/privatevalue12345678901234567890/);
+});
+test('unfamiliar credential shapes in remediation previews are never returned',()=>{
+  const unknown='Endpoint=example;AccountKey=AZUREUNKNOWN1234567890';
+  const raw={...observed.findings[0],fix:{description:'Review credential storage',before:unknown,after:`Remove ${unknown}`,auto:false}};
+  const finding=normalizeFindings({findings:[raw]})[0];
+  assert.equal(finding.remediation.description,'Review credential storage');
+  assert.equal(finding.remediation.before,'[REDACTED SOURCE PREVIEW]');
+  assert.equal(finding.remediation.after,'[REDACTED SOURCE PREVIEW]');
+  assert.doesNotMatch(JSON.stringify(finding),/AZUREUNKNOWN1234567890/);
+});
+test('real pinned scanner never returns synthetic HF credential previews',async t=>{
+  const token='hf_ABCDEFGHIJKLMNOPQRSTUVWXYZ123456';
+  const directory=await root(t,{'CLAUDE.md':`Hugging Face token: ${token}\nFollow project instructions.`});
+  const result=await scanAgentConfig({root:directory,files:['CLAUDE.md']});
+  assert.equal(result.status,'blocked');
+  assert.ok(result.findings.some(f=>f.remediation?.before==='[REDACTED SOURCE PREVIEW]'),JSON.stringify(result.findings.map(f=>({id:f.id,hasPreview:typeof f.remediation?.before==='string',containsToken:f.remediation?.before?.includes(token)??false}))));
+  assert.doesNotMatch(JSON.stringify(result),/hf_ABCDEFGHIJKLMNOPQRSTUVWXYZ123456/);
 });
 test('missing native scanner executable is failed rather than clean',async t=>{
   const directory=await root(t);

@@ -14,7 +14,9 @@ export function redactSecurity(value,options={}) {
 /** Preserve identity and gate fields; scrub only text intended for display. */
 export function redactFinding(f,options={}) {
   const out={...f};
-  for(const key of ['message','evidence','remediation']) if(out[key]!==undefined) out[key]=redactSecurity(out[key],options);
+  for(const key of ['message','evidence']) if(out[key]!==undefined) out[key]=redactSecurity(out[key],options);
+  if(typeof out.remediation==='string') out.remediation=redactSecurity(out.remediation,options);
+  else if(out.remediation) out.remediation={description:redactSecurity(out.remediation.description,options),before:'[REDACTED SOURCE PREVIEW]',after:'[REDACTED SOURCE PREVIEW]',auto:out.remediation.auto};
   if(out.suppression) out.suppression={...out.suppression,reviewedBy:redactSecurity(out.suppression.reviewedBy,options),reason:redactSecurity(out.suppression.reason,options)};
   return out;
 }
