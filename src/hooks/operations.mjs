@@ -7,6 +7,21 @@ import { dirtySubmodules, fingerprintRepository, repositoryDirty } from '../stat
 const text = value => typeof value === 'string' && value.length > 0 && value.length <= 256 && !value.includes('\0');
 const digestId = (...parts) => createHash('sha256').update(parts.join('\0')).digest('hex');
 
+/** Canonical source-content state for verifier getCodeState and completion. */
+export function repositoryCodeState(repos) {
+  if (!Array.isArray(repos)) throw new TypeError('Repository snapshots are required');
+  const seen = new Set();
+  const content = repos.map(repo => {
+    if (!text(repo?.id) || !/^[a-f0-9]{64}$/.test(repo.fingerprint ?? '')
+      || !Array.isArray(repo.dirtySubmodules ?? []) || repo.error || seen.has(repo.id))
+      throw new TypeError('Repository content state is unavailable');
+    seen.add(repo.id);
+    return { id: repo.id, fingerprint: repo.fingerprint,
+      unverifiableSubmodules: (repo.dirtySubmodules ?? []).length > 0 };
+  }).sort((a, b) => a.id.localeCompare(b.id));
+  return `repos-v1:${createHash('sha256').update(JSON.stringify(content)).digest('hex')}`;
+}
+
 function git(repo, ...args) {
   const result = spawnSync('git', ['-C', repo, ...args], { encoding: 'utf8', windowsHide: true });
   return result.status === 0 ? result.stdout.trim() : null;
@@ -67,7 +82,7 @@ export function mapNativeEvent(host, payload, { root, taskId, eventId } = {}) {
   }
   if (name === 'PreCompact' && !text(eventId))
     return { status: 'skipped', evidence: [], reasons: ['explicit-compaction-event-id-required'] };
-  const sourceId = eventId ?? (name === 'PostToolUse' ? payload.tool_use_id : name === 'SessionStart' ? payload.source : name);
+  const sourceId = name === 'PreCompact' ? eventId : name === 'PostToolUse' ? payload.tool_use_id : name === 'SessionStart' ? payload.source : name;
   if (!text(sourceId)) return { status: 'skipped', evidence: [], reasons: ['unique-native-event-id-required'] };
   return { status: 'passed', evidence: [], reasons: [], event: {
     root, taskId, type, id: `${host}:${digestId(payload.session_id, name, sourceId)}`,

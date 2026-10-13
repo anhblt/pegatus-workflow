@@ -1,20 +1,22 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dispatchEvent } from '../src/hooks/dispatch.mjs';
-import { mapNativeEvent, nativeResponse, activationFor } from '../src/hooks/operations.mjs';
+import { mapNativeEvent, nativeResponse, activationFor, currentRepositories, repositoryCodeState } from '../src/hooks/operations.mjs';
 import { loadProgress, saveProgress } from '../src/state/store.mjs';
 import { runAdministration } from '../src/install/admin.mjs';
 
+const proof = codeState => ({ status: 'passed', codeState, results: [{ checkId: 'unit', status: 'passed', valid: true, codeState,
+  evidence: [{ schemaVersion: 1, command: 'node', args: ['--test'], cwd: '.', exitCode: 0,
+    status: 'passed', codeState, valid: true, outputPath: '.pegatus/work/TASK-1/evidence/unit.json' }] }] });
 const initial = () => ({
   schemaVersion: 1, taskId: 'TASK-1', revision: 0, classification: 'small', phase: 'implement',
   approvedScopeHash: null, approvals: [], tasks: [], repos: [], context: {},
-  verification: { status: 'passed', codeState: 'old', results: [{ checkId: 'unit', valid: true,
-    evidence: [{ outputPath: '.pegatus/work/TASK-1/evidence/unit.json', valid: true }] }] },
+  verification: proof(repositoryCodeState([])),
   nextAction: 'verify',
 });
 async function fixture(run) {
@@ -24,6 +26,12 @@ async function fixture(run) {
 }
 const event = (root, id, type, more = {}) => ({ root, taskId: 'TASK-1', id, type, ...more });
 const cli = fileURLToPath(new URL('../bin/pegatus.mjs', import.meta.url));
+const invoke = (root, ...args) => spawnSync(process.execPath, [cli, ...args], { cwd: root, encoding: 'utf8' });
+function git(root, ...args) {
+  const result = spawnSync('git', ['-C', root, ...args], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  return result.stdout.trim();
+}
 const native = (root, env, payload) => spawnSync(process.execPath, [cli, 'hook-native', '--host', 'codex'], {
   cwd: root, encoding: 'utf8', input: JSON.stringify(payload), env: { ...process.env, ...env },
 });
@@ -70,14 +78,54 @@ test('post edit marks verification and evidence stale while retaining provenance
   assert.deepEqual(after.approvals, before.approvals);
 }));
 
+test('unknown repository state invalidates prior verification without consuming edit event', async () => fixture(async root => {
+  const before = await loadProgress(root, 'TASK-1');
+  await saveProgress(root, { ...before, repos: [{ id: 'repo', path: 'missing', branch: 'main', head: 'a', dirty: false }] }, { expectedRevision: 1 });
+  const blocked = await dispatchEvent(event(root, 'unknown-edit', 'post-edit'), {
+    currentRepositories: async () => [{ id: 'repo', error: 'snapshot-failed' }],
+  });
+  assert.equal(blocked.status, 'blocked');
+  const saved = await loadProgress(root, 'TASK-1');
+  assert.equal(saved.verification.results[0].valid, false);
+  assert.equal(saved.verification.results[0].evidence[0].valid, false);
+  assert.equal(saved.context.lifecycle?.eventIds?.length ?? 0, 0);
+}));
+
 test('before-action cannot pass without trusted authorization', async () => fixture(async root => {
-  const denied = await dispatchEvent(event(root, 'action-1', 'before-action'));
+  const denied = await dispatchEvent(event(root, 'action-1', 'before-action', { actionRef: 'deploy:staging' }));
   assert.equal(denied.status, 'blocked');
   assert.equal((await loadProgress(root, 'TASK-1')).revision, 1);
-  const allowed = await dispatchEvent(event(root, 'action-1', 'before-action'), {
-    authorizeAction: async () => ({ status: 'passed' }),
+  const allowed = await dispatchEvent(event(root, 'action-1', 'before-action', { actionRef: 'deploy:staging' }), {
+    authorizeAction: async () => ({ schemaVersion: 1, kind: 'action', status: 'passed', taskId: 'TASK-1',
+      actionRef: 'deploy:staging', scopeHash: null, reviewedBy: 'user', reviewedAt: '2026-10-13T00:00:00.000Z', evidenceRef: 'chat:approval-1' }),
   });
   assert.equal(allowed.status, 'passed');
+}));
+
+test('explicit required gates return nonzero for a missing task', async () => fixture(async root => {
+  for (const type of ['complete', 'before-action']) {
+    const extra = type === 'complete' ? ['--config-file', 'CLAUDE.md'] : ['--action-ref', 'deploy:staging'];
+    const response = invoke(root, 'lifecycle', '--root', root, '--task', 'MISSING', '--event-id', `missing-${type}`,
+      '--type', type, ...extra);
+    assert.equal(response.status, 3, response.stdout + response.stderr);
+    assert.equal(JSON.parse(response.stdout).status, 'blocked');
+  }
+}));
+
+test('explicit before-action accepts only a reviewed record for the exact task action and scope', async () => fixture(async root => {
+  const review = path.join(root, 'action-review.json');
+  const input = { schemaVersion: 1, kind: 'action', status: 'passed', taskId: 'TASK-1', actionRef: 'deploy:staging',
+    scopeHash: null, reviewedBy: 'user', reviewedAt: '2026-10-13T00:00:00.000Z', evidenceRef: 'chat:approval-1' };
+  await writeFile(review, JSON.stringify(input));
+  const call = (id, actionRef) => invoke(root, 'lifecycle', '--root', root, '--task', 'TASK-1', '--event-id', id,
+    '--type', 'before-action', '--action-ref', actionRef, '--review-file', 'action-review.json');
+  assert.equal(call('bad-action', 'deploy:production').status, 3);
+  assert.equal((await loadProgress(root, 'TASK-1')).revision, 1);
+  const accepted = call('approved-action', 'deploy:staging');
+  assert.equal(accepted.status, 0, accepted.stdout + accepted.stderr);
+  assert.equal((await loadProgress(root, 'TASK-1')).context.lifecycle.lastActionReview.evidenceRef, 'chat:approval-1');
+  await writeFile(review, JSON.stringify({ ...input, kind: 'design' }));
+  assert.equal(call('design-is-not-action', 'deploy:staging').status, 3);
 }));
 
 test('start reports ready reconciliation with the bound task', async () => fixture(async root => {
@@ -121,6 +169,60 @@ test('malformed successful scanner response cannot complete task', async () => f
   });
   assert.equal(result.status, 'failed');
   assert.equal((await loadProgress(root, 'TASK-1')).revision, 1);
+}));
+
+test('completion rejects empty and mixed verification results before security scan', async () => fixture(async root => {
+  const before = await loadProgress(root, 'TASK-1');
+  let scans = 0;
+  const scanAgentConfig = async () => { scans++; return { schemaVersion: 1, status: 'passed', codeState: 'a'.repeat(64) }; };
+  for (const verification of [{ ...before.verification, results: [] },
+    { ...before.verification, results: [{ ...before.verification.results[0], evidence: [] }] },
+    { ...before.verification, results: [...before.verification.results, { ...before.verification.results[0], status: 'failed' }] }]) {
+    const saved = await saveProgress(root, { ...await loadProgress(root, 'TASK-1'), verification }, { expectedRevision: (await loadProgress(root, 'TASK-1')).revision });
+    const outcome = await dispatchEvent(event(root, `bad-proof-${saved.revision}`, 'complete', { affectedConfigFiles: ['CLAUDE.md'] }), { scanAgentConfig });
+    assert.equal(outcome.status, 'blocked');
+  }
+  assert.equal(scans, 0);
+}));
+
+test('current source fingerprint binds verification despite a second edit while already dirty', async () => fixture(async root => {
+  const repo = path.join(root, 'repo');
+  await mkdir(repo);
+  git(repo, 'init', '-b', 'main');
+  await writeFile(path.join(repo, 'app.txt'), 'base\n');
+  git(repo, 'add', 'app.txt');
+  git(repo, '-c', 'user.name=Test', '-c', 'user.email=test@example.com', 'commit', '-m', 'initial');
+  await writeFile(path.join(repo, 'app.txt'), 'first edit\n');
+  const snapshot = (await currentRepositories(root, { repos: [{ id: 'repo', path: 'repo' }] }))[0];
+  const before = await loadProgress(root, 'TASK-1');
+  await saveProgress(root, { ...before, repos: [{ ...snapshot, path: 'repo' }], verification: proof(repositoryCodeState([snapshot])) }, { expectedRevision: 1 });
+  const unchanged = await dispatchEvent(event(root, 'tool-reported-edit-without-content-change', 'post-edit'));
+  assert.equal(unchanged.status, 'passed');
+  assert.equal((await loadProgress(root, 'TASK-1')).verification.results[0].valid, true);
+  await writeFile(path.join(repo, 'app.txt'), 'second edit\n');
+  let scans = 0;
+  const outcome = await dispatchEvent(event(root, 'stale-second-edit', 'complete', { affectedConfigFiles: ['CLAUDE.md'] }), {
+    scanAgentConfig: async () => { scans++; return { status: 'passed' }; },
+  });
+  assert.equal(outcome.status, 'blocked');
+  assert.equal(scans, 0);
+  assert.equal((await loadProgress(root, 'TASK-1')).revision, 3);
+}));
+
+test('content codeState stays the same across a commit without file changes', async () => fixture(async root => {
+  const repo = path.join(root, 'repo');
+  await mkdir(repo);
+  git(repo, 'init', '-b', 'main');
+  await writeFile(path.join(repo, 'app.txt'), 'base\n');
+  git(repo, 'add', 'app.txt');
+  git(repo, '-c', 'user.name=Test', '-c', 'user.email=test@example.com', 'commit', '-m', 'initial');
+  await writeFile(path.join(repo, 'app.txt'), 'edit\n');
+  const first = (await currentRepositories(root, { repos: [{ id: 'repo', path: 'repo' }] }))[0];
+  git(repo, 'add', 'app.txt');
+  git(repo, '-c', 'user.name=Test', '-c', 'user.email=test@example.com', 'commit', '-m', 'second');
+  const second = (await currentRepositories(root, { repos: [{ id: 'repo', path: 'repo' }] }))[0];
+  assert.notEqual(first.head, second.head);
+  assert.equal(repositoryCodeState([first]), repositoryCodeState([second]));
 }));
 
 test('learning collection receives metadata after checkpoint and cannot erase it on failure', async () => fixture(async root => {
@@ -177,6 +279,16 @@ test('precompact native bridge needs a per-invocation event ID', async () => fix
   assert.equal(native(root, env, { session_id: 'session-1', hook_event_name: 'SessionStart', source: 'startup' }).status, 0);
   assert.equal(native(root, { ...env, PEGATUS_EVENT_ID: 'compact-1' }, payload).status, 0);
   assert.equal((await loadProgress(root, 'TASK-1')).revision, 3);
+}));
+
+test('a global native event ID cannot collapse distinct edit tool IDs', async () => fixture(async root => {
+  const env = { PEGATUS_ROOT: root, PEGATUS_TASK_ID: 'TASK-1', PEGATUS_EVENT_ID: 'fixed-for-compact-only' };
+  native(root, env, { session_id: 'session-1', hook_event_name: 'SessionStart', source: 'startup' });
+  for (const tool_use_id of ['tool-1', 'tool-2']) {
+    const response = native(root, env, { session_id: 'session-1', hook_event_name: 'PostToolUse', tool_name: 'apply_patch', tool_use_id });
+    assert.equal(response.status, 0, response.stderr);
+  }
+  assert.equal((await loadProgress(root, 'TASK-1')).revision, 4);
 }));
 
 test('native response respects advisory PostToolUse and blocking PreCompact semantics', () => {

@@ -5,12 +5,14 @@ import { assertContained } from '../paths.mjs';
 import { loadProgress, saveProgress } from '../state/store.mjs';
 import { reconcile } from '../state/reconcile.mjs';
 import { scanAgentConfig } from '../security/agentshield.mjs';
-import { currentRepositories, invalidateVerification } from './operations.mjs';
+import { currentRepositories, invalidateVerification, repositoryCodeState } from './operations.mjs';
 
 const MAX_EVENTS = 4096;
 const types = new Set(['session-start', 'before-action', 'post-edit', 'pre-compact', 'session-end', 'complete']);
 const validId = value => typeof value === 'string' && value.length > 0 && value.length <= 256
   && /^[A-Za-z0-9._:-]+$/.test(value);
+const reference = value => typeof value === 'string' && value.length > 0 && value.length <= 256
+  && /^[A-Za-z0-9._:/-]+$/.test(value);
 const result = (status, reason, extra = {}) => ({ status, evidence: [], reasons: reason ? [reason] : [], ...extra });
 const eventKey = id => createHash('sha256').update(id).digest('hex');
 const boundSession = (record, sessionId) => record.context.lifecycle?.sessionIds?.includes(eventKey(sessionId)) === true;
@@ -19,7 +21,7 @@ const conflict = error => /Progress revision conflict|Progress lock exists/.test
 
 function recorded(record, id) { return record.context.lifecycle?.eventIds?.includes(eventKey(id)) === true; }
 
-function recordEvent(record, event, security) {
+function recordEvent(record, event, security, actionReview) {
   const context = structuredClone(record.context);
   const lifecycle = context.lifecycle ?? { eventIds: [] };
   if (!Array.isArray(lifecycle.eventIds) || lifecycle.eventIds.some(id => !validId(id))) throw new TypeError('Corrupt lifecycle event journal');
@@ -35,14 +37,32 @@ function recordEvent(record, event, security) {
   lifecycle.lastCheckpoint = { type: event.type, eventId: eventKey(event.id), at: new Date().toISOString() };
   if (security) lifecycle.security = { status: security.status, codeState: security.codeState,
     files: [...event.affectedConfigFiles] };
+  if (actionReview) lifecycle.lastActionReview = { eventId: eventKey(event.id), actionRef: event.actionRef,
+    reviewedBy: actionReview.reviewedBy, reviewedAt: actionReview.reviewedAt, evidenceRef: actionReview.evidenceRef };
   context.lifecycle = lifecycle;
   return { ...record, context };
 }
 
-function completedVerification(verification) {
-  if (verification.status !== 'passed' || verification.invalidation) return false;
-  const results = verification.results ?? [];
-  return Array.isArray(results) && results.every(item => item.valid !== false);
+function completedVerification(verification, codeState) {
+  if (verification.status !== 'passed' || verification.invalidation || verification.codeState !== codeState) return false;
+  const results = verification.results;
+  return Array.isArray(results) && results.length > 0 && results.every(item =>
+    reference(item.checkId) && item.status === 'passed' && item.valid === true && item.codeState === codeState
+    && Array.isArray(item.evidence) && item.evidence.length > 0 && item.evidence.every(evidence =>
+      evidence.schemaVersion === 1 && typeof evidence.command === 'string' && evidence.command.length > 0
+      && Array.isArray(evidence.args) && typeof evidence.cwd === 'string' && evidence.cwd.length > 0
+      && evidence.exitCode === 0 && evidence.status === 'passed' && evidence.valid === true
+      && evidence.codeState === codeState));
+}
+
+function actionReviewValid(review, record, actionRef) {
+  return review?.schemaVersion === 1 && review.kind === 'action' && review.status === 'passed'
+    && review.taskId === record.taskId && review.actionRef === actionRef
+    && review.scopeHash === record.approvedScopeHash && reference(review.evidenceRef)
+    && typeof review.reviewedBy === 'string' && review.reviewedBy.trim().length > 0
+    && review.reviewedBy.length <= 128 && !/[\r\n\0]/.test(review.reviewedBy)
+    && typeof review.reviewedAt === 'string' && !Number.isNaN(Date.parse(review.reviewedAt))
+    && new Date(review.reviewedAt).toISOString() === review.reviewedAt;
 }
 
 /**
@@ -65,13 +85,14 @@ export async function dispatchEvent(event, deps = {}) {
     let record;
     try { record = await load(root, event.taskId); }
     catch { return result('failed', 'progress-load-failed'); }
-    if (!record) return result('skipped', 'task-record-not-found');
+    if (!record) return result(event.sessionId ? 'skipped' : 'blocked', 'task-record-not-found');
     if (event.sessionId && event.type !== 'session-start' && !boundSession(record, event.sessionId))
       return result('skipped', 'native-session-not-bound-to-task');
     if (recorded(record, event.id) && event.type !== 'session-start') return result('skipped', 'event-already-checkpointed');
     let next = record;
     let reconciliation;
     let security;
+    let actionReview;
     try {
       if (event.type === 'session-start') {
         reconciliation = reconcile(record, await snapshot(root, record));
@@ -79,31 +100,51 @@ export async function dispatchEvent(event, deps = {}) {
         if (recorded(record, event.id)) return result('skipped', 'event-already-checkpointed', { reconciliation });
       }
       if (event.type === 'before-action') {
+        if (!reference(event.actionRef)) return result('blocked', 'explicit-action-reference-required');
         if (typeof deps.authorizeAction !== 'function') return result('blocked', 'trusted-authorization-unavailable');
-        const decision = await deps.authorizeAction({ taskId: record.taskId, eventId: event.id, actionRef: event.actionRef });
-        if (decision?.status !== 'passed') return result('blocked', 'action-not-authorized');
+        actionReview = await deps.authorizeAction({ taskId: record.taskId, eventId: eventKey(event.id),
+          actionRef: event.actionRef, scopeHash: record.approvedScopeHash });
+        if (!actionReviewValid(actionReview, record, event.actionRef)) return result('blocked', 'action-not-authorized');
       }
       if (event.type === 'post-edit') {
-        const current = await snapshot(root, record);
+        const blockUncertain = async reason => {
+          if (!record.verification.invalidation) {
+            await save(root, { ...record, verification: invalidateVerification(record.verification, eventKey(event.id)) },
+              { expectedRevision: record.revision });
+          }
+          return result('blocked', reason);
+        };
+        let current;
+        try { current = await snapshot(root, record); }
+        catch { return blockUncertain('repository-state-unavailable'); }
         const byId = new Map(current.map(repo => [repo.id, repo]));
         if (current.length !== record.repos.length || record.repos.some(repo => {
           const now = byId.get(repo.id);
           return !now || now.error || now.branch !== repo.branch || now.head !== repo.head || now.dirtySubmodules?.length;
-        })) return result('blocked', 'repository-reconciliation-required');
+        })) return blockUncertain('repository-reconciliation-required');
+        let currentState;
+        try { currentState = repositoryCodeState(current); } catch { return blockUncertain('repository-state-unavailable'); }
+        const fresh = current.length > 0 && !record.verification.invalidation
+          && record.verification.codeState === currentState;
         next = { ...next, repos: record.repos.map(repo => ({ ...repo, ...byId.get(repo.id) })),
-          verification: invalidateVerification(record.verification, eventKey(event.id)) };
+          verification: fresh ? record.verification : invalidateVerification(record.verification, eventKey(event.id)) };
       }
       if (event.type === 'complete') {
         if (!Array.isArray(event.affectedConfigFiles) || !event.affectedConfigFiles.length)
           return result('blocked', 'explicit-affected-configuration-required');
-        if (!completedVerification(record.verification)) return result('blocked', 'valid-verification-required');
+        const current = await snapshot(root, record);
+        if (current.length !== record.repos.length || current.some(repo => repo.error || repo.dirtySubmodules?.length))
+          return result('blocked', 'repository-state-unavailable');
+        let codeState;
+        try { codeState = repositoryCodeState(current); } catch { return result('blocked', 'repository-state-unavailable'); }
+        if (!completedVerification(record.verification, codeState)) return result('blocked', 'valid-verification-required');
         security = await scan({ root, files: event.affectedConfigFiles });
         if (security?.status !== 'passed') return result(security?.status === 'failed' ? 'failed' : 'blocked', 'configuration-security-gate', { security });
         if (security.schemaVersion !== 1 || !/^[a-f0-9]{64}$/.test(security.codeState ?? ''))
           return result('failed', 'malformed-configuration-security-result');
         next = { ...next, phase: 'complete' };
       }
-      next = recordEvent(next, event, security);
+      next = recordEvent(next, event, security, actionReview);
       const saved = await save(root, next, { expectedRevision: record.revision });
       const response = result('passed', null, { revision: saved.revision, ...(reconciliation ? { reconciliation } : {}),
         ...(security ? { security } : {}) });

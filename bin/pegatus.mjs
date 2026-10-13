@@ -73,12 +73,32 @@ async function runLifecycleCommand(argv, cwd) {
     if (response.stderr) process.stderr.write(response.stderr);
     return response.exitCode;
   }
-  const options = flags(args, ['--root', '--task', '--event-id', '--type', '--config-file']);
+  const options = flags(args, ['--root', '--task', '--event-id', '--type', '--config-file', '--action-ref', '--review-file']);
   if (!options.root || !options.task || !options.eventId || !options.type)
-    throw new TypeError('Usage: pegatus lifecycle --root <root> --task <task-id> --event-id <unique-id> --type <event> [--config-file <relative-file> ...]');
+    throw new TypeError('Usage: pegatus lifecycle --root <root> --task <task-id> --event-id <unique-id> --type <event> [--config-file <relative-file> ...] [--action-ref <ref> --review-file <review.json>]');
+  if (options.type !== 'before-action' && (options.actionRef || options.reviewFile))
+    throw new TypeError('Action review options apply only to before-action');
   const request = { root: path.resolve(cwd, options.root), taskId: options.task, id: options.eventId, type: options.type };
   if (options.files.length) request.affectedConfigFiles = options.files;
-  const outcome = await dispatchEvent(request);
+  const deps = {};
+  if (options.type === 'before-action') {
+    request.actionRef = options.actionRef;
+    if (options.reviewFile) {
+      try {
+        const target = path.resolve(request.root, options.reviewFile);
+        await assertContained(request.root, target);
+        const source = await readFile(target);
+        if (source.length > 16384) throw new TypeError('Action review exceeds limit');
+        const review = JSON.parse(source.toString('utf8'));
+        deps.authorizeAction = async () => review;
+      } catch {
+        const blocked = { status: 'blocked', evidence: [], reasons: ['action-review-unavailable'] };
+        process.stdout.write(JSON.stringify(blocked) + '\n');
+        return 3;
+      }
+    }
+  }
+  const outcome = await dispatchEvent(request, deps);
   process.stdout.write(JSON.stringify(outcome) + '\n');
   return outcome.status === 'blocked' ? 3 : outcome.status === 'failed' ? 1 : 0;
 }
