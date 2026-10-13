@@ -1,0 +1,2 @@
+# Preserve pinned audit bytes across Windows/Linux checkouts, including CRLF.
+vendor/** -text

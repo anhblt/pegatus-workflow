@@ -7,6 +7,9 @@ import { assertContained } from '../src/paths.mjs';
 import { loadProgress, saveProgress } from '../src/state/store.mjs';
 import { reconcile } from '../src/state/reconcile.mjs';
 import { dirtySubmodules, fingerprintRepository, repositoryDirty } from '../src/state/fingerprint.mjs';
+import { loadCatalog } from '../src/catalog/manifest.mjs';
+import { lintCatalog } from '../src/catalog/lint.mjs';
+import { fileURLToPath } from 'node:url';
 
 const operations = new Set([
   'start', 'design', 'plan', 'execute', 'investigate', 'review', 'verify',
@@ -84,6 +87,20 @@ export async function main(argv, { cwd, home } = {}) {
   if (!operations.has(argv[0])) {
     process.stderr.write(`Unknown operation: ${argv[0]}\n`);
     return 2;
+  }
+  if (argv[0] === 'catalog') {
+    if (argv[1] !== 'lint' || !(argv.length === 2 || argv.length === 4 && argv[2] === '--root')) {
+      process.stderr.write('Usage: pegatus catalog lint [--root <package-root>]\n');
+      return 2;
+    }
+    try {
+      const root = argv[3] ? path.resolve(cwd,argv[3]) : fileURLToPath(new URL('../',import.meta.url));
+      const findings = lintCatalog(await loadCatalog(root));
+      for (const finding of findings) process.stderr.write(`${finding.severity}: ${finding.code}: ${finding.location}: ${finding.message}\n`);
+      if (findings.some(finding=>finding.severity==='error')) return 1;
+      process.stdout.write('catalog lint: ok\n');
+      return 0;
+    } catch (error) { process.stderr.write(`Cannot load catalog: ${error.message}\n`); return 1; }
   }
   if (['checkpoint', 'resume', 'status'].includes(argv[0])) {
     try { return await runStateOperation(argv, cwd); }
