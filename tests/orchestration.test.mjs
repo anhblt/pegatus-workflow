@@ -7,6 +7,7 @@ import { spawnSync } from 'node:child_process';
 import { loadProgress, saveProgress } from '../src/state/store.mjs';
 import { runVerification } from '../src/verify/loop.mjs';
 import { currentRepositories } from '../src/hooks/operations.mjs';
+import { dispatchEvent } from '../src/hooks/dispatch.mjs';
 import { fileURLToPath } from 'node:url';
 
 const modules = {};
@@ -48,6 +49,13 @@ test('unsupported or undeclared delegation uses sequential inline scheduling', (
   }
 });
 
+test('running workers consume configured concurrency including the host cap', () => {
+  const tasks = [task('a', { status: 'running' }), task('b'), task('c')];
+  assert.deepEqual(batchIds(call('schedule', tasks, { concurrency: 2, capabilities: { delegation: true } })), [['b'], ['c']]);
+  assert.deepEqual(batchIds(call('schedule', tasks, { concurrency: 8, capabilities: { delegation: true, maxWorkers: 2 } })), [['b'], ['c']]);
+  assert.deepEqual(batchIds(call('schedule', tasks, { concurrency: 1, capabilities: { delegation: true } })), []);
+});
+
 test('graph rejects cycles, missing dependencies, duplicates and unsafe ownership before dispatch', () => {
   assert.throws(() => call('schedule', [task('a', { dependsOn: ['b'] }), task('b', { dependsOn: ['a'] })]), /cycle/i);
   assert.throws(() => call('schedule', [task('a', { dependsOn: ['missing'] })]), /dependency/i);
@@ -61,7 +69,8 @@ test('graph rejects cycles, missing dependencies, duplicates and unsafe ownershi
 test('done tasks stay complete while failed and interrupted dependencies cannot become ready', () => {
   assert.deepEqual(batchIds(call('schedule', [task('a', { status: 'done' }), task('b', { dependsOn: ['a'] })])), [['b']]);
   for (const status of ['failed', 'interrupted', 'running', 'blocked']) {
-    assert.deepEqual(batchIds(call('schedule', [task('a', { status }), task('b', { dependsOn: ['a'] }), task('c')])), [['c']]);
+    assert.deepEqual(batchIds(call('schedule', [task('a', { status }), task('b', { dependsOn: ['a'] }), task('c')],
+      { concurrency: 2, capabilities: { delegation: true } })), [['c']]);
   }
   assert.deepEqual(batchIds(call('schedule', [task('a', { status: 'running', paths: ['src'] }), task('b')])), []);
 });
@@ -190,6 +199,39 @@ test('completed tasks are not redispatched on resume and combined checks actuall
   assert.equal((await loadProgress(root, 'TASK-1')).tasks[0].status, 'done');
   assert.equal(resumed.verification.results[0].exitCode, 7);
 }));
+
+test('all-done resume invalidates obsolete checks proof before a throwing verifier and completion stays blocked', async () => fixture([task('a')], async root => {
+  assert.equal((await run(root, { executeInline: async brief => outcome(brief.workerId), verifyCombined: verify })).status, 'passed');
+  const saved = await loadProgress(root, 'TASK-1');
+  saved.context.combinedChecks[0].args = ['-e', 'process.exit(7)'];
+  await saveProgress(root, saved, { expectedRevision: saved.revision });
+  let beforeCallback;
+  const resumed = await run(root, { verifyCombined: async () => {
+    beforeCallback = await loadProgress(root, 'TASK-1');
+    throw new Error('SECRET callback failure');
+  } });
+  assert.equal(resumed.status, 'blocked');
+  assert.equal(beforeCallback.verification.status, 'blocked');
+  assert.equal(beforeCallback.verification.results[0].valid, false);
+  const after = await loadProgress(root, 'TASK-1');
+  assert.equal(after.tasks[0].status, 'done');
+  assert.equal(after.verification.status, 'blocked');
+  assert.equal(after.verification.results[0].valid, false);
+  assert.equal(after.verification.results[0].evidence[0].valid, false);
+  assert.doesNotMatch(JSON.stringify(after) + JSON.stringify(resumed), /SECRET/);
+  const completion = await dispatchEvent({ root, taskId: 'TASK-1', id: 'completion-after-throw', type: 'complete', affectedConfigFiles: ['AGENTS.md'] });
+  assert.equal(completion.status, 'blocked');
+  assert.equal(completion.reasons[0], 'valid-verification-required');
+}));
+
+test('all-done resumed blocked or malformed verifier cannot restore prior passed proof', async () => {
+  for (const response of [{ status: 'blocked' }, { status: 'passed', results: {} }, { status: 'failed', results: {} }]) await fixture([task('a')], async root => {
+    assert.equal((await run(root, { executeInline: async brief => outcome(brief.workerId), verifyCombined: verify })).status, 'passed');
+    const resumed = await run(root, { verifyCombined: async () => response });
+    assert.equal(resumed.status, 'blocked');
+    assert.notEqual((await loadProgress(root, 'TASK-1')).verification.status, 'passed');
+  });
+});
 
 test('bare passed combined status cannot replace current code-state and command evidence', async () => fixture([task('a')], async root => {
   const response = await run(root, { executeInline: async brief => outcome(brief.workerId), verifyCombined: async () => ({ status: 'passed' }) });

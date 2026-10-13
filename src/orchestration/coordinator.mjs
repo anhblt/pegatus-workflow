@@ -196,6 +196,11 @@ export async function runOrchestration({ root, taskId, concurrency = 2, capabili
     validateGraph(record.tasks);
     if (!record.tasks.length) return result('blocked', 'approved-tasks-required', { mode });
     if (record.phase === 'complete') return result('blocked', 'task-already-complete', { mode });
+    // Even an all-done resume may change the combined check requirements. The
+    // previous pass must stop being usable before any early gate/callback error.
+    if (record.verification.status === 'passed') await checkpoint({ ...record,
+      verification: { ...invalidateVerification(record.verification, `combined-retry:${randomUUID()}`), status: 'blocked',
+        reasons: ['current-combined-verification-required'] }, nextAction: 'Run current combined checks before integration' });
     if (typeof deps.verifyCombined !== 'function' || !Array.isArray(record.context.combinedChecks) || !record.context.combinedChecks.length)
       return result('blocked', 'combined-verification-callback-and-checks-required', { mode });
     resolveConfig({ project: { repositories: [{ id: 'combined', path: '.', verify: record.context.combinedChecks }] } });
@@ -283,10 +288,19 @@ export async function runOrchestration({ root, taskId, concurrency = 2, capabili
       })), repos: record.repos.map(repo => ({ ...repo, ...byId.get(repo.id) })) });
     }
     if (!record.tasks.every(completed)) return result('blocked', 'worker-or-dependency-reconciliation-required', { mode, tasks: record.tasks });
+    await checkpoint({ ...record, verification: { ...invalidateVerification(record.verification, `combined-attempt:${randomUUID()}`),
+      status: 'blocked', reasons: ['current-combined-verification-required'] }, nextAction: 'Run current combined checks before integration' });
     const before = repositoryCodeState(await snapshot());
     const getCodeState = async () => repositoryCodeState(await snapshot());
-    const verification = await deps.verifyCombined({ root, taskId, checks: structuredClone(record.context.combinedChecks),
-      tasks: structuredClone(record.tasks), getCodeState });
+    let verification;
+    try {
+      verification = await deps.verifyCombined({ root, taskId, checks: structuredClone(record.context.combinedChecks),
+        tasks: structuredClone(record.tasks), getCodeState });
+    } catch {
+      await checkpoint({ ...record, verification: { ...record.verification, reasons: ['combined-verification-callback-failed'] },
+        nextAction: 'Resolve combined verifier callback failure before integration' });
+      return result('blocked', 'combined-verification-callback-failed', { mode });
+    }
     const after = repositoryCodeState(await snapshot());
     if (before !== after || !validCombined(verification, record.context.combinedChecks, after, root)) {
       if (verification?.status === 'failed' && before === after) {

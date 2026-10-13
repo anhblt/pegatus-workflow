@@ -51,6 +51,8 @@ export function schedule(tasks, options = {}) {
   validateGraph(tasks);
   const limit = workerLimit(options), done = new Set(tasks.filter(completed).map(task => task.id));
   const active = tasks.filter(task => task.status === 'running');
+  const available = Math.max(0, limit - active.length);
+  if (!available) return [];
   const remaining = tasks.filter(pending).filter(task => !active.some(worker => overlappingOwnership(ownedPaths(task), ownedPaths(worker))));
   const batches = [];
   for (;;) {
@@ -59,7 +61,7 @@ export function schedule(tasks, options = {}) {
       if (done.has(task.id) || !task.dependsOn.every(id => done.has(id))) continue;
       if (batch.some(other => overlappingOwnership(ownedPaths(task), ownedPaths(other)))) continue;
       batch.push(task);
-      if (batch.length === limit) break;
+      if (batch.length === available) break;
     }
     if (!batch.length) break;
     batches.push(batch);
