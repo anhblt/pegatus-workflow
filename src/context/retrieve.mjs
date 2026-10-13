@@ -3,6 +3,7 @@ import path from 'node:path';
 import { assertContained } from '../paths.mjs';
 import { resolveConfig } from '../config.mjs';
 import { indexMemory, selectMemory } from '../memory/index.mjs';
+import { buildContextManifest } from '../telemetry/usage.mjs';
 
 /** The trusted workflow supplies resolution after reading instruction semantics:
  * {readInstructions: absolutePaths[], discovery: commandSpecs[], knowledgePaths: [],
@@ -13,6 +14,17 @@ import { indexMemory, selectMemory } from '../memory/index.mjs';
  * with JSON stdout {refs:[{path,freshness,...}],uncertainties:[]} or those fields directly.
  */
 export async function retrieveContext({ config, context, query, run }) {
+  const result = await retrieve({ config, context, query, run });
+  result.contextManifest = buildContextManifest({
+    instructionPaths: [...new Set([...(context.instructionPaths ?? []), ...(context.instructions ?? []).map(item => item.path)])],
+    knowledgeRefs: [...result.refs, ...result.sources],
+  }, config?.tokenControls ?? {});
+  if (result.contextManifest.status === 'blocked') result.uncertainties.push({ code: 'context-budget-exceeded',
+    message: 'Required context exceeds configured limits. Narrow retrieval or update team configuration before dependent work.' });
+  return result;
+}
+
+async function retrieve({ config, context, query, run }) {
   const result = { refs: [], uncertainties: [], fallbackAllowed: false, sources: [], trace: [] };
   const instructions = context.instructions ?? [];
   const resolution = context.resolution ?? {};

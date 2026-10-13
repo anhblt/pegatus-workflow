@@ -1,0 +1,31 @@
+# Token controls and fixed role tiers
+
+`src/telemetry/usage.mjs` provides explicit, local helpers. It makes no model/provider requests, reads no personal configuration, and does not infer token counts from characters. Native host limits and actual model availability still require the Task 10 Windows/Linux trials.
+
+Project `.pegatus/config.json` overrides explicitly supplied user defaults. `hostModels[host][fast|standard|deep]` accepts a legacy model string or `{model,effort?}`. A project tier replaces the entire pair so a changed model cannot inherit another model's effort. Catalog roles retain their assigned tier; agents cannot choose replacement models or effort levels.
+
+Exact support comes from a separate team declaration, `hostModelCapabilities[host] = {source,models:[{model,efforts:[]}]}`. `source` describes the team's evidence; a URL or source string is not proof of a host trial. Declarations for a host replace atomically, including their source. Use exact names and supported efforts from the relevant installed host/account. Pegatus contains no current model IDs. For example (synthetic placeholders, not supported models):
+
+```json
+{
+  "hostModels": { "codex": { "deep": { "model": "TEAM_SELECTED_MODEL", "effort": "high" } } },
+  "hostModelCapabilities": {
+    "codex": { "source": "Team declaration; host/version and evidence location", "models": [{ "model": "TEAM_SELECTED_MODEL", "efforts": ["high"] }] }
+  },
+  "tokenControls": { "maxContextRefs": 128, "maxContextChars": 32768, "maxOutputChars": 16384, "maxSummaryChars": 4096 }
+}
+```
+
+`resolveRoleTier(role,{host,models,modelCapabilities})` returns the configured pair only when declared support matches. Absent tiers, unknown model support, unsupported efforts and unknown role tiers retain host defaults with explicit warnings. Legacy strings remain valid configuration; emitting their model field now requires the same explicit declaration. Unsupported pairs fall back together, avoiding an unintended inherited effort. Antigravity retains instruction-only roles and does not claim native model/effort mapping. Results disclose `support:'team-declared'` and `qualified:false`; the source remains caller-supplied evidence.
+
+`generateHost` and doctor expose `roleModels` and effective `tokenControls`. Codex files use `developer_instructions` and `model_reasoning_effort` as documented in [OpenAI's custom agent schema](https://learn.chatgpt.com/docs/agent-configuration/subagents). Claude files use the documented [effort frontmatter](https://code.claude.com/docs/en/sub-agents). Local inspection used Codex CLI 0.153.4 and Claude Code 2.1.296 help; the Codex protocol schema describes reasoning effort as a nonempty model-advertised string, so Pegatus does not guess a Codex effort enum. Claude native field values follow its documented vocabulary, with exact model support still team-declared. Emitting valid fields is not a host qualification result.
+
+`buildContextManifest({instructionPaths,knowledgeRefs,resources,evidenceRefs},tokenControls)` separates stable instruction paths from dynamic references without embedding bodies. References may be strings or objects with `path`/`outputPath`; each is mandatory. Duplicates of the same kind are collapsed. Counts and JSON character size have configured bounds. Overflow returns `status:'blocked'`, `reason:'required-context-exceeds-budget'`, the required count, and empty reference arrays. The caller must narrow the retrieval or obtain an updated team budget before dependent work. This cannot authorize skipping instructions or checks. `retrieveContext` attaches this manifest and a visible uncertainty on overflow; the memory CLI returns blocked with no entries. Existing authoritative retrieval bodies remain available to API callers for source review; the manifest is the bounded handoff/discovery view, not a claim that all host prompt tokens are bounded.
+
+`limitOutput(text,{maxChars,fullOutputRef})` returns a preview with a visible `[TRUNCATED; full output: ...]` marker when necessary. Its complete text, including the marker, fits the limit, and it avoids splitting surrogate pairs. The caller must first retain the full output at that reference. If no reference is supplied or its marker cannot fit, the helper rejects the truncation. It does not write logs or verify their existence. Apply existing evidence redaction/exclusion policy before retaining or presenting output; this helper is not a redactor.
+
+`checkpointSummary({summary,logs},tokenControls)` accepts coordinator-authored summary text and log references (strings or evidence objects with `outputPath`). It strips log bodies, bounds the summary with the same visible marker, and caps reference count/total record size. Summaries refer to retained supporting logs instead of repeating them. The summary helper is an explicit workflow call, not an automatic rewrite of aggregate progress, approvals or verification evidence. Existing verifier evidence remains bounded/redacted and must not be represented as a complete raw log if capture was truncated.
+
+`recordUsage({source,values})` returns `{schemaVersion:1,source,available,values}`. Supply numeric nonnegative observed metrics and explicit nulls for unavailable fields. Missing, empty or entirely unavailable measurements produce `available:false,values:null`; observed zero is retained. Partial measurements preserve nulls, and no total, cost, saving or cache measurement is invented. Metrics and their source are host/caller supplied; no mandatory hosted telemetry is introduced.
+
+Limits are UTF-16 character counts, not token estimates. Context characters range 512..1048576, output/summary characters 128..1048576, reference count 1..4096. Native output/context enforcement is unverified; generated prompts label these as Pegatus helper limits and role guidance.

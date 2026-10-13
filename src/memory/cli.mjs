@@ -75,7 +75,9 @@ export async function runLearningCommand(argv, cwd) {
     if (resolution.externalKnowledge || resolution.knowledgePaths?.length || resolution.discovery?.length)
       return { status: 'blocked', entries: [], evidence: [], reasons: ['authoritative-knowledge-requires-instructed-retrieval'] };
     const retrieved = await retrieveContext({ config, context, query: args.query });
-    return { status: 'passed', entries: retrieved.refs, uncertainties: retrieved.uncertainties, evidence: [], reasons: [] };
+    const blocked = retrieved.contextManifest.status === 'blocked';
+    return { status: blocked ? 'blocked' : 'passed', entries: blocked ? [] : retrieved.refs,
+      contextManifest: retrieved.contextManifest, uncertainties: retrieved.uncertainties, evidence: [], reasons: blocked ? ['context-budget-exceeded'] : [] };
   }
   if (!['propose', 'list', 'review', 'approve', 'reject', 'supersede', 'retire'].includes(action))
     throw new TypeError('Usage: pegatus learn propose|list|review|approve|reject|supersede|retire --root <root> ...');

@@ -61,16 +61,17 @@ export async function runAdministration(argv,{cwd,securityPreflight=scanInstallP
   await assertContained(root,root);
   const user=await configuration(scope==='user'?root:userRoot),project=scope==='project'?await configuration(root):{};
   const config=resolveConfig({user,project}),catalog=await runtimeCatalog();
-  const generated=generateHost(catalog,{host,scope,root,models:config.hostModels[host]??{}});
+  const generated=generateHost(catalog,{host,scope,root,models:config.hostModels[host]??{},modelCapabilities:config.hostModelCapabilities[host],tokenControls:config.tokenControls});
   const current=await readOwnership(root,host),userLock=scope==='project' && userRoot && userRoot!==root?await readOwnership(userRoot,host):null;
   const version=JSON.parse(catalog.files['package.json'].toString('utf8')).version;
   const details={capabilities:{...generated.capabilities,security:'explicit-call'},warnings:generated.warnings.filter(w=>!w.startsWith('Security scanner unavailable')),snippets:generated.snippets,
-    hookActivation:hookActivation(host,root)};
+    hookActivation:hookActivation(host,root),roleModels:generated.roleModels,tokenControls:generated.tokenControls};
   if(operation==='doctor') {
     const inherited=!current.files.length && Boolean(userLock?.files.length),effective=inherited?userLock:current,effectiveRoot=inherited?userRoot:root;
-    const adapted=inherited?generateHost(catalog,{host,scope:'user',root:userRoot,models:resolveConfig({user}).hostModels[host]??{}}):generated;
+    const userConfig=resolveConfig({user});
+    const adapted=inherited?generateHost(catalog,{host,scope:'user',root:userRoot,models:userConfig.hostModels[host]??{},modelCapabilities:userConfig.hostModelCapabilities[host],tokenControls:userConfig.tokenControls}):generated;
     return {status:'passed',evidence:[],reasons:[],capabilities:{...adapted.capabilities,security:'explicit-call'},warnings:adapted.warnings.filter(w=>!w.startsWith('Security scanner unavailable')),snippets:adapted.snippets,
-      hookActivation:hookActivation(host,effectiveRoot),
+      hookActivation:hookActivation(host,effectiveRoot),roleModels:adapted.roleModels,tokenControls:adapted.tokenControls,
       installedVersion:effective.version??null,configuration:config,inherited,...(inherited?{inheritedRoot:userRoot}:{}),
       locations:effective.files.map(f=>({path:path.join(effectiveRoot,f.path),state:f.actualHash===null?'missing':f.actualHash===f.installedHash?'unchanged':'edited',inherited})),
       commandLocations:effective.files.filter(f=>/\/(?:skills\/pegatus-|commands\/pegatus-|workflows\/pegatus-|global_workflows\/pegatus-)/.test(f.path)).map(f=>path.join(effectiveRoot,f.path)),

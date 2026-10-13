@@ -16,11 +16,12 @@ test('adapters preserve runtime trees and instruction generators',()=>{
   }
 });
 test('Claude and Codex emit prefixed native roles with user configured models only',()=>{
-  const codex=generateHost(catalog,{host:'codex',scope:'user',root,models:{fast:'user-chosen-fast'}});
+  const modelCapabilities={source:'team declaration fixture',models:[{model:'user-chosen-fast',efforts:[]}]};
+  const codex=generateHost(catalog,{host:'codex',scope:'user',root,models:{fast:'user-chosen-fast'},modelCapabilities});
   const role=codex.operations.find(o=>o.relativePath==='.codex/agents/pegatus-context-explorer.toml');
   assert.match(role.content,/model = "user-chosen-fast"/); assert.doesNotMatch(role.content,/tools\s*=/);
   assert.ok(codex.operations.some(o=>o.relativePath==='.agents/skills/pegatus-start/SKILL.md'));
-  const claude=generateHost(catalog,{host:'claude',scope:'project',root,models:{fast:'user-chosen-fast'}});
+  const claude=generateHost(catalog,{host:'claude',scope:'project',root,models:{fast:'user-chosen-fast'},modelCapabilities});
   assert.ok(claude.operations.some(o=>o.relativePath==='.claude/agents/pegatus-context-explorer.md' && o.content.includes('user-chosen-fast')));
 });
 test('Antigravity only claims documented workflow and rules locations',()=>{

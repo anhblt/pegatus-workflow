@@ -37,7 +37,8 @@ test('project configuration wins while user/project installations deduplicate',a
   }
   assert.ok(inherited.locations.every(location=>location.inherited));
   await mkdir(path.join(options.cwd,'.pegatus'));
-  await writeFile(path.join(options.cwd,'.pegatus/config.json'),JSON.stringify({hostModels:{codex:{fast:'project-model'}},custom:'keep'}));
+  await writeFile(path.join(options.cwd,'.pegatus/config.json'),JSON.stringify({hostModels:{codex:{fast:'project-model'}},
+    hostModelCapabilities:{codex:{source:'team declaration fixture',models:[{model:'project-model',efforts:[]}]}},custom:'keep'}));
   const differing=await runAdministration(['install',...project],options);
   assert.equal(differing.status,'blocked');assert.match(differing.reasons.join(),/duplicate/i);
   const doctor=await runAdministration(['doctor',...project],options);

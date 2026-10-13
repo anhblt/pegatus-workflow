@@ -1,10 +1,13 @@
 import path from 'node:path';
+import { tokenDefaults, resolveTokenControls, validateModelMapping, validateModelCapabilities } from './telemetry/usage.mjs';
 
 const defaults = Object.freeze({
   schemaVersion: 1,
   repositories: [],
   knowledge: null,
   hostModels: {},
+  hostModelCapabilities: {},
+  tokenControls: tokenDefaults,
   concurrency: 2,
   repairLimit: 3,
   evidenceExclusions: [],
@@ -15,11 +18,14 @@ const nonempty = value => typeof value === 'string' && value.trim().length > 0 &
 const clone = value => Array.isArray(value) ? value.map(clone) : isObject(value)
   ? Object.fromEntries(Object.entries(value).map(([key, item]) => [key, clone(item)])) : value;
 
-function merge(base, override) {
+function merge(base, override, keys = []) {
   const result = clone(base);
   for (const [key, value] of Object.entries(override)) {
     if (['__proto__', 'constructor', 'prototype'].includes(key)) throw new TypeError(`Unsafe config key: ${key}`);
-    result[key] = isObject(value) && isObject(base[key]) ? merge(base[key], value) : clone(value);
+    // A tier is an atomic model/effort pair: changing the model cannot inherit old effort.
+    const tier = keys[0] === 'hostModels' && keys.length === 2;
+    const declaration = keys[0] === 'hostModelCapabilities' && keys.length === 1;
+    result[key] = !tier && !declaration && isObject(value) && isObject(base[key]) ? merge(base[key], value, [...keys, key]) : clone(value);
   }
   return result;
 }
@@ -85,9 +91,16 @@ function validate(config) {
   for (const [host, tiers] of Object.entries(config.hostModels)) {
     if (!['claude', 'codex', 'antigravity'].includes(host) || !isObject(tiers)) throw new TypeError(`Invalid hostModels entry: ${host}`);
     for (const [tier, model] of Object.entries(tiers)) {
-      if (!['fast', 'standard', 'deep'].includes(tier) || !nonempty(model)) throw new TypeError(`Invalid hostModels.${host}.${tier}`);
+      if (!['fast', 'standard', 'deep'].includes(tier)) throw new TypeError(`Invalid hostModels.${host}.${tier}`);
+      validateModelMapping(model);
     }
   }
+  if (!isObject(config.hostModelCapabilities)) throw new TypeError('hostModelCapabilities must be an object');
+  for (const [host, capabilities] of Object.entries(config.hostModelCapabilities)) {
+    if (!['claude', 'codex', 'antigravity'].includes(host)) throw new TypeError(`Invalid model capabilities host: ${host}`);
+    validateModelCapabilities(capabilities);
+  }
+  config.tokenControls = resolveTokenControls(config.tokenControls);
   if (!Array.isArray(config.evidenceExclusions) || config.evidenceExclusions.some(value => !nonempty(value))) {
     throw new TypeError('evidenceExclusions must be a string array');
   }
