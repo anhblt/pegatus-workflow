@@ -49,6 +49,18 @@ export async function runVerification({
       for (const evidence of check.evidence) evidence.valid = false;
     }
   };
+  const captureState = async () => {
+    try {
+      const state = await observe();
+      const changed = !sameState(result.codeState, state);
+      if (changed) invalidate();
+      result.codeState = state;
+      return changed;
+    } catch (error) {
+      invalidate(); result.codeState = null;
+      throw error;
+    }
+  };
   let previousFailures;
   let previousState;
   try { for (;;) {
@@ -89,12 +101,16 @@ export async function runVerification({
     let diagnosis, approval, reviewResult;
     try {
       diagnosis = await diagnose(context);
+      const diagnosisChangedState = await captureState();
       round.diagnosis = scrub(diagnosis);
       if (!diagnosis) return finish('failed', 'diagnosis-required', 'Request a concrete diagnosis');
       if (diagnosis.scopeExpanded || diagnosis.securityBlocked) return finish('blocked', diagnosis.securityBlocked ? 'security-blocker' : 'scope-expansion', 'Reconcile scope or security blocker with the user');
+      if (diagnosisChangedState) return finish('blocked', 'code-state-changed', 'Reconcile repository changes before repair');
       if (!trustedCoordinator || typeof authorizeRepair !== 'function') return finish('blocked', 'repair-approval-required', 'Obtain coordinator approval with user evidence and repair scope');
       approval = await authorizeRepair({ ...context, diagnosis });
+      const approvalChangedState = await captureState();
       if (approval?.approved !== true || !Array.isArray(approval.scope) || !approval.scope.length || !approval.scope.every(nonempty) || !nonempty(approval.evidence)) return finish('blocked', 'repair-approval-required', 'Obtain coordinator approval with user evidence and repair scope');
+      if (approvalChangedState) return finish('blocked', 'code-state-changed', 'Reconcile repository changes before repair');
       if (typeof review !== 'function') return finish('blocked', 'review-required', 'Provide coordinator review before applying repairs');
       if (!sameState(state, await observe())) {
         invalidate(); result.codeState = await observe();
@@ -104,20 +120,24 @@ export async function runVerification({
       previousFailures = signature; previousState = state;
       invalidate(); result.repairs++;
       const repaired = await repair({ ...context, diagnosis, approval });
-      result.codeState = await observe();
+      await captureState();
       if (repaired?.scopeExpanded || repaired?.securityBlocked) return finish('blocked', repaired.securityBlocked ? 'security-blocker' : 'scope-expansion', 'Reconcile scope or security blocker with the user');
       reviewResult = await review({ ...context, diagnosis, approval, repairResult: repaired, codeState: result.codeState });
+      const reviewChangedState = await captureState();
       round.review = scrub(reviewResult);
       if (reviewResult?.scopeExpanded || reviewResult?.securityBlocked) return finish('blocked', reviewResult.securityBlocked ? 'security-blocker' : 'scope-expansion', 'Reconcile scope or security blocker with the user');
       if (reviewResult?.status !== 'passed') return finish('blocked', 'review-required', 'Resolve review findings before rechecking');
+      if (reviewChangedState) return finish('blocked', 'code-state-changed', 'Review repository changes before rechecking');
     } catch (error) {
       // Callback exceptions can contain arbitrary host output/secrets. Preserve
       // command evidence but do not copy unrestricted callback text into records.
-      return finish('blocked', error.code === 'CODE_STATE_UNAVAILABLE' ? 'code-state-unavailable' : 'coordinator-error', 'Resolve coordinator callback failure and reconcile code state');
+      try { await captureState(); }
+      catch { return finish('blocked', 'code-state-unavailable', 'Restore repository state observation and rerun checks'); }
+      return finish('blocked', error?.code === 'CODE_STATE_UNAVAILABLE' ? 'code-state-unavailable' : 'coordinator-error', 'Resolve coordinator callback failure and reconcile code state');
     }
   } } catch (error) {
     if (error.code !== 'CODE_STATE_UNAVAILABLE') throw error;
-    invalidate();
+    invalidate(); result.codeState = null;
     return finish('blocked', 'code-state-unavailable', 'Restore repository state observation and rerun checks');
   }
 }

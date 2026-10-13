@@ -47,6 +47,53 @@ test('callback data is bounded and redacted in returned aggregate evidence', asy
   assert.ok(result.history[0].diagnosis.log.length <= 200);
 });
 
+test('diagnosis edits invalidate evidence before security or scope blocker early returns', async () => {
+  for (const diagnosis of [{ securityBlocked: true }, { scopeExpanded: true }]) {
+    let state = 'before';
+    const result = await runVerification({ checks: [unit], ...authority,
+      getCodeState: async () => state, run: async () => fail,
+      diagnose: async () => { state = 'after'; return diagnosis; },
+      repair: async () => { assert.fail('blocked diagnosis cannot authorize repair'); },
+    });
+    assert.equal(result.status, 'blocked');
+    assert.equal(result.reason, diagnosis.securityBlocked ? 'security-blocker' : 'scope-expansion');
+    assert.equal(result.codeState, 'after');
+    assert.equal(result.results[0].valid, false);
+    assert.equal(result.evidence[0].valid, false);
+  }
+});
+
+test('approval rejection after edits invalidates prior evidence and updates code provenance', async () => {
+  let state = 'before';
+  const result = await runVerification({ checks: [unit], ...authority,
+    getCodeState: async () => state, run: async () => fail,
+    authorizeRepair: async () => { state = 'after'; return { approved: false }; },
+    repair: async () => { assert.fail('rejected repair cannot execute'); },
+  });
+  assert.equal(result.reason, 'repair-approval-required');
+  assert.equal(result.codeState, 'after');
+  assert.equal(result.results[0].valid, false);
+  assert.equal(result.evidence[0].valid, false);
+});
+
+test('callback exceptions reconcile edits and unavailable state invalidates all prior evidence', async () => {
+  for (const unavailable of [false, true]) {
+    let state = 'before';
+    const result = await runVerification({ checks: [unit], ...authority,
+      getCodeState: async () => { if (state === 'after' && unavailable) throw new Error('unavailable'); return state; },
+      run: async () => fail,
+      diagnose: async () => { state = 'after'; throw new Error('token=callback-error-secret'); },
+      repair: async () => { assert.fail('failed coordinator callback cannot repair'); },
+    });
+    assert.equal(result.status, 'blocked');
+    assert.equal(result.reason, unavailable ? 'code-state-unavailable' : 'coordinator-error');
+    assert.equal(result.codeState, unavailable ? null : 'after');
+    assert.equal(result.results[0].valid, false);
+    assert.equal(result.evidence[0].valid, false);
+    assert.equal(JSON.stringify(result).includes('callback-error-secret'), false);
+  }
+});
+
 test('interrupted or failed spawn execution stops without attempting a code repair', async () => {
   for (const response of [{ exitCode: 0, interrupted: true }, { error: new Error('ENOENT') }]) {
     const result = await runVerification({ checks: [unit], ...authority,

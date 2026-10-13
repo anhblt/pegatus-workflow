@@ -42,7 +42,7 @@ export function redactEvidence(value, { redactions = [], evidenceExclusions = []
     if (item === null || typeof item === 'number' || typeof item === 'boolean') return item;
     if (depth > 5) return '[OMITTED]';
     if (Array.isArray(item)) return item.slice(0, 100).map(child => visit(child, depth + 1));
-    if (item && typeof item === 'object') return Object.fromEntries(Object.entries(item).slice(0, 100).map(([key, child]) => [scrub(key), sensitiveFlag.test(`--${key}`) ? '[REDACTED]' : visit(child, depth + 1)]));
+    if (item && typeof item === 'object') return Object.fromEntries(Object.entries(item).slice(0, 100).map(([key, child]) => [scrub(key).slice(0, maxOutput), sensitiveFlag.test(`--${key}`) ? '[REDACTED]' : visit(child, depth + 1)]));
     return null;
   };
   return visit(value);
@@ -78,15 +78,17 @@ async function invoke(request, run, scrub, maxOutput) {
   const stdout = scrub(response.stdout), stderr = scrub(response.stderr);
   const exitCode = Number.isInteger(response.exitCode) ? response.exitCode : null;
   const interrupted = Boolean(response.interrupted || response.signal || response.error?.name === 'AbortError');
-  const error = response.error ? scrub(response.error.message ?? response.error) : null;
-  const passed = exitCode === 0 && !error && !interrupted;
+  const hasError = response.error !== undefined && response.error !== null;
+  const error = hasError ? scrub(response.error.message ?? response.error) : null;
+  const signal = response.signal ? scrub(response.signal) : null;
+  const passed = exitCode === 0 && !hasError && !interrupted;
   return {
     status: passed ? 'passed' : 'failed',
-    reason: passed ? null : interrupted ? 'interrupted' : error || exitCode === null ? 'execution-error' : 'nonzero-exit',
+    reason: passed ? null : interrupted ? 'interrupted' : hasError || exitCode === null ? 'execution-error' : 'nonzero-exit',
     startedAt, finishedAt: new Date().toISOString(), exitCode,
-    stdout: stdout.slice(0, maxOutput), stderr: stderr.slice(0, maxOutput), error,
-    signal: response.signal ? scrub(response.signal) : null,
-    outputTruncated: Boolean(response.truncated || stdout.length > maxOutput || stderr.length > maxOutput),
+    stdout: stdout.slice(0, maxOutput), stderr: stderr.slice(0, maxOutput), error: error?.slice(0, maxOutput) ?? null,
+    signal: signal?.slice(0, maxOutput) ?? null,
+    outputTruncated: Boolean(response.truncated || [stdout, stderr, error, signal].some(value => value?.length > maxOutput)),
   };
 }
 
@@ -110,6 +112,7 @@ export async function runCheck(check, {
   const cwd = path.resolve(repositoryRoot, check.cwd);
   const request = { command: check.command, args: [...check.args], cwd, shell: false, kind: 'check', id: check.id ?? check.command, signal, captureLimit: Math.max(maxOutput * 2, 65_536) };
   const result = {
+    schemaVersion: 1,
     checkId: request.id, command: scrub(check.command), args: check.args.map(scrub), cwd: scrub(cwd),
     shell: check.shell ?? null, codeState: verifiedState ?? null, finalCodeState: initial ?? null,
     status: 'blocked', reason: null, valid: true, prerequisites: [],
@@ -135,12 +138,16 @@ export async function runCheck(check, {
       }
     } catch (error) {
       result.status = 'blocked'; result.reason = 'code-state-unavailable'; result.valid = false;
-      result.error = scrub(error.message);
+      const message = scrub(error?.message);
+      result.error = message.slice(0, maxOutput);
+      result.outputTruncated ||= message.length > maxOutput;
+      result.finalCodeState = null;
     }
   }
   result.finishedAt = new Date().toISOString();
   result.reasons = result.reason ? [result.reason] : [];
   result.evidence = [{
+    schemaVersion: 1,
     command: result.command, args: result.args, cwd: result.cwd, exitCode: result.exitCode,
     startedAt: result.startedAt, finishedAt: result.finishedAt, codeState: result.codeState,
     status: result.status, reason: result.reason, valid: result.valid, outputPath: null,

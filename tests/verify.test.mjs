@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, readFile, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { runCheck } from '../src/verify/runner.mjs';
+import { redactEvidence, runCheck } from '../src/verify/runner.mjs';
 
 const check = { id: 'unit', command: 'node', args: ['test.mjs'], cwd: '.', requires: [] };
 const pass = async () => ({ exitCode: 0, stdout: 'ok', stderr: '' });
@@ -70,6 +70,44 @@ test('spawn errors and interruptions cannot pass even with exit zero', async () 
   assert.equal(thrown.reason, 'execution-error');
 });
 
+test('a reported empty error cannot pass with exit zero', async () => {
+  const result = await runCheck(check, { codeState: 'a', run: async () => ({ exitCode: 0, error: new Error('') }) });
+  assert.equal(result.status, 'failed');
+  assert.equal(result.reason, 'execution-error');
+});
+
+test('untrusted error messages honor output bounds after redaction', async () => {
+  const result = await runCheck(check, { codeState: 'a', maxOutput: 80,
+    run: async () => ({ exitCode: 0, error: new Error('token=do-not-leak\n' + 'x'.repeat(1000)) }),
+  });
+  assert.ok(result.error.length <= 80);
+  assert.equal(result.outputTruncated, true);
+  assert.equal(JSON.stringify(result).includes('do-not-leak'), false);
+});
+
+test('untrusted signal text honors output bounds', async () => {
+  const result = await runCheck(check, { codeState: 'a', maxOutput: 80,
+    run: async () => ({ exitCode: 0, signal: 's'.repeat(1000) }),
+  });
+  assert.ok(result.signal.length <= 80);
+  assert.equal(result.outputTruncated, true);
+});
+
+test('callback property keys honor output bounds after redaction', () => {
+  const key = 'token=key-secret\n' + 'x'.repeat(1000);
+  const sanitized = redactEvidence({ [key]: 'value' }, { maxOutput: 80 });
+  assert.ok(Object.keys(sanitized)[0].length <= 80);
+  assert.equal(JSON.stringify(sanitized).includes('key-secret'), false);
+});
+
+test('code state observation error messages honor output bounds', async () => {
+  let observations = 0;
+  const unavailable = await runCheck(check, { codeState: 'a', maxOutput: 80, run: pass,
+    getCodeState: async () => { if (++observations === 2) throw new Error('x'.repeat(1000)); return 'a'; },
+  });
+  assert.ok(unavailable.error.length <= 80);
+});
+
 test('a successful command is invalidated when code changes during execution', async () => {
   let state = 'before';
   const result = await runCheck(check, {
@@ -91,6 +129,9 @@ test('evidence redacts secrets in command, errors and output before bounded pers
     codeState: 'a', evidenceRoot: root, redactions: ['custom-hidden'], maxOutput: 200,
   });
   const saved = await readFile(result.evidencePath, 'utf8');
+  const persisted = JSON.parse(saved);
+  assert.equal(persisted.schemaVersion, 1);
+  assert.equal(persisted.evidence[0].schemaVersion, 1);
   for (const secret of ['secret-123', 'bearer-456', 'secret-789', 'custom-hidden']) {
     assert.equal(saved.includes(secret), false, secret);
     assert.equal(JSON.stringify(result).includes(secret), false, secret);
