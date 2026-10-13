@@ -21,12 +21,28 @@ const conflict = error => /Progress revision conflict|Progress lock exists/.test
 
 function recorded(record, id) { return record.context.lifecycle?.eventIds?.includes(eventKey(id)) === true; }
 
+function eventIdentity(event, record) {
+  const identity = { type: event.type, sessionId: event.sessionId ? eventKey(event.sessionId) : null };
+  if (event.type === 'before-action' || event.type === 'complete') identity.scopeHash = record.approvedScopeHash;
+  if (event.type === 'before-action') identity.actionRef = event.actionRef ?? null;
+  if (event.type === 'complete') identity.affectedConfigFiles = Array.isArray(event.affectedConfigFiles)
+    && event.affectedConfigFiles.every(file => typeof file === 'string')
+    ? [...new Set(event.affectedConfigFiles)].sort() : null;
+  return eventKey(JSON.stringify(identity));
+}
+
 function recordEvent(record, event, security, actionReview) {
   const context = structuredClone(record.context);
   const lifecycle = context.lifecycle ?? { eventIds: [] };
   if (!Array.isArray(lifecycle.eventIds) || lifecycle.eventIds.some(id => !validId(id))) throw new TypeError('Corrupt lifecycle event journal');
   if (lifecycle.eventIds.length >= MAX_EVENTS) throw new Error('Lifecycle event journal full; archive this task before new lifecycle events');
+  const identities = lifecycle.eventIdentities ?? {};
+  if (typeof identities !== 'object' || Array.isArray(identities)
+    || Object.entries(identities).some(([id, identity]) => !/^[a-f0-9]{64}$/.test(id) || !/^[a-f0-9]{64}$/.test(identity)))
+    throw new TypeError('Corrupt lifecycle event identities');
   lifecycle.eventIds.push(eventKey(event.id));
+  identities[eventKey(event.id)] = eventIdentity(event, record);
+  lifecycle.eventIdentities = identities;
   if (event.type === 'session-start' && event.sessionId) {
     const sessions = lifecycle.sessionIds ?? [];
     if (!Array.isArray(sessions) || sessions.some(id => !/^[a-f0-9]{64}$/.test(id)) || sessions.length >= 256)
@@ -88,16 +104,25 @@ export async function dispatchEvent(event, deps = {}) {
     if (!record) return result(event.sessionId ? 'skipped' : 'blocked', 'task-record-not-found');
     if (event.sessionId && event.type !== 'session-start' && !boundSession(record, event.sessionId))
       return result('skipped', 'native-session-not-bound-to-task');
-    if (recorded(record, event.id) && event.type !== 'session-start') return result('skipped', 'event-already-checkpointed');
     let next = record;
     let reconciliation;
     let security;
     let actionReview;
     try {
+      const replay = recorded(record, event.id);
+      if (replay) {
+        const identity = record.context.lifecycle.eventIdentities?.[eventKey(event.id)];
+        if (identity !== undefined && identity !== eventIdentity(event, record))
+          return result('blocked', 'event-identity-mismatch');
+        if (identity === undefined && ['before-action', 'complete'].includes(event.type))
+          return result('blocked', 'recorded-event-identity-required');
+        if (!['session-start', 'before-action', 'complete'].includes(event.type))
+          return result('skipped', 'event-already-checkpointed');
+      }
       if (event.type === 'session-start') {
         reconciliation = reconcile(record, await snapshot(root, record));
         if (reconciliation.status !== 'ready') return result('blocked', 'repository-reconciliation-required', { reconciliation });
-        if (recorded(record, event.id)) return result('skipped', 'event-already-checkpointed', { reconciliation });
+        if (replay) return result('skipped', 'event-already-checkpointed', { reconciliation });
       }
       if (event.type === 'before-action') {
         if (!reference(event.actionRef)) return result('blocked', 'explicit-action-reference-required');
@@ -144,6 +169,7 @@ export async function dispatchEvent(event, deps = {}) {
           return result('failed', 'malformed-configuration-security-result');
         next = { ...next, phase: 'complete' };
       }
+      if (replay) return result('skipped', 'event-already-checkpointed', { ...(security ? { security } : {}) });
       next = recordEvent(next, event, security, actionReview);
       const saved = await save(root, next, { expectedRevision: record.revision });
       const response = result('passed', null, { revision: saved.revision, ...(reconciliation ? { reconciliation } : {}),
