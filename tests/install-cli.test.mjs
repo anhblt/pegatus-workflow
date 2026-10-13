@@ -28,6 +28,13 @@ test('project configuration wins while user/project installations deduplicate',a
   const project=['--host','codex','--scope','project','--root',options.cwd,'--user-root',options.home];
   const duplicate=await runAdministration(['install',...project],options);
   assert.equal(duplicate.status,'skipped');assert.equal(duplicate.inheritedRoot,options.home);
+  const inherited=await runAdministration(['doctor',...project],options);
+  assert.equal(inherited.inherited,true);assert.equal(inherited.inheritedRoot,options.home);
+  assert.equal(inherited.installedVersion,'0.0.0');assert.ok(inherited.commandLocations.length);
+  for(const file of inherited.commandLocations) {
+    assert.ok(file.startsWith(options.home+path.sep));await readFile(file);
+  }
+  assert.ok(inherited.locations.every(location=>location.inherited));
   await mkdir(path.join(options.cwd,'.pegatus'));
   await writeFile(path.join(options.cwd,'.pegatus/config.json'),JSON.stringify({hostModels:{codex:{fast:'project-model'}},custom:'keep'}));
   const differing=await runAdministration(['install',...project],options);

@@ -14,7 +14,7 @@ async function fixture(t) {
   return root;
 }
 const desired = (file,content) => ({path:file,content,hash:hashBytes(content),sourceHash:hashBytes(content)});
-const options = root => ({root,host:'codex',scope:'project',version:'test',sourceRevisions:[]});
+const options = (root,expectedLockHash=null) => ({root,host:'codex',scope:'project',version:'test',sourceRevisions:[],expectedLockHash});
 test('updates refuse edited managed files',()=>{
   const p=planInstall([{path:'skill.md',installedHash:'old',actualHash:'edited'}],[{path:'skill.md',hash:'new'}]);
   assert.equal(p.conflicts.length,1); assert.equal(p.writes.length,0);
@@ -35,10 +35,10 @@ test('install ownership enables update and uninstall without touching user confi
   assert.equal((await applyInstall(p,{securityPreflight:passed})).status,'passed');
   let lock=await readOwnership(root,'codex'); assert.equal(lock.files[0].actualHash,hashBytes('one'));
   assert.equal(lock.version,'test'); assert.ok(lock.files[0].sourceHash);
-  p=planInstall(lock.files,[desired(lock.files[0].path,'two')],options(root));
+  p=planInstall(lock.files,[desired(lock.files[0].path,'two')],options(root,lock.lockHash));
   assert.equal((await applyInstall(p,{securityPreflight:passed})).status,'passed');
   lock=await readOwnership(root,'codex');
-  assert.equal((await applyInstall(planInstall(lock.files,[],options(root)),{securityPreflight:passed})).status,'passed');
+  assert.equal((await applyInstall(planInstall(lock.files,[],options(root,lock.lockHash)),{securityPreflight:passed})).status,'passed');
   await assert.rejects(readFile(path.join(root,lock.files[0].path)),{code:'ENOENT'});
   assert.equal(await readFile(path.join(root,'.codex/config.toml'),'utf8'),'user hooks and settings');
 });
@@ -93,4 +93,31 @@ test('interrupted journal recovers and refuses later user edits',async t=>{
   await writeFile(path.join(root,'managed.md'),'user edit');
   assert.equal((await recoverInstall(root,'codex')).status,'blocked');
   assert.equal(await readFile(path.join(root,'managed.md'),'utf8'),'user edit');
+});
+test('a stale precomputed plan cannot replace a newer ownership snapshot',async t=>{
+  const root=await fixture(t);
+  const initial=await readOwnership(root,'codex');
+  const first=planInstall(initial.files,[desired('first.md','first')],{...options(root),expectedLockHash:initial.lockHash});
+  const stale=planInstall(initial.files,[desired('second.md','second')],{...options(root),expectedLockHash:initial.lockHash});
+  assert.equal((await applyInstall(first,{securityPreflight:passed})).status,'passed');
+  const before=await readFile(path.join(root,'.pegatus/install-lock-codex.json'));
+  const blocked=await applyInstall(stale,{securityPreflight:passed});
+  assert.equal(blocked.status,'blocked');assert.match(blocked.reasons.join(),/ownership.*changed|stale/i);
+  assert.deepEqual(await readFile(path.join(root,'.pegatus/install-lock-codex.json')),before);
+  assert.equal(await readFile(path.join(root,'first.md'),'utf8'),'first');
+  await assert.rejects(readFile(path.join(root,'second.md')),{code:'ENOENT'});
+});
+test('recovery rechecks each pending restore and keeps its journal after concurrent edits',async t=>{
+  const root=await fixture(t);await mkdir(path.join(root,'.pegatus'));
+  const journal={schemaVersion:1,host:'codex',entries:['pending.md','first.md'].map(file=>({path:file,before:Buffer.from('old').toString('base64'),afterHash:hashBytes('installed')}))};
+  const journalFile=path.join(root,'.pegatus/install-journal-codex.json');
+  await writeFile(journalFile,JSON.stringify(journal));
+  await writeFile(path.join(root,'pending.md'),'installed');await writeFile(path.join(root,'first.md'),'installed');
+  const outcome=await recoverInstall(root,'codex',{async afterRestore(entry){
+    if(entry.path==='first.md') await writeFile(path.join(root,'pending.md'),'concurrent user edit');
+  }});
+  assert.equal(outcome.status,'blocked');
+  assert.equal(await readFile(path.join(root,'pending.md'),'utf8'),'concurrent user edit');
+  assert.equal(await readFile(path.join(root,'first.md'),'utf8'),'old');
+  assert.deepEqual(JSON.parse(await readFile(journalFile,'utf8')),journal);
 });

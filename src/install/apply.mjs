@@ -21,34 +21,45 @@ async function assertExpected(root,op) {
   const actual=await fileBytes(root,op.path),actualHash=actual===null?null:hashBytes(actual);
   if(actualHash!==op.expectedHash) throw new Error(`Destination changed after planning: ${op.path}`);
 }
-async function replace(root,file,bytes) {
+async function replace(root,file,bytes,assertUnchanged) {
   const target=path.resolve(root,file);
   await assertContained(root,target);
   await mkdir(path.dirname(target),{recursive:true});
   await assertContained(root,target);
   const temporary=`${target}.${randomUUID()}.tmp`;
-  try { await writeFile(temporary,bytes,{flag:'wx'}); await assertContained(root,target); await rename(temporary,target); }
+  try { await writeFile(temporary,bytes,{flag:'wx'}); await assertContained(root,target); await assertUnchanged?.(); await rename(temporary,target); }
   finally { await unlink(temporary).catch(error=>{if(error.code!=='ENOENT') throw error;}); }
 }
-async function remove(root,file) {
+async function remove(root,file,assertUnchanged) {
   const target=path.resolve(root,file); await assertContained(root,target);
+  await assertUnchanged?.();
   await unlink(target).catch(error=>{if(error.code!=='ENOENT') throw error;});
 }
-async function recover(root,host) {
+async function recoveryMatches(root,host,entry) {
+  safeRelative(entry.path,{internal:entry.path===lockPath(host)});
+  const actual=await fileBytes(root,entry.path,{internal:entry.path===lockPath(host)});
+  const actualHash=actual===null?null:hashBytes(actual),beforeHash=entry.before===null?null:hashBytes(Buffer.from(entry.before,'base64'));
+  return actualHash===beforeHash || actualHash===entry.afterHash;
+}
+async function recover(root,host,{afterRestore}={}) {
   const bytes=await fileBytes(root,journalPath(host),{internal:true});
   if(!bytes) return result('skipped', ['No interrupted installation']);
   const journal=JSON.parse(bytes.toString('utf8'));
   if(journal.schemaVersion!==1 || journal.host!==host || !Array.isArray(journal.entries)) return result('blocked',['Invalid recovery journal']);
   // Inspect every file before restoring any of them; user edits after interruption win.
   for(const entry of journal.entries) {
-    safeRelative(entry.path,{internal:entry.path===lockPath(host)});
-    const actual=await fileBytes(root,entry.path,{internal:entry.path===lockPath(host)});
-    const actualHash=actual===null?null:hashBytes(actual), beforeHash=entry.before===null?null:hashBytes(Buffer.from(entry.before,'base64'));
-    if(actualHash!==beforeHash && actualHash!==entry.afterHash) return result('blocked',[`Recovery conflict: ${entry.path}`]);
+    if(!await recoveryMatches(root,host,entry)) return result('blocked',[`Recovery conflict: ${entry.path}`]);
   }
-  for(const entry of [...journal.entries].reverse()) {
-    if(entry.before===null) await remove(root,entry.path);
-    else await replace(root,entry.path,Buffer.from(entry.before,'base64'));
+  try {
+    for(const entry of [...journal.entries].reverse()) {
+      const assertUnchanged=async()=>{if(!await recoveryMatches(root,host,entry)) throw new Error(`Recovery conflict: ${entry.path}`);};
+      await assertUnchanged();
+      if(entry.before===null) await remove(root,entry.path,assertUnchanged);
+      else await replace(root,entry.path,Buffer.from(entry.before,'base64'),assertUnchanged);
+      await afterRestore?.(entry);
+    }
+  } catch(error) {
+    return result('blocked',[error.message]);
   }
   await remove(root,journalPath(host));
   return result('passed',[],{recovered:true});
@@ -71,10 +82,10 @@ async function exclusive(root,host,action) {
   finally {await handle.close();await remove(root,relative);}
 }
 /** Restore an interrupted apply only when every destination still matches the journal. */
-export async function recoverInstall(root,host) {
+export async function recoverInstall(root,host,options={}) {
   try {
     if(!await fileBytes(root,journalPath(host),{internal:true})) return result('skipped',['No interrupted installation']);
-    return await exclusive(root,host,()=>recover(root,host));
+    return await exclusive(root,host,()=>recover(root,host,options));
   } catch(error){return result('blocked',[error.message]);}
 }
 /** Security is injected by the scanner integration, not inferred from exit 0 or filenames.
@@ -85,8 +96,11 @@ export async function applyInstall(plan,{securityPreflight,afterWrite}={}) {
   if(securityPreflight?.status!=='passed') return result('blocked',['Security preflight unavailable or not passed'],{security:securityPreflight??{status:'unavailable'}});
   try {
     if(!path.isAbsolute(plan.root) || !['project','user'].includes(plan.scope)) throw new TypeError('Explicit absolute root and scope are required');
+    if(plan.expectedLockHash!==null && !/^[a-f0-9]{64}$/.test(plan.expectedLockHash??'')) throw new TypeError('Planning ownership snapshot expectedLockHash is required');
     return await exclusive(plan.root,plan.host,async()=>{
       const recovered=await recover(plan.root,plan.host); if(recovered.status==='blocked') return recovered;
+      const previous=await fileBytes(plan.root,lockPath(plan.host),{internal:true});
+      if((previous===null?null:hashBytes(previous))!==plan.expectedLockHash) return result('blocked',['Ownership lock changed after planning; replan from the current snapshot']);
       const entries=[];
       for(const op of [...plan.writes,...plan.removes]) {
         safeRelative(op.path);
@@ -97,7 +111,7 @@ export async function applyInstall(plan,{securityPreflight,afterWrite}={}) {
         entries.push({path:op.path,before:before===null?null:before.toString('base64'),afterHash:plan.writes.includes(op)?op.hash:null});
       }
       const lock={schemaVersion:1,host:plan.host,scope:plan.scope,version:plan.version,sourceRevisions:plan.sourceRevisions??[],files:plan.owned.map(op=>({path:op.path,installedHash:op.hash,sourceHash:op.sourceHash??op.hash}))};
-      const bytes=plan.owned.length?Buffer.from(JSON.stringify(lock,null,2)+'\n'):null,previous=await fileBytes(plan.root,lockPath(plan.host),{internal:true});
+      const bytes=plan.owned.length?Buffer.from(JSON.stringify(lock,null,2)+'\n'):null;
       entries.push({path:lockPath(plan.host),before:previous===null?null:previous.toString('base64'),afterHash:bytes===null?null:hashBytes(bytes)});
       await replace(plan.root,journalPath(plan.host),JSON.stringify({schemaVersion:1,host:plan.host,entries}));
       try {

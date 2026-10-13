@@ -61,9 +61,12 @@ export async function runAdministration(argv,{cwd,securityPreflight}={}) {
   const version=JSON.parse(catalog.files['package.json'].toString('utf8')).version;
   const details={capabilities:generated.capabilities,warnings:generated.warnings,snippets:generated.snippets};
   if(operation==='doctor') {
-    return {status:'passed',evidence:[],reasons:[],...details,installedVersion:current.version??null,configuration:config,
-      locations:current.files.map(f=>({path:path.join(root,f.path),state:f.actualHash===null?'missing':f.actualHash===f.installedHash?'unchanged':'edited'})),
-      commandLocations:generated.operations.filter(o=>/\/(?:skills\/pegatus-|commands\/pegatus-|workflows\/pegatus-|global_workflows\/pegatus-)/.test(o.relativePath)).map(o=>path.join(root,o.relativePath)),
+    const inherited=!current.files.length && Boolean(userLock?.files.length),effective=inherited?userLock:current,effectiveRoot=inherited?userRoot:root;
+    const adapted=inherited?generateHost(catalog,{host,scope:'user',root:userRoot,models:resolveConfig({user}).hostModels[host]??{}}):generated;
+    return {status:'passed',evidence:[],reasons:[],capabilities:adapted.capabilities,warnings:adapted.warnings,snippets:adapted.snippets,
+      installedVersion:effective.version??null,configuration:config,inherited,...(inherited?{inheritedRoot:userRoot}:{}),
+      locations:effective.files.map(f=>({path:path.join(effectiveRoot,f.path),state:f.actualHash===null?'missing':f.actualHash===f.installedHash?'unchanged':'edited',inherited})),
+      commandLocations:effective.files.filter(f=>/\/(?:skills\/pegatus-|commands\/pegatus-|workflows\/pegatus-|global_workflows\/pegatus-)/.test(f.path)).map(f=>path.join(effectiveRoot,f.path)),
       userInstalledVersion:userLock?.version??null};
   }
   const recovery=await recoverInstall(root,host);
@@ -83,7 +86,7 @@ export async function runAdministration(argv,{cwd,securityPreflight}={}) {
     const bytes=await fileBytes(root,op.path);
     if(bytes!==null) currentFiles.push({path:op.path,actualHash:hashBytes(bytes)});
   }
-  const plan=planInstall(currentFiles,desired,{root,host,scope,version,sourceRevisions:catalog.sourceLock.sources.map(s=>({id:s.id,revision:s.revision}))});
+  const plan=planInstall(currentFiles,desired,{root,host,scope,version,expectedLockHash:owned.lockHash,sourceRevisions:catalog.sourceLock.sources.map(s=>({id:s.id,revision:s.revision}))});
   const security=typeof securityPreflight==='function'?await securityPreflight(plan):securityPreflight;
   return {...await applyInstall(plan,{securityPreflight:security}),...details};
 }

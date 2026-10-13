@@ -24,7 +24,7 @@ export async function fileBytes(root,file,{internal=false}={}) {
 /** Locks are local ownership evidence, never permission to overwrite modified files. */
 export async function readOwnership(root,host) {
   const bytes=await fileBytes(root,lockPath(host),{internal:true});
-  if(!bytes) return {schemaVersion:1,host,files:[]};
+  if(!bytes) return {schemaVersion:1,host,files:[],lockHash:null};
   const lock=JSON.parse(bytes.toString('utf8'));
   if(lock.schemaVersion!==1 || lock.host!==host || !Array.isArray(lock.files)) throw new TypeError('Invalid installation lock');
   const seen=new Set();
@@ -36,5 +36,5 @@ export async function readOwnership(root,host) {
     const content=await fileBytes(root,entry.path);
     files.push({...entry,actualHash:content===null?null:hashBytes(content)});
   }
-  return {...lock,files};
+  return {...lock,files,lockHash:hashBytes(bytes)};
 }

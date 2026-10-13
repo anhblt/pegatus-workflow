@@ -1,6 +1,8 @@
 import { safeRelative } from './ownership.mjs';
 
-/** Pure ownership diff; any conflict blocks the entire apply, including removals. */
+/** Pure ownership diff; any conflict blocks the entire apply, including removals.
+ * Applying callers supply options.expectedLockHash from readOwnership().lockHash.
+ */
 export function planInstall(current,desired,options={}) {
   const conflicts=[],writes=[],removes=[],owned=[],seen=new Set(),existing=new Map();
   for(const entry of current) {
