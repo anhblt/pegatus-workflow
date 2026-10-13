@@ -86,3 +86,14 @@ test('lint catches a skill manifest that drops an upstream supporting reference'
   skill.resources=skill.resources.filter(item=>item!==resource);
   assert.ok((await lint())(catalog).some(f=>f.code==='incomplete-resource-closure' && f.message===resource));
 });
+
+test('lint rejects mapping syntax in required plain YAML scalars but accepts declared string forms', async () => {
+  const catalog = await (await api()).loadCatalog(root);
+  const file = catalog.skills.find(skill=>skill.id==='pegatus-design').path;
+  const check = async description => {
+    catalog.documents[file]=`---\nname: pegatus-design\n${description}\n---\nBody`;
+    return (await lint())(catalog).some(f=>f.code==='invalid-frontmatter'&&f.location===file);
+  };
+  for (const invalid of ['description: malformed: scalar','description:\n  malformed: scalar','description: !tag value','description: [array]']) assert.equal(await check(invalid),true,invalid);
+  for (const valid of ['description: https://example.com guidance','description: "Valid: scalar"',"description: 'O''Brien: valid'",'description: >-\n  Valid: block scalar\n  continuation','description:\n  Valid upstream-style plain\n  continuation']) assert.equal(await check(valid),false,valid);
+});

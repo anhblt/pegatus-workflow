@@ -5,8 +5,27 @@ const categories = ['agents','skills','commands','hooks','rules','memory','learn
 const safePath = value => typeof value === 'string' && value.length > 0 && !path.posix.isAbsolute(value) && !path.win32.isAbsolute(value) && !/^[A-Za-z]:/.test(value) && !value.split(/[\\/]/).includes('..');
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 
-// Validate the catalog's required YAML scalars, folded descriptions and root-key
-// structure. This deliberately does not interpret arbitrary upstream metadata.
+// Explicit subset for required string fields: plain (possibly indented), single
+// quoted with doubled quotes, JSON-compatible double quoted, and |/> block text.
+// This is not a general YAML parser; tags, aliases and collection fields are not
+// supported for name/description. Other upstream metadata remains uninterpreted.
+function requiredScalar(value, continuation) {
+  if (/^[>|][-+]?$/.test(value)) return continuation.join(' ');
+  if (value.startsWith('"')) {
+    if (continuation.length) return null;
+    try { const result=JSON.parse(value); return typeof result==='string'?result:null; }
+    catch { return null; }
+  }
+  if (value.startsWith("'")) {
+    if (continuation.length || !/^'(?:[^']|'')*'$/.test(value)) return null;
+    return value.slice(1,-1).replaceAll("''", "'");
+  }
+  const parts = [value,...continuation].filter(Boolean);
+  if (parts.some(part=>/^[\[\]{},&*!|>"'%@`]|^[?:-](?:\s|$)|:(?:\s|$)/.test(part))) return null;
+  const plain = parts.map(part=>part.replace(/\s+#.*$/,'')).join(' ');
+  return /^(?:null|true|false|~|\d+)$/i.test(plain)?null:plain;
+}
+
 function validFrontmatter(frontmatter) {
   if (!frontmatter) return false;
   const lines = frontmatter.split(/\r?\n/), keys = new Set(), values = {};
@@ -17,15 +36,10 @@ function validFrontmatter(frontmatter) {
     keys.add(match[1]);
     const value=match[2]??'';
     if (['name','description'].includes(match[1])) {
-      if (!value || /^[>|][-+]?$/.test(value)) {
-        const block=[];
-        while (i+1<lines.length && /^\s+/.test(lines[i+1])) block.push(lines[++i].trim());
-        values[match[1]]=block.join(' ');
-      } else {
-        if (/^[\[{]|^(?:null|true|false|~|\d+)$/i.test(value)) return false;
-        if (/^["']/.test(value) && value.at(-1)!==value[0]) return false;
-        values[match[1]]=value.replace(/^["']|["']$/g,'');
-      }
+      const continuation=[];
+      while (i+1<lines.length && /^\s+/.test(lines[i+1])) continuation.push(lines[++i].trim());
+      values[match[1]]=requiredScalar(value,continuation);
+      if (values[match[1]]===null) return false;
     }
   }
   return /^[a-z][a-z0-9-]*$/.test(values.name??'') && Boolean(values.description?.trim());

@@ -61,3 +61,19 @@ test('small fixes omit spec gates and features require approved design and scope
   assert.equal(workflowRoute(catalog,{classification:'feature',approved:['design']}).canImplement,false);
   assert.equal(workflowRoute(catalog,{classification:'feature',approved:['design','scope']}).canImplement,true);
 });
+
+test('.NET test workflows can load their .NET extension dependencies without other languages', async () => {
+  const {loadCatalog,selectResources} = await api();
+  const catalog = await loadCatalog(packageRoot);
+  for (const [consumerId,task,expectedNames] of [
+    ['dotnet-code-testing','test-generation',['SKILL.md','dotnet.md','dotnet-examples.md']],
+    ['dotnet-test-gap-analysis','test-gaps',['SKILL.md','dotnet.md']],
+  ]) {
+    const consumer = catalog.skills.find(skill=>skill.id===consumerId);
+    const dependency = catalog.skills.find(skill=>consumer.dependencies.includes(skill.id) && skill.id.endsWith('-extensions'));
+    assert.ok(dependency);
+    const resources = selectResources(dependency,{stack:'dotnet',framework:'.net',testFramework:'xunit',task});
+    for (const name of expectedNames) assert.ok(resources.includes(`${dependency.path.slice(0,-8)}${name==='SKILL.md'?name:`extensions/${name}`}`),`${consumerId}: ${name}`);
+    assert.ok(!resources.some(resource=>/\/extensions\/(cpp|go|java|python|typescript)\b/.test(resource)));
+  }
+});
