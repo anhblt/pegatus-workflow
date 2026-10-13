@@ -2,11 +2,12 @@ import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { assertContained } from '../paths.mjs';
 
-const normalize = value => value.replaceAll('\\', '/').replace(/\/$/, '');
+const normalize = value => path.posix.normalize(value.replaceAll('\\', '/')).replace(/\/$/, '');
 const scoped = (target, scope) => scope === '.' || target === scope || target.startsWith(`${scope}/`);
 const words = value => String(value).toLowerCase().match(/[\p{L}\p{N}_]+/gu) ?? [];
 const validScope = value => typeof value === 'string' && value.length > 0 &&
-  !path.posix.isAbsolute(value) && !path.win32.isAbsolute(value) && !/^[A-Za-z]:/.test(value) && !normalize(value).split('/').includes('..');
+  !value.includes('\0') && !path.posix.isAbsolute(value) && !path.win32.isAbsolute(value) && !/^[A-Za-z]:/.test(value) &&
+  !value.replaceAll('\\', '/').split('/').includes('..');
 
 /** Approved fallback only. No task lessons or vault documents are indexed here.
  * Each <entry>.md.json sidecar holds projectId, paths, keywords, approvalState,

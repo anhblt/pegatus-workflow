@@ -161,3 +161,24 @@ test('instruction-derived command cannot run without instruction provenance', as
   delete context.resolution.discovery[0].instructionPaths;
   await assert.rejects(retrieveContext({ config: {}, context, query: 'contact', run: async () => assert.fail('unattributed command') }), /instruction/i);
 });
+
+test('shell command specs reject query placeholders before any discovery command runs', async t => {
+  const context = await contextFixture(t);
+  for (const command of [
+    { command: 'pwsh', args: ['-Command', 'node query.mjs {query}'], cwd: '.', requires: [], shell: 'pwsh' },
+    { command: 'bash', args: ['-c', 'node query.mjs "{query}"'], cwd: '.', requires: [], shell: 'bash' },
+  ]) {
+    context.resolution.discovery = [context.resolution.discovery[0], { ...command, instructionPaths: [context.instructions[0].path] }];
+    await assert.rejects(retrieveContext({ config: {}, context, query: 'contact; Write-Output INJECTED', run: async () => assert.fail('unsafe spec must fail before any runner call') }), /query.*shell|shell.*query/i);
+    context.resolution.discovery = context.resolution.discovery.slice(0, 1);
+  }
+});
+
+test('ordinary executable argv preserves query replacement characters as data', async t => {
+  const context = await contextFixture(t);
+  const result = await retrieveContext({ config: {}, context, query: '$& $$ $` contact; Write-Output INJECTED', run: async spec => {
+    assert.equal(spec.args[1], '$& $$ $` contact; Write-Output INJECTED');
+    return { exitCode: 0, refs: [] };
+  } });
+  assert.deepEqual(result.uncertainties, []);
+});

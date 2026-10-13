@@ -36,10 +36,15 @@ export async function retrieveContext({ config, context, query, run }) {
   const knowledgePaths = resolution.knowledgePaths ?? knowledge?.paths ?? [];
   // Validate with the same platform-neutral command contract used for verification.
   resolveConfig({ project: { knowledge: { paths: knowledgePaths, discovery: commands } } });
+  // Shell arguments can be program text. Do not interpolate untrusted query data
+  // into them; callers must use a direct executable with argv placeholders.
+  if (commands.some(command => command.shell && command.args.some(arg => arg.includes('{query}')))) {
+    throw new TypeError('Query placeholders are not allowed in shell discovery commands');
+  }
   for (const location of knowledgePaths) result.refs.push({ path: await assertContained(context.root, path.resolve(context.root, location)), kind: 'knowledge-location', confirmation: 'agent-review-required' });
   for (const command of commands) {
     if (resolution.discovery !== undefined) provenance(command.instructionPaths);
-    const spec = { ...command, args: command.args.map(arg => arg.replaceAll('{query}', query)), cwd: await assertContained(context.root, path.resolve(context.root, command.cwd)) };
+    const spec = { ...command, args: command.args.map(arg => arg.replaceAll('{query}', () => query)), cwd: await assertContained(context.root, path.resolve(context.root, command.cwd)) };
     delete spec.instructionPaths;
     result.trace.push({ operation: 'discovery-command', command: spec.command, args: spec.args, cwd: spec.cwd });
     let output;

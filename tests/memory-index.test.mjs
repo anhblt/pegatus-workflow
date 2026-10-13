@@ -105,3 +105,15 @@ test('approved metadata cannot index an escaping path scope', async t => {
   assert.deepEqual(result.entries, []);
   assert.equal(result.uncertainties[0].code, 'memory-metadata-invalid');
 });
+
+test('relative dot and separator normalization retains exact project path boundaries', async t => {
+  const root = await fixture(t);
+  await entry(root, 'contact.md', { ...approved, paths: ['./src/'] });
+  const index = await indexMemory({ root, projectId: 'here' });
+  assert.deepEqual(index.uncertainties, []);
+  assert.equal(selectMemory(index.entries, { projectId: 'here', paths: ['src/a.cs'], query: 'contact' }).length, 1);
+  assert.equal(selectMemory(index.entries, { projectId: 'here', paths: ['.\\src\\a.cs'], query: 'contact' }).length, 1);
+  assert.deepEqual(selectMemory(index.entries, { projectId: 'here', paths: ['src-other/a.cs'], query: 'contact' }), []);
+  assert.deepEqual(selectMemory(index.entries, { projectId: 'here', paths: ['src/../other/a.cs'], query: 'contact' }), []);
+  assert.deepEqual(selectMemory([{ ...approved, paths: ['./src/../other/'] }], { projectId: 'here', paths: ['other/a.cs'], query: 'contact' }), []);
+});
