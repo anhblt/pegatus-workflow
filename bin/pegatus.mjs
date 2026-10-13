@@ -10,6 +10,7 @@ import { dirtySubmodules, fingerprintRepository, repositoryDirty } from '../src/
 import { loadCatalog } from '../src/catalog/manifest.mjs';
 import { lintCatalog } from '../src/catalog/lint.mjs';
 import { fileURLToPath } from 'node:url';
+import { runAdministration } from '../src/install/admin.mjs';
 
 const operations = new Set([
   'start', 'design', 'plan', 'execute', 'investigate', 'review', 'verify',
@@ -76,7 +77,7 @@ async function runStateOperation(argv, cwd) {
   return operation === 'resume' && reconciliation.status === 'blocked' ? 3 : 0;
 }
 
-export async function main(argv, { cwd, home } = {}) {
+export async function main(argv, { cwd, home, securityPreflight } = {}) {
   if (!Array.isArray(argv) || typeof cwd !== 'string' || typeof home !== 'string') {
     throw new TypeError('main requires argv and cwd/home paths');
   }
@@ -87,6 +88,13 @@ export async function main(argv, { cwd, home } = {}) {
   if (!operations.has(argv[0])) {
     process.stderr.write(`Unknown operation: ${argv[0]}\n`);
     return 2;
+  }
+  if (['install','update','doctor','uninstall'].includes(argv[0])) {
+    try {
+      const result = await runAdministration(argv,{cwd,securityPreflight});
+      process.stdout.write(JSON.stringify(result)+'\n');
+      return result.status==='blocked'?3:result.status==='failed'?1:0;
+    } catch(error) { process.stderr.write(`${error.message}\n`);return 2; }
   }
   if (argv[0] === 'catalog') {
     if (argv[1] !== 'lint' || !(argv.length === 2 || argv.length === 4 && argv[2] === '--root')) {
