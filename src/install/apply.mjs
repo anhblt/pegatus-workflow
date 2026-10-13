@@ -21,6 +21,12 @@ async function assertExpected(root,op) {
   const actual=await fileBytes(root,op.path),actualHash=actual===null?null:hashBytes(actual);
   if(actualHash!==op.expectedHash) throw new Error(`Destination changed after planning: ${op.path}`);
 }
+async function assertOwned(root,op) {
+  safeRelative(op.path);
+  await rejectCaseCollision(root,op.path);
+  const actual=await fileBytes(root,op.path);
+  if((actual===null?null:hashBytes(actual))!==op.hash) throw new Error(`Owned destination changed before ownership commit: ${op.path}`);
+}
 async function replace(root,file,bytes,assertUnchanged) {
   const target=path.resolve(root,file);
   await assertContained(root,target);
@@ -110,6 +116,13 @@ export async function applyInstall(plan,{securityPreflight,afterWrite}={}) {
         if(plan.writes.includes(op) && (op.content===undefined || hashBytes(op.content)!==op.hash)) return result('blocked',[`Invalid staged bytes: ${op.path}`]);
         entries.push({path:op.path,before:before===null?null:before.toString('base64'),afterHash:plan.writes.includes(op)?op.hash:null});
       }
+      const writePaths=new Set(plan.writes.map(op=>op.path));
+      for(const op of plan.owned) {
+        if(op.content===undefined || hashBytes(op.content)!==op.hash) return result('blocked',[`Invalid staged bytes: ${op.path}`]);
+        if(!writePaths.has(op.path)) {
+          try {await assertOwned(plan.root,op);} catch(error) {return result('blocked',[error.message]);}
+        }
+      }
       const lock={schemaVersion:1,host:plan.host,scope:plan.scope,version:plan.version,sourceRevisions:plan.sourceRevisions??[],files:plan.owned.map(op=>({path:op.path,installedHash:op.hash,sourceHash:op.sourceHash??op.hash}))};
       const bytes=plan.owned.length?Buffer.from(JSON.stringify(lock,null,2)+'\n'):null;
       entries.push({path:lockPath(plan.host),before:previous===null?null:previous.toString('base64'),afterHash:bytes===null?null:hashBytes(bytes)});
@@ -118,6 +131,7 @@ export async function applyInstall(plan,{securityPreflight,afterWrite}={}) {
         // Journal contains all rollback bytes before the first managed mutation.
         for(const op of plan.writes) {await assertExpected(plan.root,op);await replace(plan.root,op.path,op.content);await afterWrite?.(op);}
         for(const op of plan.removes) {await assertExpected(plan.root,op);await remove(plan.root,op.path);await afterWrite?.(op);}
+        for(const op of plan.owned) await assertOwned(plan.root,op);
         const currentLock=await fileBytes(plan.root,lockPath(plan.host),{internal:true});
         if((currentLock===null?null:hashBytes(currentLock))!==(previous===null?null:hashBytes(previous))) throw new Error('Ownership lock changed during installation');
         if(bytes===null) await remove(plan.root,lockPath(plan.host));
@@ -126,7 +140,7 @@ export async function applyInstall(plan,{securityPreflight,afterWrite}={}) {
         return result('passed',[],{lock:bytes===null?null:lock,written:plan.writes.length,removed:plan.removes.length});
       } catch(error) {
         const rollback=await recover(plan.root,plan.host);
-        return result(rollback.status==='blocked'?'blocked':'failed',[error.message,...rollback.reasons],{rollback});
+        return result(rollback.status==='blocked' || error.message.startsWith('Owned destination changed before ownership commit:')?'blocked':'failed',[error.message,...rollback.reasons],{rollback});
       }
     });
   } catch(error) {return result('blocked',[error.message]);}

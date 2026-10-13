@@ -103,6 +103,38 @@ test('normalization redacts bare provider credentials and changed finding eviden
   assert.doesNotMatch(JSON.stringify(finding),/syntheticABCDEFGHIJKLMNOPQRSTUVWXYZ1234/);
   assert.notEqual(normalizeFindings({findings:[{...raw,evidence:'changed'}]})[0].fingerprint,finding.fingerprint);
 });
+test('literal redactions cannot change critical severity, identity, status or exception matching',async t=>{
+  const directory=await root(t);
+  const critical={...observed.findings[0],evidence:'private-value-in-evidence'};
+  const run=response(report(1,[critical]),2);
+  const redactions=['critical',critical.id,'blocked','private-value-in-evidence'];
+  const first=await scanAgentConfig({root:directory,files:['CLAUDE.md'],run,redactions});
+  assert.equal(first.status,'blocked');
+  assert.equal(first.findings[0].severity,'critical');
+  assert.equal(first.findings[0].id,critical.id);
+  assert.match(first.reasons.join(),/Unresolved .* security findings/);
+  assert.doesNotMatch(JSON.stringify(first),/private-value-in-evidence/);
+  const exceptions=[{fingerprint:first.findings[0].fingerprint,reviewedBy:'human',reviewedAt:'2026-10-13T00:00:00Z',reason:'Reviewed synthetic fixture',disposition:'accepted-risk'}];
+  const accepted=await scanAgentConfig({root:directory,files:['CLAUDE.md'],run,redactions,exceptions});
+  assert.equal(accepted.status,'passed');
+  assert.equal(accepted.findings[0].suppression.fingerprint,first.findings[0].fingerprint);
+});
+test('malformed scanner remediation cannot carry raw secret objects into findings',async t=>{
+  const directory=await root(t);
+  const finding={...observed.findings[0],fix:{nested:'sk-proj-privatevalue12345678901234567890'}};
+  const result=await scanAgentConfig({root:directory,files:['CLAUDE.md'],run:response(report(1,[finding]),2)});
+  assert.equal(result.status,'failed');
+  assert.doesNotMatch(JSON.stringify(result),/privatevalue12345678901234567890/);
+});
+test('observed structured remediation retains shape and redacts its text',async t=>{
+  const directory=await root(t);
+  const finding={...observed.findings[0],fix:{description:'Review this change',before:'safe',after:'sk-proj-privatevalue12345678901234567890',auto:false}};
+  const result=await scanAgentConfig({root:directory,files:['CLAUDE.md'],run:response(report(1,[finding]),2)});
+  assert.equal(result.status,'blocked');
+  assert.equal(result.findings[0].remediation.auto,false);
+  assert.equal(result.findings[0].remediation.after,'[REDACTED]');
+  assert.doesNotMatch(JSON.stringify(result),/privatevalue12345678901234567890/);
+});
 test('missing native scanner executable is failed rather than clean',async t=>{
   const directory=await root(t);
   const result=await scanAgentConfig({root:directory,files:['CLAUDE.md'],run:async()=>({exitCode:null,error:{code:'ENOENT',message:'missing binary'}})});

@@ -7,7 +7,7 @@ import {fileURLToPath,pathToFileURL} from 'node:url';
 import {assertContained} from '../paths.mjs';
 import {hashBytes} from '../install/ownership.mjs';
 import {redactEvidence} from '../verify/runner.mjs';
-import {normalizeFindings,applyExceptions,redactSecurity} from './findings.mjs';
+import {normalizeFindings,applyExceptions,redactSecurity,redactFinding} from './findings.mjs';
 const require=createRequire(import.meta.url);
 const packageRoot=fileURLToPath(new URL('../../',import.meta.url));
 const integrity='sha512-lpeHG96DtEn7ofq7Iiyvq29piQOwParaiZOdDB206i4ZeCL4yjwT6xN5BSGI4yhCEAN0eO0f9F9hxHLBuRqf/g==';
@@ -110,7 +110,7 @@ export async function scanAgentConfig({root,files,run=execute,timeoutMs=30_000,e
   } catch(error) {result.status='failed';result.reasons.push(error.code==='MODULE_NOT_FOUND'?'Pinned AgentShield executable missing':error.message);}
   finally {if(stage) await rm(stage,{recursive:true,force:true}).catch(()=>{result.status='failed';result.reasons.push('Scanner temporary-directory cleanup failed');});}
   // Raw reports/output never leave the scanner boundary. Redact error strings too.
-  return {...result,findings:result.findings.map(f=>redactSecurity(f,{redactions,maxOutput:4096})),reasons:redactSecurity(result.reasons,{redactions})};
+  return {...result,findings:result.findings.map(f=>redactFinding(f,{redactions,maxOutput:4096})),reasons:redactSecurity(result.reasons,{redactions})};
 }
 /** Scan the desired configuration bytes, never an obsolete destination snapshot.
  * Removal-only safety is ownership/CAS checked by applyInstall; no fabricated scan.
