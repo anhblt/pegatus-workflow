@@ -15,12 +15,14 @@ import { scanAgentConfig } from '../src/security/agentshield.mjs';
 import { dispatchEvent } from '../src/hooks/dispatch.mjs';
 import { activationFor, mapNativeEvent, nativeResponse } from '../src/hooks/operations.mjs';
 import { runLearningCommand, learningCollector } from '../src/memory/cli.mjs';
+import { runOrchestrationCommand } from '../src/orchestration/cli.mjs';
 
 const operations = new Set([
   'start', 'design', 'plan', 'execute', 'investigate', 'review', 'verify',
   'checkpoint', 'resume', 'learn', 'memory', 'security', 'status',
   'install', 'update', 'doctor', 'uninstall', 'catalog',
   'lifecycle', 'hook-native', 'hook-activation',
+  'orchestrate',
 ]);
 
 function flags(args, allowed) {
@@ -167,7 +169,7 @@ async function runStateOperation(argv, cwd) {
   return operation === 'resume' && reconciliation.status === 'blocked' ? 3 : 0;
 }
 
-export async function main(argv, { cwd, home, securityPreflight } = {}) {
+export async function main(argv, { cwd, home, securityPreflight, orchestrationCallbacks, userConfig } = {}) {
   if (!Array.isArray(argv) || typeof cwd !== 'string' || typeof home !== 'string') {
     throw new TypeError('main requires argv and cwd/home paths');
   }
@@ -182,6 +184,13 @@ export async function main(argv, { cwd, home, securityPreflight } = {}) {
   if (['lifecycle', 'hook-native', 'hook-activation'].includes(argv[0])) {
     try { return await runLifecycleCommand(argv, cwd); }
     catch (error) { process.stderr.write(`${error.message}\n`); return 2; }
+  }
+  if (argv[0] === 'orchestrate') {
+    try {
+      const result = await runOrchestrationCommand(argv, { cwd, callbacks: orchestrationCallbacks, userConfig });
+      process.stdout.write(JSON.stringify(result) + '\n');
+      return result.status === 'blocked' ? 3 : result.status === 'failed' ? 1 : 0;
+    } catch (error) { process.stderr.write(`${error.message}\n`); return 2; }
   }
   if (['learn', 'memory'].includes(argv[0])) {
     try {
