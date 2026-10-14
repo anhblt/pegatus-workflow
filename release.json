@@ -4,7 +4,8 @@
   "qualification": "incomplete",
   "releaseReady": false,
   "sourceLock": "sources.lock.json",
-  "dependencyLock": "package-lock.json",
+  "dependencyLock": "npm-shrinkwrap.json",
+  "runtimeDependencyLock": "package-lock.json",
   "acceptanceChecklist": "docs/acceptance/checklist.md",
   "blockers": [
     "Native small-fix and gated-feature qualification in all three hosts on Windows and Linux remains required",

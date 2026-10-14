@@ -25,6 +25,9 @@ test('detached installed runtime scans configuration and completes a vault-less 
   const extracted = spawnSync('tar', ['-xf', path.join(root, metadata.filename), '-C', root], { encoding: 'utf8' });
   assert.equal(extracted.status, 0, extracted.stderr);
   const packedCli = path.join(root, 'package/bin/pegatus.mjs');
+  const packageRelease = JSON.parse(await readFile(path.join(root, 'package/release.json')));
+  assert.ok(metadata.files.some(file => file.path === packageRelease.dependencyLock), 'Package provenance must name the shipped dependency lock');
+  assert.equal(packageRelease.runtimeDependencyLock, 'package-lock.json');
   assert.equal(invoke(packedCli, root, ['catalog', 'lint']).status, 0, 'Packed resource and audited-byte closure must lint');
   const packedLock = JSON.parse(await readFile(path.join(root, 'package/sources.lock.json')));
   for (const dependency of packedLock.packages) {
@@ -33,6 +36,10 @@ test('detached installed runtime scans configuration and completes a vault-less 
   const installed = invoke(packedCli, root, ['install', '--host', 'claude', '--scope', 'project', '--root', root]);
   assert.equal(installed.status, 0, installed.stderr + installed.stdout);
   const cli = path.join(root, '.pegatus/runtime/claude/bin/pegatus.mjs');
+  const runtimeRoot = path.dirname(path.dirname(cli));
+  const runtimeRelease = JSON.parse(await readFile(path.join(runtimeRoot, 'release.json')));
+  assert.deepEqual(await readFile(path.join(runtimeRoot, runtimeRelease.dependencyLock)),
+    await readFile(path.join(runtimeRoot, runtimeRelease.runtimeDependencyLock)), 'Runtime retains both declared lock resources');
   await writeFile(path.join(root, 'CLAUDE.md'), await readFile(new URL('./fixtures/security/benign/CLAUDE.md', import.meta.url)));
   const scanned = invoke(cli, root, ['security', '--root', root, '--file', 'CLAUDE.md']);
   assert.equal(scanned.status, 0, scanned.stderr + scanned.stdout);

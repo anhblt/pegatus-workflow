@@ -1,4 +1,4 @@
-import {readFile,readdir} from 'node:fs/promises';
+import {readFile,readdir,lstat} from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {resolveConfig} from '../config.mjs';
@@ -38,17 +38,22 @@ async function runtimeCatalog() {
   const findings=lintCatalog(catalog);
   if(findings.some(f=>f.severity==='error')) throw new Error('Catalog validation failed: '+findings.filter(f=>f.severity==='error').map(f=>f.code).join(', '));
   // The portable CLI and modules are a whole dependency tree, just like vendor resources.
-  async function visit(directory) {
+  async function visit(directory,dependencyFiles=false) {
     for(const entry of await readdir(path.join(packageRoot,directory),{withFileTypes:true})) {
       const file=`${directory}/${entry.name}`;
       await assertContained(packageRoot,path.join(packageRoot,file));
       if(entry.isSymbolicLink()) throw new Error('Runtime resources cannot be symbolic links');
-      if(entry.isDirectory()) await visit(file);
+      if(entry.isDirectory()) {
+        if(entry.name.toLowerCase()==='node_modules') {
+          if(!dependencyFiles || entry.name!=='node_modules') throw new Error(`Unlocked runtime dependency tree: ${file}`);
+          await nestedDependencies(file);
+        } else await visit(file,dependencyFiles);
+      }
       else catalog.files[file]=await readFile(path.join(packageRoot,file));
     }
   }
   await visit('src');await visit('bin');
-  for(const file of ['package.json','sources.lock.json','release.json']) catalog.files[file]=await readFile(path.join(packageRoot,file));
+  for(const file of ['package.json','sources.lock.json','release.json','npm-shrinkwrap.json']) catalog.files[file]=await readFile(path.join(packageRoot,file));
   // npm omits package-lock.json from tarballs. The byte-identical shrinkwrap is
   // shipped and becomes the detached runtime's package-lock.json.
   try { catalog.files['package-lock.json']=await readFile(path.join(packageRoot,'package-lock.json')); }
@@ -59,15 +64,42 @@ async function runtimeCatalog() {
   // Copy only the prepared, locked dependency graph. Installation never fetches
   // packages, and a detached runtime must not resolve through the kit checkout.
   const lock=JSON.parse(catalog.files['package-lock.json'].toString('utf8'));
+  const locked=new Set(Object.keys(lock.packages).filter(Boolean)),materialized=new Set();
   for(const [directory,dependency] of Object.entries(lock.packages)) {
     if(!directory) continue;
     if(!/^node_modules\/(?:@[^/]+\/)?[^/]+(?:\/node_modules\/(?:@[^/]+\/)?[^/]+)*$/.test(directory)
       || !dependency.integrity || dependency.link) throw new Error('Invalid pinned runtime dependency');
-    const manifest=JSON.parse(await readFile(path.join(packageRoot,directory,'package.json'),'utf8'));
+    const target=path.join(packageRoot,directory),manifestPath=path.join(target,'package.json');
+    await assertContained(packageRoot,target);await assertContained(packageRoot,manifestPath);
+    if(!(await lstat(target)).isDirectory() || (await lstat(manifestPath)).isSymbolicLink()) throw new Error(`Invalid pinned runtime dependency: ${directory}`);
+    const manifest=JSON.parse(await readFile(manifestPath,'utf8'));
     if(manifest.version!==dependency.version) throw new Error(`Pinned runtime dependency mismatch: ${directory}`);
   }
+  async function dependencyPackage(directory) {
+    if(!locked.has(directory)) throw new Error(`Unlocked runtime dependency: ${directory}`);
+    materialized.add(directory);
+    await visit(directory,true);
+  }
+  async function nestedDependencies(directory) {
+    for(const entry of await readdir(path.join(packageRoot,directory),{withFileTypes:true})) {
+      // npm-generated executable links/cache metadata are not dependency packages.
+      if(entry.name==='.bin' || entry.name==='.package-lock.json') continue;
+      const file=`${directory}/${entry.name}`;
+      await assertContained(packageRoot,path.join(packageRoot,file));
+      if(entry.isSymbolicLink() || !entry.isDirectory()) throw new Error(`Unlocked runtime dependency: ${file}`);
+      if(entry.name.startsWith('@')) {
+        for(const scoped of await readdir(path.join(packageRoot,file),{withFileTypes:true})) {
+          const scopedFile=`${file}/${scoped.name}`;
+          await assertContained(packageRoot,path.join(packageRoot,scopedFile));
+          if(scoped.isSymbolicLink() || !scoped.isDirectory()) throw new Error(`Unlocked runtime dependency: ${scopedFile}`);
+          await dependencyPackage(scopedFile);
+        }
+      } else await dependencyPackage(file);
+    }
+  }
   const packageDirectories=Object.keys(lock.packages).filter(directory=>directory && !directory.includes('/node_modules/'));
-  for(const directory of packageDirectories) await visit(directory);
+  for(const directory of packageDirectories) await dependencyPackage(directory);
+  if(materialized.size!==locked.size) throw new Error('Pinned runtime dependency graph was not fully materialized');
   return catalog;
 }
 function hookActivation(host,root) {
