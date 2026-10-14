@@ -95,6 +95,8 @@ test('output limits include a visible marker and reference the full retained log
 test('checkpoint summaries reference logs and enforce configured summary limits', () => {
   const r = checkpointSummary({ summary: 'Passed checks. '.repeat(100), logs: [{ outputPath: 'evidence/test.json', stdout: 'do not embed', status: 'passed' }] }, { maxSummaryChars: 220 });
   assert.equal(r.schemaVersion, 1); assert.ok(r.summary.length <= 220); assert.match(r.summary, /TRUNCATED/);
+  assert.match(r.summary, /supporting logs:/);
+  assert.doesNotMatch(r.summary, /full output:/);
   assert.deepEqual(r.logs, ['evidence/test.json']); assert.doesNotMatch(JSON.stringify(r), /do not embed/);
   assert.throws(() => checkpointSummary({ summary: 'checked', logs: [{ stdout: 'lost' }] }), /outputPath/);
 });

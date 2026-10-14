@@ -1,6 +1,6 @@
 {
   "name": "pegatus-v2",
-  "version": "0.0.0",
+  "version": "0.1.0-rc.1",
   "private": true,
   "type": "module",
   "bin": {
@@ -15,5 +15,22 @@
   },
   "dependencies": {
     "ecc-agentshield": "1.6.0"
-  }
+  },
+  "bundleDependencies": [
+    "ecc-agentshield"
+  ],
+  "files": [
+    "bin",
+    "src",
+    "catalog",
+    "vendor",
+    "audit/agentshield/package.json",
+    "audit/agentshield/package-lock.json",
+    "sources.lock.json",
+    "npm-shrinkwrap.json",
+    "release.json",
+    "docs",
+    "README.md"
+  ],
+  "description": "Pinned cross-harness workflow kit; qualification candidate, release blocked"
 }

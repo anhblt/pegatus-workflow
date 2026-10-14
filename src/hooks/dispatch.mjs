@@ -60,15 +60,31 @@ function recordEvent(record, event, security, actionReview) {
 }
 
 function completedVerification(verification, codeState) {
-  if (verification.status !== 'passed' || verification.invalidation || verification.codeState !== codeState) return false;
+  if (!['passed', 'failed', 'blocked'].includes(verification.status) || verification.invalidation || verification.codeState !== codeState) return false;
   const results = verification.results;
   return Array.isArray(results) && results.length > 0 && results.every(item =>
-    reference(item.checkId) && item.status === 'passed' && item.valid === true && item.codeState === codeState
+    reference(item.checkId) && ['passed', 'failed', 'blocked'].includes(item.status) && item.valid === true && item.codeState === codeState
     && Array.isArray(item.evidence) && item.evidence.length > 0 && item.evidence.every(evidence =>
       evidence.schemaVersion === 1 && typeof evidence.command === 'string' && evidence.command.length > 0
       && Array.isArray(evidence.args) && typeof evidence.cwd === 'string' && evidence.cwd.length > 0
-      && evidence.exitCode === 0 && evidence.status === 'passed' && evidence.valid === true
+      && (item.status === 'passed' ? evidence.exitCode === 0 : evidence.exitCode === null || Number.isInteger(evidence.exitCode))
+      && evidence.status === item.status && evidence.valid === true
       && evidence.codeState === codeState));
+}
+
+function limitationReviewValid(review, record, outstanding, codeState) {
+  return review?.schemaVersion === 1 && review.kind === 'verification-limitations'
+    && review.taskId === record.taskId && review.scopeHash === record.approvedScopeHash && review.codeState === codeState
+    && reference(review.evidenceRef) && typeof review.reviewedBy === 'string' && review.reviewedBy.trim().length > 0
+    && review.reviewedBy.length <= 128 && !/[\r\n\0]/.test(review.reviewedBy)
+    && typeof review.reviewedAt === 'string' && !Number.isNaN(Date.parse(review.reviewedAt))
+    && new Date(review.reviewedAt).toISOString() === review.reviewedAt
+    && Array.isArray(review.limitations) && review.limitations.length === outstanding.length
+    && new Set(review.limitations.map(item => item?.checkId)).size === outstanding.length
+    && outstanding.every(check => review.limitations.some(item => item?.checkId === check.checkId
+      && item.status === check.status && item.evidenceHash === eventKey(JSON.stringify(check.evidence))
+      && typeof item.reason === 'string' && item.reason.trim().length > 0 && item.reason.length <= 1024
+      && !/[\r\n\0]/.test(item.reason)));
 }
 
 function actionReviewValid(review, record, actionRef) {
@@ -101,9 +117,10 @@ export async function dispatchEvent(event, deps = {}) {
     let record;
     try { record = await load(root, event.taskId); }
     catch { return result('failed', 'progress-load-failed'); }
-    if (!record) return result(event.sessionId ? 'skipped' : 'blocked', 'task-record-not-found');
+    const required = ['before-action', 'complete'].includes(event.type);
+    if (!record) return result(event.sessionId && !required ? 'skipped' : 'blocked', 'task-record-not-found');
     if (event.sessionId && event.type !== 'session-start' && !boundSession(record, event.sessionId))
-      return result('skipped', 'native-session-not-bound-to-task');
+      return result(required ? 'blocked' : 'skipped', 'native-session-not-bound-to-task');
     let next = record;
     let reconciliation;
     let security;
@@ -163,6 +180,18 @@ export async function dispatchEvent(event, deps = {}) {
         let codeState;
         try { codeState = repositoryCodeState(current); } catch { return result('blocked', 'repository-state-unavailable'); }
         if (!completedVerification(record.verification, codeState)) return result('blocked', 'valid-verification-required');
+        const outstanding = record.verification.results.filter(check => check.status !== 'passed');
+        if (outstanding.length) {
+          if (typeof deps.authorizeLimitations !== 'function') return result('blocked', 'reviewed-limitations-required');
+          const review = await deps.authorizeLimitations({ taskId: record.taskId, scopeHash: record.approvedScopeHash, codeState,
+            checks: outstanding.map(check => ({ checkId: check.checkId, status: check.status, evidenceHash: eventKey(JSON.stringify(check.evidence)) })) });
+          if (!limitationReviewValid(review, record, outstanding, codeState)) return result('blocked', 'reviewed-limitations-required');
+          next = { ...next, context: { ...next.context, lifecycle: { eventIds: [], ...next.context.lifecycle, completionLimitations: {
+            schemaVersion: 1, kind: review.kind, taskId: review.taskId, scopeHash: review.scopeHash, codeState,
+            reviewedBy: review.reviewedBy, reviewedAt: review.reviewedAt, evidenceRef: review.evidenceRef,
+            limitations: review.limitations.map(({ checkId, status, evidenceHash, reason }) => ({ checkId, status, evidenceHash, reason })),
+          } } } };
+        } else if (record.verification.status !== 'passed') return result('blocked', 'valid-verification-required');
         security = await scan({ root, files: event.affectedConfigFiles });
         if (security?.status !== 'passed') return result(security?.status === 'failed' ? 'failed' : 'blocked', 'configuration-security-gate', { security });
         if (security.schemaVersion !== 1 || !/^[a-f0-9]{64}$/.test(security.codeState ?? ''))

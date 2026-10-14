@@ -37,6 +37,45 @@ const native = (root, env, payload) => spawnSync(process.execPath, [cli, 'hook-n
   cwd: root, encoding: 'utf8', input: JSON.stringify(payload), env: { ...process.env, ...env },
 });
 
+test('required direct gates fail closed for missing tasks and injected unbound sessions', async () => fixture(async root => {
+  for (const type of ['before-action', 'complete']) {
+    for (const taskId of ['MISSING', 'TASK-1']) {
+      const outcome = await dispatchEvent({ root, taskId, type, id: `${type}-${taskId}`, sessionId: 'unbound' });
+      assert.equal(outcome.status, 'blocked', JSON.stringify(outcome));
+    }
+  }
+  assert.equal((await dispatchEvent(event(root, 'advisory-unbound', 'post-edit', { sessionId: 'unbound' }))).status, 'skipped');
+}));
+
+test('completion accepts reviewed current failed checks without relabeling them passed', async () => fixture(async root => {
+  const before = await loadProgress(root, 'TASK-1');
+  const verification = proof(repositoryCodeState([]));
+  verification.status = 'failed';
+  verification.results[0].status = 'failed';
+  verification.results[0].evidence[0].status = 'failed';
+  verification.results[0].evidence[0].exitCode = 1;
+  await saveProgress(root, { ...before, verification }, { expectedRevision: 1 });
+  const review = { schemaVersion: 1, kind: 'verification-limitations', taskId: 'TASK-1', scopeHash: null,
+    codeState: verification.codeState, reviewedBy: 'human reviewer', reviewedAt: '2026-10-13T01:00:00.000Z',
+    evidenceRef: 'review/limitation.json', limitations: [{ checkId: 'unit', status: 'failed',
+      evidenceHash: createHash('sha256').update(JSON.stringify(verification.results[0].evidence)).digest('hex'),
+      reason: 'Specific fixture limitation accepted for this scope' }] };
+  const deps = { scanAgentConfig: async () => ({ schemaVersion: 1, status: 'passed', codeState: 'a'.repeat(64) }),
+    authorizeLimitations: async () => review };
+  const request = event(root, 'accepted-limitation', 'complete', { affectedConfigFiles: ['CLAUDE.md'] });
+  assert.equal((await dispatchEvent(request)).status, 'blocked');
+  for (const wrong of [{ ...review, scopeHash: 'other' }, { ...review, codeState: 'old' },
+    { ...review, limitations: [{ ...review.limitations[0], evidenceHash: '0'.repeat(64) }] }]) {
+    assert.equal((await dispatchEvent(request, { ...deps, authorizeLimitations: async () => wrong })).status, 'blocked');
+  }
+  assert.equal((await dispatchEvent(request, deps)).status, 'passed');
+  const saved = await loadProgress(root, 'TASK-1');
+  assert.equal(saved.phase, 'complete');
+  assert.equal(saved.verification.results[0].status, 'failed');
+  assert.equal(saved.context.lifecycle.completionLimitations.evidenceRef, 'review/limitation.json');
+  assert.equal((await dispatchEvent(request)).status, 'blocked', 'required replay must reauthorize accepted limitations');
+}));
+
 test('replayed checkpoint survives a fresh dispatch call without duplicate save', async () => fixture(async root => {
   const first = await dispatchEvent(event(root, 'session-1:compact-1', 'pre-compact'));
   const second = await dispatchEvent(event(root, 'session-1:compact-1', 'pre-compact'));
@@ -363,7 +402,7 @@ test('learning collection receives metadata after checkpoint and cannot erase it
 test('native mapping only uses audited events and explicit binding', () => {
   assert.equal(mapNativeEvent('claude', { hook_event_name: 'PostToolUse', tool_name: 'Edit', session_id: 's', tool_use_id: 't' }).status, 'skipped');
   const mapped = mapNativeEvent('claude', { hook_event_name: 'PostToolUse', tool_name: 'Edit', session_id: 's', tool_use_id: 't', tool_response: { password: 'SECRET' } },
-    { root: 'C:/workspace', taskId: 'TASK-1' });
+    { root: path.resolve(os.tmpdir(), 'workspace'), taskId: 'TASK-1' });
   assert.equal(mapped.status, 'passed');
   assert.equal(mapped.event.type, 'post-edit');
   assert.doesNotMatch(JSON.stringify(mapped), /SECRET/);
@@ -429,11 +468,11 @@ test('native response respects advisory PostToolUse and blocking PreCompact sema
 });
 
 test('activation proposal uses static commands and leaves task binding in environment', () => {
-  const activation = activationFor('codex', 'C:/Safe Workspace');
+  const activation = activationFor('codex', path.resolve(os.tmpdir(), 'Safe Workspace'));
   const serialized = JSON.stringify(activation);
   assert.match(serialized, /hook-native/);
   assert.doesNotMatch(serialized, /TASK-1|PEGATUS_TASK_ID=/);
-  assert.throws(() => activationFor('claude', 'C:/Unsafe & command'), /safe/i);
+  assert.throws(() => activationFor('claude', path.resolve(os.tmpdir(), 'Unsafe & command')), /safe/i);
 });
 
 test('doctor exposes an opt-in native proposal while reporting hooks as explicit-call', async () => fixture(async root => {

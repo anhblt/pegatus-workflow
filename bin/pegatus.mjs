@@ -76,7 +76,7 @@ async function runLifecycleCommand(argv, cwd) {
     if (response.stderr) process.stderr.write(response.stderr);
     return response.exitCode;
   }
-  const options = flags(args, ['--root', '--task', '--event-id', '--type', '--config-file', '--action-ref', '--review-file', '--learning-file']);
+  const options = flags(args, ['--root', '--task', '--event-id', '--type', '--config-file', '--action-ref', '--review-file', '--learning-file', '--limitations-file']);
   if (!options.root || !options.task || !options.eventId || !options.type)
     throw new TypeError('Usage: pegatus lifecycle --root <root> --task <task-id> --event-id <unique-id> --type <event> [--config-file <relative-file> ...] [--action-ref <ref> --review-file <review.json>]');
   if (options.type !== 'before-action' && (options.actionRef || options.reviewFile))
@@ -84,6 +84,20 @@ async function runLifecycleCommand(argv, cwd) {
   const request = { root: path.resolve(cwd, options.root), taskId: options.task, id: options.eventId, type: options.type };
   if (options.files.length) request.affectedConfigFiles = options.files;
   const deps = {};
+  if (options.limitationsFile) {
+    if (options.type !== 'complete') throw new TypeError('Limitation review applies only to completion');
+    try {
+      const target = path.resolve(request.root, options.limitationsFile);
+      await assertContained(request.root, target);
+      const source = await readFile(target);
+      if (source.length > 32768) throw new TypeError('Limitation review exceeds limit');
+      const review = JSON.parse(source.toString('utf8'));
+      deps.authorizeLimitations = async () => review;
+    } catch {
+      process.stdout.write(JSON.stringify({ status: 'blocked', evidence: [], reasons: ['limitation-review-unavailable'] }) + '\n');
+      return 3;
+    }
+  }
   if (options.learningFile) {
     if (!['pre-compact', 'session-end'].includes(options.type)) throw new TypeError('Learning observations apply only to pre-compact or session-end');
     deps.collectLearning = await learningCollector(request.root, options.learningFile);

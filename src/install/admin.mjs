@@ -42,12 +42,32 @@ async function runtimeCatalog() {
     for(const entry of await readdir(path.join(packageRoot,directory),{withFileTypes:true})) {
       const file=`${directory}/${entry.name}`;
       await assertContained(packageRoot,path.join(packageRoot,file));
+      if(entry.isSymbolicLink()) throw new Error('Runtime resources cannot be symbolic links');
       if(entry.isDirectory()) await visit(file);
       else catalog.files[file]=await readFile(path.join(packageRoot,file));
     }
   }
   await visit('src');await visit('bin');
-  for(const file of ['package.json','package-lock.json','sources.lock.json']) catalog.files[file]=await readFile(path.join(packageRoot,file));
+  for(const file of ['package.json','sources.lock.json','release.json']) catalog.files[file]=await readFile(path.join(packageRoot,file));
+  // npm omits package-lock.json from tarballs. The byte-identical shrinkwrap is
+  // shipped and becomes the detached runtime's package-lock.json.
+  try { catalog.files['package-lock.json']=await readFile(path.join(packageRoot,'package-lock.json')); }
+  catch(error) {
+    if(error.code!=='ENOENT') throw error;
+    catalog.files['package-lock.json']=await readFile(path.join(packageRoot,'npm-shrinkwrap.json'));
+  }
+  // Copy only the prepared, locked dependency graph. Installation never fetches
+  // packages, and a detached runtime must not resolve through the kit checkout.
+  const lock=JSON.parse(catalog.files['package-lock.json'].toString('utf8'));
+  for(const [directory,dependency] of Object.entries(lock.packages)) {
+    if(!directory) continue;
+    if(!/^node_modules\/(?:@[^/]+\/)?[^/]+(?:\/node_modules\/(?:@[^/]+\/)?[^/]+)*$/.test(directory)
+      || !dependency.integrity || dependency.link) throw new Error('Invalid pinned runtime dependency');
+    const manifest=JSON.parse(await readFile(path.join(packageRoot,directory,'package.json'),'utf8'));
+    if(manifest.version!==dependency.version) throw new Error(`Pinned runtime dependency mismatch: ${directory}`);
+  }
+  const packageDirectories=Object.keys(lock.packages).filter(directory=>directory && !directory.includes('/node_modules/'));
+  for(const directory of packageDirectories) await visit(directory);
   return catalog;
 }
 function hookActivation(host,root) {

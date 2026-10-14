@@ -1,0 +1,22 @@
+name: qualification
+on: [push, pull_request, workflow_dispatch]
+jobs:
+  package:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+        node: ['22', '24']
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Containment and security smoke
+        run: node --test tests/paths.test.mjs tests/install.test.mjs tests/security.test.mjs
+      - run: npm test
+      - run: npm run lint
+      - run: npm pack --dry-run

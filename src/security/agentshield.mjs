@@ -34,7 +34,10 @@ async function execute(request) {
 async function executable() {
   const cli=fileURLToPath(import.meta.resolve('ecc-agentshield'));
   const manifest=JSON.parse(await readFile(path.resolve(path.dirname(cli),'../package.json'),'utf8'));
-  const lock=JSON.parse(await readFile(path.join(packageRoot,'package-lock.json'),'utf8'));
+  let bytes;
+  try { bytes=await readFile(path.join(packageRoot,'package-lock.json'),'utf8'); }
+  catch(error) { if(error.code!=='ENOENT') throw error; bytes=await readFile(path.join(packageRoot,'npm-shrinkwrap.json'),'utf8'); }
+  const lock=JSON.parse(bytes);
   const node=lock.packages?.['node_modules/ecc-agentshield'];
   if(manifest.version!=='1.6.0' || node?.version!=='1.6.0' || node.integrity!==integrity) throw new Error('Pinned AgentShield dependency unavailable or mismatched');
   return cli;
@@ -126,6 +129,8 @@ export async function scanInstallPlan(plan,options={}) {
     for(const op of plan.owned) {
       relative(op.path);
       if(op.content===undefined || hashBytes(op.content)!==op.hash) throw new Error('Invalid staged configuration bytes');
+      // Locked library documentation is dependency content, not agent config.
+      if(/^\.pegatus\/runtime\/[^/]+\/node_modules\//.test(op.path)) continue;
       if(!scannerSupported(op.path) && !staticSupported(op.path) && !/^\.(?:claude|codex|agents|gemini)\//.test(op.path)) continue;
       const target=path.join(stage,op.path);await mkdir(path.dirname(target),{recursive:true});await writeFile(target,op.content,{mode:0o600});files.push(op.path);
     }

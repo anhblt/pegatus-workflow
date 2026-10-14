@@ -21,7 +21,7 @@ test('CLI default security scans installs and doctor reports explicit-call',asyn
   const installed=await runAdministration(['install',...args],options);
   assert.equal(installed.status,'passed');assert.ok(installed.security.coverage.agentShield.length);
   const doctor=await runAdministration(['doctor',...args],options);
-  assert.equal(doctor.capabilities.security,'explicit-call');assert.equal(doctor.installedVersion,'0.0.0');
+  assert.equal(doctor.capabilities.security,'explicit-call');assert.equal(doctor.installedVersion,'0.1.0-rc.1');
 });
 test('project configuration wins while user/project installations deduplicate',async t=>{
   const options=await roots(t),user=['--host','codex','--scope','user','--root',options.home];
@@ -31,7 +31,7 @@ test('project configuration wins while user/project installations deduplicate',a
   assert.equal(duplicate.status,'skipped');assert.equal(duplicate.inheritedRoot,options.home);
   const inherited=await runAdministration(['doctor',...project],options);
   assert.equal(inherited.inherited,true);assert.equal(inherited.inheritedRoot,options.home);
-  assert.equal(inherited.installedVersion,'0.0.0');assert.ok(inherited.commandLocations.length);
+  assert.equal(inherited.installedVersion,'0.1.0-rc.1');assert.ok(inherited.commandLocations.length);
   for(const file of inherited.commandLocations) {
     assert.ok(file.startsWith(options.home+path.sep));await readFile(file);
   }
@@ -47,6 +47,6 @@ test('project configuration wins while user/project installations deduplicate',a
   assert.equal((await runAdministration(['doctor',...user],options)).installedVersion,null);
   assert.equal((await runAdministration(['install',...project],options)).status,'passed');
   const installed=await runAdministration(['doctor',...project],options);
-  assert.equal(installed.installedVersion,'0.0.0');assert.ok(installed.commandLocations.length);
+  assert.equal(installed.installedVersion,'0.1.0-rc.1');assert.ok(installed.commandLocations.length);
   assert.match(await readFile(path.join(options.cwd,'.codex/agents/pegatus-context-explorer.toml'),'utf8'),/project-model/);
 });

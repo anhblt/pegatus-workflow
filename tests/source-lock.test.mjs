@@ -62,6 +62,8 @@ test('all selected sources and npm dependencies remain pinned', async () => {
   const lock = JSON.parse(await readFile(new URL('../sources.lock.json', import.meta.url)));
   validateSources(lock);
   await validatePackage(lock);
+  assert.deepEqual(await readFile(new URL('../npm-shrinkwrap.json', import.meta.url)),
+    await readFile(new URL('../package-lock.json', import.meta.url)), 'Published shrinkwrap must retain the exact locked graph');
 });
 
 for (const [name, mutate] of [

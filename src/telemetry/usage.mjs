@@ -123,6 +123,13 @@ export function checkpointSummary({ summary, logs = [] } = {}, controls = {}) {
     return ref;
   }))];
   const preview = limitOutput(summary, { maxChars: limits.maxSummaryChars, ...(refs.length ? { fullOutputRef: refs.join(', ') } : {}) });
+  if (preview.truncated) {
+    const marker = `\n[TRUNCATED; supporting logs: ${refs.join(', ')}]`;
+    if (marker.length > limits.maxSummaryChars) throw new TypeError('Summary limit cannot fit supporting log references');
+    let head = summary.slice(0, limits.maxSummaryChars - marker.length);
+    if (/[\uD800-\uDBFF]$/.test(head)) head = head.slice(0, -1);
+    preview.text = head + marker;
+  }
   const result = { schemaVersion: 1, summary: preview.text, truncated: preview.truncated, logs: refs };
   if (refs.length > limits.maxContextRefs || JSON.stringify(result).length > limits.maxContextChars) throw new TypeError('Checkpoint log references exceed context limit');
   return result;
