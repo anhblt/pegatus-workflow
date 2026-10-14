@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fingerprintRepository } from '../state/fingerprint.mjs';
+import { redactCredentials } from '../security/credentials.mjs';
 
 const sensitiveFlag = /^--?(?:password|passwd|token|secret|api[-_]?key|access[-_]?key|authorization)$/i;
 const shells = new Set(['bash', 'sh', 'zsh', 'pwsh', 'powershell', 'cmd']);
@@ -23,12 +24,7 @@ function scrubber(check, redactions, exclusions) {
     if (sensitiveFlag.test(check.args[index]) && check.args[index + 1]) secrets.push(check.args[index + 1]);
   }
   return value => {
-    let text = String(value ?? '');
-    text = text.replace(/-----BEGIN [^-]*PRIVATE KEY-----[\s\S]*?(?:-----END [^-]*PRIVATE KEY-----|$)/g, '[REDACTED PRIVATE KEY]')
-      .replace(/\b(Bearer\s+)\S+/gi, '$1[REDACTED]')
-      .replace(/((?:password|passwd|token|secret|api[-_]?key|access[-_]?key)\s*[=:]\s*)(?:"[^"]*"|'[^']*'|[^\s,;]+)/gi, '$1[REDACTED]')
-      .replace(/(https?:\/\/)[^\s/@]+:[^\s/@]+@/gi, '$1[REDACTED]@');
-    for (const secret of secrets) text = text.split(secret).join('[REDACTED]');
+    const text = redactCredentials(value, secrets);
     return text.split(/\r?\n/).filter(line => !exclusions.some(value => line.includes(value))).join('\n');
   };
 }

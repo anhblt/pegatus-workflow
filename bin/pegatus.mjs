@@ -18,12 +18,12 @@ import { runLearningCommand, learningCollector } from '../src/memory/cli.mjs';
 import { runOrchestrationCommand } from '../src/orchestration/cli.mjs';
 
 const operations = new Set([
-  'start', 'design', 'plan', 'execute', 'investigate', 'review', 'verify',
   'checkpoint', 'resume', 'learn', 'memory', 'security', 'status',
-  'install', 'update', 'doctor', 'uninstall', 'catalog',
+  'install', 'update', 'doctor', 'uninstall', 'role', 'catalog',
   'lifecycle', 'hook-native', 'hook-activation',
   'orchestrate',
 ]);
+const hostWorkflows = new Set(['start','design','plan','execute','investigate','review','verify']);
 
 function flags(args, allowed) {
   const options = { files: [] };
@@ -188,11 +188,11 @@ export async function main(argv, { cwd, home, securityPreflight, orchestrationCa
     throw new TypeError('main requires argv and cwd/home paths');
   }
   if (argv.length === 0 || ['--help', '-h', 'help'].includes(argv[0])) {
-    process.stdout.write('Usage: pegatus <operation> [options]\nOperations: ' + [...operations].join(', ') + '\n');
+    process.stdout.write('Usage: pegatus <operation> [options]\nOperations: ' + [...operations].join(', ') + '\nHost workflows: invoke installed pegatus-start, pegatus-design, pegatus-plan, pegatus-execute, pegatus-investigate, pegatus-review, pegatus-verify skills in your host. These are not CLI subcommands.\nPortable roles: role --host <host> --scope project --root <project> --user-root <defaults> --role <role-id>; consume the returned procedure and fixed selection in the coordinator.\n');
     return 0;
   }
   if (!operations.has(argv[0])) {
-    process.stderr.write(`Unknown operation: ${argv[0]}\n`);
+    process.stderr.write(hostWorkflows.has(argv[0]) ? `Host workflow: invoke installed pegatus-${argv[0]} in your host; this is not a CLI subcommand.\n` : `Unknown operation: ${argv[0]}\n`);
     return 2;
   }
   if (['lifecycle', 'hook-native', 'hook-activation'].includes(argv[0])) {
@@ -213,7 +213,7 @@ export async function main(argv, { cwd, home, securityPreflight, orchestrationCa
       return result.status === 'blocked' ? 3 : result.status === 'failed' ? 1 : 0;
     } catch (error) { process.stderr.write(`${error.message}\n`); return 2; }
   }
-  if (['install','update','doctor','uninstall'].includes(argv[0])) {
+  if (['install','update','doctor','uninstall','role'].includes(argv[0])) {
     try {
       const result = await runAdministration(argv,{cwd,securityPreflight});
       process.stdout.write(JSON.stringify(result)+'\n');

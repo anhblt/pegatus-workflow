@@ -29,3 +29,5 @@ Exact support comes from a separate team declaration, `hostModelCapabilities[hos
 `recordUsage({source,values})` returns `{schemaVersion:1,source,available,values}`. Supply numeric nonnegative observed metrics and explicit nulls for unavailable fields. Missing, empty or entirely unavailable measurements produce `available:false,values:null`; observed zero is retained. Partial measurements preserve nulls, and no total, cost, saving or cache measurement is invented. Metrics and their source are host/caller supplied; no mandatory hosted telemetry is introduced.
 
 Limits are UTF-16 character counts, not token estimates. Context characters range 512..1048576, output/summary characters 128..1048576, reference count 1..4096. Native output/context enforcement is unverified; generated prompts label these as Pegatus helper limits and role guidance.
+
+The public memory command also measures the serialized aggregate response, including selected bodies and metadata, against both character limits. Overflow is blocked with a root-relative reference to preserved full documents; see [reviewed memory](learning.md).

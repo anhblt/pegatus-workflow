@@ -6,7 +6,7 @@ import { indexMemory } from './index.mjs';
 import { discoverInstructions } from '../context/instructions.mjs';
 import { retrieveContext } from '../context/retrieve.mjs';
 import { loadCatalog } from '../catalog/manifest.mjs';
-import { proposeLesson, saveCandidate, listCandidates, recordReview, promoteLesson, retireLesson, collectLearning, validateReusableProposal } from './learning.mjs';
+import { proposeLesson, saveCandidate, listCandidates, recordReview, commitReview, recoverReview, collectLearning, validateReusableProposal } from './learning.mjs';
 
 function options(args, allowed) {
   const result = { paths: [] };
@@ -76,8 +76,20 @@ export async function runLearningCommand(argv, cwd) {
       return { status: 'blocked', entries: [], evidence: [], reasons: ['authoritative-knowledge-requires-instructed-retrieval'] };
     const retrieved = await retrieveContext({ config, context, query: args.query });
     const blocked = retrieved.contextManifest.status === 'blocked';
-    return { status: blocked ? 'blocked' : 'passed', entries: blocked ? [] : retrieved.refs,
+    const result = { status: blocked ? 'blocked' : 'passed', entries: blocked ? [] : retrieved.refs,
       contextManifest: retrieved.contextManifest, uncertainties: retrieved.uncertainties, evidence: [], reasons: blocked ? ['context-budget-exceeded'] : [] };
+    // Count the actual aggregate envelope, including bodies and metadata. A
+    // compact overflow result keeps the complete documents at this root-relative
+    // index; no partial instructions or evidence can masquerade as complete.
+    if (JSON.stringify(result).length > Math.min(config.tokenControls.maxOutputChars, config.tokenControls.maxContextChars))
+      return {status:'blocked',entries:[],evidence:[],reasons:['context-budget-exceeded'],reference:'.pegatus/memory'};
+    return result;
+  }
+  if (action === 'recover') {
+    const args = options(rest, ['--root','--recovery-file']);
+    if (!args.root || !args.recoveryFile) throw new TypeError('Recovery requires explicit root and recovery file');
+    const root = path.resolve(cwd,args.root);
+    return recoverReview(root, await readLearningJson(root,args.recoveryFile), {trustedCoordinator:true});
   }
   if (!['propose', 'list', 'review', 'approve', 'reject', 'supersede', 'retire'].includes(action))
     throw new TypeError('Usage: pegatus learn propose|list|review|approve|reject|supersede|retire --root <root> ...');
@@ -124,11 +136,7 @@ export async function runLearningCommand(argv, cwd) {
       const catalog = await loadCatalog(catalogRoot);
       validateCatalog = async ({ candidate: proposal }) => validateReusableProposal(proposal, catalog);
     }
-    const outcome = action === 'approve'
-      ? await promoteLesson(candidate, { approval: review, target: destination, trustedCoordinator: true, validateCatalog })
-      : await retireLesson(candidate, { review, target: destination, trustedCoordinator: true });
-    await recordReview(root, candidate, review, { trustedCoordinator: true });
-    return outcome;
+    return commitReview(root, candidate, review, { target: destination, trustedCoordinator: true, validateCatalog });
   }
   return { status: 'passed', candidate: await recordReview(root, candidate, review, { trustedCoordinator: true }), evidence: [], reasons: [] };
 }

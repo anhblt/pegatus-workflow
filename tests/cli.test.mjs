@@ -11,8 +11,8 @@ test('help succeeds and unknown operations return usage error', async () => {
   assert.equal(await main(['unknown'], { cwd: process.cwd(), home: process.cwd() }), 2);
 });
 
-test('a future operation fails visibly until implemented', () => {
+test('host workflow names provide an actionable invocation direction', () => {
   const result = spawnSync(process.execPath, [cli, 'execute'], { encoding: 'utf8' });
   assert.equal(result.status, 2);
-  assert.match(result.stderr, /not implemented/i);
+  assert.match(result.stderr, /Host workflow: invoke installed pegatus-execute/i);
 });

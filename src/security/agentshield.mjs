@@ -8,6 +8,7 @@ import {assertContained} from '../paths.mjs';
 import {hashBytes} from '../install/ownership.mjs';
 import {redactEvidence} from '../verify/runner.mjs';
 import {normalizeFindings,applyExceptions,redactSecurity,redactFinding} from './findings.mjs';
+import {credentialAssignments} from './credentials.mjs';
 const require=createRequire(import.meta.url);
 const packageRoot=fileURLToPath(new URL('../../',import.meta.url));
 const integrity='sha512-lpeHG96DtEn7ofq7Iiyvq29piQOwParaiZOdDB206i4ZeCL4yjwT6xN5BSGI4yhCEAN0eO0f9F9hxHLBuRqf/g==';
@@ -16,7 +17,7 @@ function scannerSupported(file) {
   return direct.has(file) && file!=='.gemini/antigravity/mcp_config.json' || /^(?:\.claude\/)?(?:agents|subagents|rules|commands|contexts)\/[^/]+\.md$/.test(file) || /^\.codex\/agents\/[^/]+\.toml$/.test(file) || /^(?:\.claude\/)?hooks\/[^/]+\.(?:json|js|cjs|mjs|sh|bash|zsh|py)$/.test(file);
 }
 function staticSupported(file) {
-  return /^(?:\.agents\/(?:skills|workflows|rules)\/|\.gemini\/config\/global_workflows\/|\.claude\/skills\/|\.pegatus\/runtime\/).+\.md$/.test(file) || file==='.gemini/antigravity/mcp_config.json';
+  return /^(?:\.agents\/(?:skills|workflows|rules)\/|\.gemini\/config\/global_workflows\/|\.claude\/skills\/|\.pegatus\/runtime\/).+\.md$/.test(file) || file==='.gemini/antigravity/mcp_config.json' || /^\.pegatus\/overrides\/(?:claude|codex|antigravity)\.json$/.test(file);
 }
 function relative(file) {
   if(typeof file!=='string' || !file || file.includes('\\') || file.includes(':') || file.includes('\0') || path.posix.isAbsolute(file) || file.split('/').some(p=>!p || p==='.' || p==='..')) throw new TypeError('Security files must be explicit safe relative paths');
@@ -44,12 +45,12 @@ async function executable() {
 }
 function supplemental(file,content) {
   const patterns=[
-    ['pegatus-secret','critical',/\b(?:api[_-]?key|password|secret|access[_-]?token)\s*[=:]\s*["']?([A-Za-z0-9_./+\-]{12,})/gi,'Embedded credential'],
     ['pegatus-instruction-override','critical',/\bignore\s+all\s+previous\s+instructions\b/gi,'Instruction override'],
     ['pegatus-command-interpolation','high',/\bcommand\s*[=:][^\n]*\$\{(?:user|input|prompt)[^}]*\}/gi,'Untrusted command interpolation'],
     ['pegatus-unsafe-permission','critical',/\b(?:bypassPermissions|dangerously[_-]skip[_-]permissions|danger-full-access)\b/g,'Unsafe permission configuration'],
   ];
-  return patterns.flatMap(([id,severity,pattern,title])=>[...content.matchAll(pattern)].map(match=>({id,severity,file,title,description:'Pegatus static content check; review configuration in context.',evidence:match[0],line:content.slice(0,match.index).split('\n').length,source:'pegatus-static@1'})));
+  const secrets=credentialAssignments(content).filter(match=>!match.safe && match.value.length>=12).map(match=>({id:'pegatus-secret',severity:'critical',file,title:'Embedded credential',description:'Pegatus static content check; review configuration in context.',evidence:match.text,line:content.slice(0,match.index).split('\n').length,source:'pegatus-static@1'}));
+  return [...secrets,...patterns.flatMap(([id,severity,pattern,title])=>[...content.matchAll(pattern)].map(match=>({id,severity,file,title,description:'Pegatus static content check; review configuration in context.',evidence:match[0],line:content.slice(0,match.index).split('\n').length,source:'pegatus-static@1'})))];
 }
 /** Explicit file scope only. run({command,args,cwd,shell:false,signal,captureLimit})
  * -> {exitCode,stdout,stderr?,error?,signal?,truncated?}. No provider/online/hooks flags.

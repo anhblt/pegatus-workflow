@@ -65,7 +65,7 @@ test('spawn errors and interruptions cannot pass even with exit zero', async () 
     const result = await runCheck(check, { codeState: 'a', run: async () => response });
     assert.equal(result.status, 'failed');
   }
-  const thrown = await runCheck(check, { run: async () => { throw new Error('spawn failed'); } });
+  const thrown = await runCheck(check, { codeState: 'a', run: async () => { throw new Error('spawn failed'); } });
   assert.equal(thrown.status, 'failed');
   assert.equal(thrown.reason, 'execution-error');
 });

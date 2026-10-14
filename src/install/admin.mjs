@@ -15,9 +15,9 @@ import {activationFor} from '../hooks/operations.mjs';
 const packageRoot=fileURLToPath(new URL('../../',import.meta.url));
 function argumentsFor(argv,cwd) {
   const [operation,...args]=argv,options={operation};
-  if(!['install','update','doctor','uninstall'].includes(operation)) throw new TypeError('Unsupported administration operation');
+  if(!['install','update','doctor','uninstall','role'].includes(operation)) throw new TypeError('Unsupported administration operation');
   for(let i=0;i<args.length;i+=2) {
-    const key={'--host':'host','--scope':'scope','--root':'root','--user-root':'userRoot'}[args[i]];
+    const key={'--host':'host','--scope':'scope','--root':'root','--user-root':'userRoot','--role':'role'}[args[i]];
     if(!key || !args[i+1] || args[i+1].startsWith('--') || options[key]) throw new TypeError('Usage: pegatus install|update|doctor|uninstall --host <host> --scope user|project --root <explicit-root> [--user-root <explicit-defaults-root>]');
     options[key]=args[i+1];
   }
@@ -26,6 +26,7 @@ function argumentsFor(argv,cwd) {
   if(!['project','user'].includes(options.scope)) throw new TypeError('Explicit --scope user|project is required');
   options.root=path.resolve(cwd,options.root);
   if(options.userRoot) options.userRoot=path.resolve(cwd,options.userRoot);
+  if(operation==='role' && !options.role) throw new TypeError('Portable role requires --role <catalog-role-id>');
   return options;
 }
 async function configuration(root) {
@@ -118,28 +119,58 @@ export async function runAdministration(argv,{cwd,securityPreflight=scanInstallP
   const version=JSON.parse(catalog.files['package.json'].toString('utf8')).version;
   const details={capabilities:{...generated.capabilities,security:'explicit-call'},warnings:generated.warnings.filter(w=>!w.startsWith('Security scanner unavailable')),snippets:generated.snippets,
     hookActivation:hookActivation(host,root),roleModels:generated.roleModels,tokenControls:generated.tokenControls};
+  const overridePath=`.pegatus/overrides/${host}.json`;
+  const overrideOwned=current.files.find(file=>file.path===overridePath);
+  const userConfig=resolveConfig({user});
+  const userGenerated=userLock?.files.length?generateHost(catalog,{host,scope:'user',root:userRoot,models:userConfig.hostModels[host]??{},modelCapabilities:userConfig.hostModelCapabilities[host],tokenControls:userConfig.tokenControls}):null;
+  const inheritedClean=Boolean(userGenerated && userLock.version===version && userLock.files.length===userGenerated.operations.length
+    && userGenerated.operations.every(op=>userLock.files.some(file=>file.path===op.path && file.installedHash===op.hash && file.actualHash===op.hash)));
+  const packet={schemaVersion:1,host,version,userRoot:userRoot??null,userLockHash:userLock?.lockHash??null,
+    roleModels:generated.roleModels,tokenControls:generated.tokenControls};
+  const packetContent=JSON.stringify(packet,null,2)+'\n';
+  let installedPacket=null;
+  if(overrideOwned?.actualHash===overrideOwned?.installedHash && overrideOwned) installedPacket=JSON.parse((await fileBytes(root,overridePath)).toString('utf8'));
+  const portableReady=Boolean(installedPacket && inheritedClean && installedPacket.userRoot===userRoot && installedPacket.userLockHash===userLock.lockHash);
+  const activation={mode:'explicit-portable',qualified:false,required:'Invoke role and consume its returned procedure, fixed model/effort and token controls in the trusted coordinator; native same-name precedence is not assumed.',
+    command:process.execPath,args:[path.join(userRoot??root,`.pegatus/runtime/${host}/bin/pegatus.mjs`),'role','--host',host,'--scope','project','--root',root,'--user-root',userRoot??root,'--role','<role-id>']};
+  if(operation==='role') {
+    if(!portableReady) return {status:'blocked',evidence:[],reasons:['Owned portable project override and unchanged matching user runtime required; install/update or reconcile first']};
+    const role=catalog.agents.find(role=>role.id===options.role),selection=installedPacket.roleModels.find(role=>role.role===options.role);
+    if(!role || !selection) throw new Error('Unknown portable role');
+    return {status:'passed',evidence:[],reasons:[],activation,selection,tokenControls:installedPacket.tokenControls,
+      procedure:path.join(userRoot,`.pegatus/runtime/${host}`,role.path),
+      instructions:'Read applicable solution instructions and the referenced procedure. Preserve authorized scope, ownership and required checks. Use exactly the returned fixed selection; unsupported pairs retain host defaults. Native execution remains unqualified.'};
+  }
   if(operation==='doctor') {
     const inherited=!current.files.length && Boolean(userLock?.files.length),effective=inherited?userLock:current,effectiveRoot=inherited?userRoot:root;
-    const userConfig=resolveConfig({user});
-    const adapted=inherited?generateHost(catalog,{host,scope:'user',root:userRoot,models:userConfig.hostModels[host]??{},modelCapabilities:userConfig.hostModelCapabilities[host],tokenControls:userConfig.tokenControls}):generated;
-    return {status:'passed',evidence:[],reasons:[],capabilities:{...adapted.capabilities,security:'explicit-call'},warnings:adapted.warnings.filter(w=>!w.startsWith('Security scanner unavailable')),snippets:adapted.snippets,
-      hookActivation:hookActivation(host,effectiveRoot),roleModels:adapted.roleModels,tokenControls:adapted.tokenControls,
+    const adapted=(inherited || overrideOwned) && userGenerated?userGenerated:generated;
+    const locations=effective.files.map(f=>({path:path.join(effectiveRoot,f.path),state:f.actualHash===null?'missing':f.actualHash===f.installedHash?'unchanged':'edited',inherited}));
+    if(overrideOwned && userLock) locations.push(...userLock.files.map(f=>({path:path.join(userRoot,f.path),state:f.actualHash===null?'missing':f.actualHash===f.installedHash?'unchanged':'edited',inherited:true})));
+    return {status:overrideOwned && !portableReady?'blocked':'passed',evidence:[],reasons:overrideOwned && !portableReady?['Portable override or inherited runtime changed; reconcile before activation']:[],capabilities:{...adapted.capabilities,security:'explicit-call'},warnings:adapted.warnings.filter(w=>!w.startsWith('Security scanner unavailable')),snippets:adapted.snippets,
+      hookActivation:hookActivation(host,overrideOwned?userRoot??root:effectiveRoot),roleModels:adapted.roleModels,tokenControls:adapted.tokenControls,
       installedVersion:effective.version??null,configuration:config,inherited,...(inherited?{inheritedRoot:userRoot}:{}),
-      locations:effective.files.map(f=>({path:path.join(effectiveRoot,f.path),state:f.actualHash===null?'missing':f.actualHash===f.installedHash?'unchanged':'edited',inherited})),
-      commandLocations:effective.files.filter(f=>/\/(?:skills\/pegatus-|commands\/pegatus-|workflows\/pegatus-|global_workflows\/pegatus-)/.test(f.path)).map(f=>path.join(effectiveRoot,f.path)),
+      requestedRoleModels:generated.roleModels,
+      ...(overrideOwned?{activation,roleModels:portableReady?installedPacket.roleModels:[],tokenControls:portableReady?installedPacket.tokenControls:null,nativeRoleModels:userGenerated?.roleModels??[],configurationUpdateRequired:overrideOwned.installedHash!==hashBytes(packetContent)}:{}),
+      locations,
+      commandLocations:locations.filter(f=>/[\\/](?:skills[\\/]pegatus-|commands[\\/]pegatus-|workflows[\\/]pegatus-|global_workflows[\\/]pegatus-)/.test(f.path)).map(f=>f.path),
       userInstalledVersion:userLock?.version??null};
   }
   const recovery=await recoverInstall(root,host);
   if(recovery.status==='blocked') return {...recovery,...details};
   // Re-read after recovery; a journal can restore a previous ownership snapshot.
   const owned=await readOwnership(root,host);
+  let desired=operation==='uninstall'?[]:generated.operations;
   if(operation!=='uninstall' && userLock?.files.length) {
+    if(!inheritedClean) return {status:'blocked',evidence:[],reasons:['User installation version, owned bytes or resource closure differs; reconcile explicit user runtime'],...details};
     const byPath=new Map(userLock.files.map(f=>[f.path,f]));
     const same=generated.operations.every(op=>byPath.get(op.path)?.installedHash===op.hash && byPath.get(op.path)?.actualHash===op.hash);
     if(same && !owned.files.length) return {status:'skipped',evidence:[],reasons:['Matching user installation supplies this scope'],inheritedRoot:userRoot,...details};
-    return {status:'blocked',evidence:[],reasons:['Duplicate user/project scope differs; update or uninstall the explicit user scope before installing project overrides'],...details};
+    if(owned.files.some(file=>file.path!==overridePath)) return {status:'blocked',evidence:[],reasons:['Existing project native installation requires explicit reconciliation before portable override'],...details};
+    desired=[{path:overridePath,relativePath:overridePath,content:packetContent,hash:hashBytes(packetContent),sourceHash:hashBytes(packetContent)}];
+    details.activation=activation;
+    details.snippets=userGenerated.snippets;
+    details.hookActivation=hookActivation(host,userRoot);
   }
-  const desired=operation==='uninstall'?[]:generated.operations;
   const currentFiles=[...owned.files],ownedPaths=new Set(currentFiles.map(f=>f.path));
   for(const op of desired) {
     if(ownedPaths.has(op.path)) continue;

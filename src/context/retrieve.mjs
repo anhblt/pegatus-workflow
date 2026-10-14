@@ -1,4 +1,5 @@
-import { readFile } from 'node:fs/promises';
+import { readFile, lstat } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { assertContained } from '../paths.mjs';
 import { resolveConfig } from '../config.mjs';
@@ -98,7 +99,16 @@ async function retrieve({ config, context, query, run }) {
         const file = await assertContained(context.root, entry.path);
         result.trace.push({ operation: 'memory-read', path: file });
         try {
-          result.refs.push({ ...entry, content: await readFile(file, 'utf8') });
+          const bytes = await readFile(file), content = bytes.toString('utf8');
+          let pending = false;
+          if (/^[a-f0-9]{64}$/.test(entry.id ?? '') && /^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(entry.sourceTask)) {
+            const lock = await assertContained(context.root, path.join(context.root,'.pegatus/work',entry.sourceTask,'lessons',`${entry.id}.review-lock`));
+            pending = await lstat(lock).then(()=>true).catch(error=>{if(error.code!=='ENOENT') throw error;return false;});
+          }
+          const verified = !pending && entry.documentHash === createHash('sha256').update(bytes).digest('hex');
+          if (!verified) result.uncertainties.push({ code: pending ? 'memory-review-pending' : entry.documentHash ? 'memory-content-changed' : 'memory-digest-missing', path: file,
+            message: 'The current body is not bound to a verified approval; review source and propose the current claim before relying on it.' });
+          result.refs.push({ ...entry, content, ...(!verified ? { approvalState: 'unverified', freshness: {status:'unknown'}, requiresSourceConfirmation:true, confirmation:'agent-review-required' } : {}) });
         } catch (error) {
           result.uncertainties.push({ code: 'memory-unavailable', path: file, message: error.message });
         }

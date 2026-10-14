@@ -4,6 +4,7 @@ import path from 'node:path';
 import { assertContained } from '../paths.mjs';
 import { indexMemory } from './index.mjs';
 import { lintCatalog } from '../catalog/lint.mjs';
+import { redactCredentials } from '../security/credentials.mjs';
 
 const nonempty = value => typeof value === 'string' && Boolean(value.trim()) && !value.includes('\0');
 const object = value => value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -25,10 +26,7 @@ function excluded(file, patterns) {
 }
 
 function redact(value, secrets) {
-  let result = value;
-  for (const secret of [...secrets].sort((a, b) => b.length - a.length)) result = result.replaceAll(secret, '[REDACTED]');
-  return result.replace(/\b(password|token|secret|api[_-]?key)\s*[:=]\s*([^\s,;]+)/gi, '$1=[REDACTED]')
-    .replace(/\bBearer\s+[A-Za-z0-9._~+/=-]+/gi, 'Bearer [REDACTED]');
+  return redactCredentials(value, secrets);
 }
 
 function payload(candidate) {
@@ -176,21 +174,105 @@ export async function saveCandidate(root, candidate) {
   return candidate;
 }
 
-export async function recordReview(root, candidate, review, options) {
+async function currentCandidate(root, candidate) {
   validateCandidate(candidate);
-  const directory = await candidateDirectory(root, candidate.sourceTask);
   const current = (await listCandidates(root, { taskId: candidate.sourceTask, projectId: candidate.projectId }))
     .find(item => item.id === candidate.id);
   if (!current || current.contentHash !== candidate.contentHash) throw new Error('Candidate persistence mismatch');
   if (candidate.status !== current.status || candidate.approvalState !== current.approvalState
     || JSON.stringify(candidate.reviews ?? []) !== JSON.stringify(current.reviews))
     throw new Error('Stale candidate review history; reload the current persisted candidate');
-  const next = reviewLesson(current, review, options);
-  const event = next.reviews.at(-1);
+  return current;
+}
+async function appendReview(root, directory, candidate, event) {
   const file = path.join(directory, `${candidate.id}.reviews`, `${hash(JSON.stringify(event))}.json`);
   try { await exclusive(root, file, JSON.stringify(event, null, 2) + '\n'); }
-  catch (error) { if (error.code !== 'EEXIST') throw error; }
-  return next;
+  catch (error) {
+    if (error.code !== 'EEXIST' || JSON.stringify(JSON.parse(await readFile(file, 'utf8'))) !== JSON.stringify(event)) throw error;
+  }
+}
+async function snapshot(root, files) {
+  return Promise.all(files.map(async file => {
+    const target = await assertContained(root, path.resolve(root, file));
+    const bytes = await readFile(target).catch(error => { if (error.code !== 'ENOENT') throw error; return null; });
+    return {path:file, hash:bytes === null ? null : hash(bytes)};
+  }));
+}
+
+/** Serialize persisted validation, destination mutation and immutable append.
+ * An interruption retains the intent lock; recovery requires stopped-writer
+ * confirmation and the inspected lock digest, never an age-based takeover. */
+export async function commitReview(root, candidate, review, options = {}) {
+  validateCandidate(candidate);
+  const directory = await candidateDirectory(root, candidate.sourceTask);
+  const lockPath = await assertContained(root, path.join(directory, `${candidate.id}.review-lock`));
+  await mkdir(directory, {recursive:true});
+  const lock = await open(lockPath, 'wx');
+  let prepared = false, committed = false;
+  try {
+  const current = await currentCandidate(root, candidate);
+  const next = reviewLesson(current, review, options);
+  const event = next.reviews.at(-1);
+  const destination = options.target ? normalize(options.target.path) : null;
+  if (options.target && path.resolve(options.target.root) !== path.resolve(root)) throw new Error('Transactional review requires the explicit project root');
+  if (options.target) await authorizeDestination(current, options.target);
+  const before = await snapshot(root, destination ? [destination, `${destination}.json`] : []);
+  const intent = {schemaVersion:1,pid:process.pid,candidateId:candidate.id,sourceTask:candidate.sourceTask,projectId:candidate.projectId,event,destination,before};
+  await lock.writeFile(JSON.stringify(intent, null, 2)+'\n'); await lock.sync(); prepared = true;
+  let outcome;
+  if (options.target) outcome = review.decision === 'approve'
+    ? await promoteLesson(current, {...options, approval:review})
+    : await retireLesson(current, {...options, review});
+  await appendReview(root, directory, candidate, event); committed = true;
+  return outcome ?? {status:'passed',candidate:next,evidence:[],reasons:[]};
+  } finally {
+    await lock.close();
+    if (!prepared || committed) await unlink(lockPath);
+  }
+}
+export async function recordReview(root, candidate, review, options) {
+  return (await commitReview(root, candidate, review, options)).candidate;
+}
+
+/** Only complete an exact destination/event, or abort when destination bytes
+ * still equal the pre-mutation snapshot. Never delete uncertain authored files. */
+export async function recoverReview(root, request, {trustedCoordinator = false} = {}) {
+  if (!trustedCoordinator || request.stoppedWriter !== true || !['complete','abort'].includes(request.decision)
+    || !/^[a-f0-9]{64}$/.test(request.candidateId ?? '') || !/^[a-f0-9]{64}$/.test(request.expectedLockHash ?? ''))
+    throw new Error('Recovery requires trusted stopped-writer confirmation and inspected lock hash');
+  const directory = await candidateDirectory(root, request.taskId);
+  const lockPath = await assertContained(root, path.join(directory, `${request.candidateId}.review-lock`));
+  const recoveryPath = `${lockPath}.recovery`, recovery = await open(recoveryPath, 'wx');
+  try {
+    const bytes = await readFile(lockPath);
+    if (bytes.length > 262144 || hash(bytes) !== request.expectedLockHash) throw new Error('Review recovery lock changed');
+    const intent = JSON.parse(bytes);
+    if (intent.schemaVersion !== 1 || intent.candidateId !== request.candidateId || intent.sourceTask !== request.taskId || intent.projectId !== request.projectId)
+      throw new Error('Review recovery scope mismatch');
+    const current = (await listCandidates(root, {taskId:request.taskId,projectId:request.projectId})).find(item=>item.id===request.candidateId);
+    if (!current) throw new Error('Recovery candidate missing');
+    const already = current.reviews.some(event=>JSON.stringify(event)===JSON.stringify(intent.event));
+    if (!already) {
+      const next = reviewLesson(current, intent.event, {trustedCoordinator:true});
+      if (request.decision === 'abort') {
+        const observed = await snapshot(root, intent.before.map(item=>item.path));
+        if (JSON.stringify(observed) !== JSON.stringify(intent.before)) throw new Error('Destination changed; preserve files and reconcile before recovery');
+      } else {
+        if (intent.destination) {
+          const file = await assertContained(root, path.resolve(root, intent.destination));
+          const content = await readFile(file), metadata = JSON.parse(await readFile(await assertContained(root, `${file}.json`), 'utf8'));
+          if (metadata.candidateHash !== current.contentHash || metadata.projectId !== current.projectId
+            || metadata.documentHash !== hash(content) || hash(content) !== hash(`# ${current.title}\n\n${current.content}\n`)
+            || metadata.status !== next.status || JSON.stringify(metadata.reviews) !== JSON.stringify(next.reviews))
+            throw new Error('Destination does not match interrupted reviewed claim');
+        }
+        await appendReview(root, directory, current, intent.event);
+      }
+    } else if (request.decision === 'abort') throw new Error('Review already committed; cannot abort history');
+    if (hash(await readFile(lockPath)) !== request.expectedLockHash) throw new Error('Review recovery lock changed');
+    await unlink(lockPath);
+    return {status:'passed',evidence:[],reasons:[already?'review-already-committed':`review-recovery-${request.decision}`]};
+  } finally { await recovery.close(); await unlink(recoveryPath); }
 }
 
 export async function listCandidates(root, { taskId, projectId }) {
