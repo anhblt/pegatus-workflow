@@ -4732,7 +4732,7 @@
     },
     "tokens": {
       "owner": "src/telemetry/usage.mjs and role modelTier",
-      "implementation": "bounded context manifests/output previews/checkpoint summaries; team-declared fixed model/effort routing; unavailable usage remains null"
+      "implementation": "bounded context manifests/output previews/checkpoint summaries; fixed fast/standard/deep tiers with explicit mappings or host-coordinator selection policy for unconfigured tiers; unavailable usage remains null"
     },
     "orchestration": {
       "owner": "pegatus-start and pegatus-execute",

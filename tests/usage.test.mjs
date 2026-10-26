@@ -36,7 +36,6 @@ test('unknown models, effort support and tiers retain host defaults with explici
     { models: { deep: 'team-model' } },
     { models: { deep: 'unknown-model' }, modelCapabilities: capability },
     { models: { deep: { model: 'team-model', effort: 'low' } }, modelCapabilities: capability },
-    { models: {} },
   ]) {
     const r = resolveRoleTier({ modelTier: 'deep' }, { host: 'codex', ...options });
     assert.equal(r.model, null); assert.equal(r.effort, null); assert.equal(r.mode, 'host-default');
@@ -45,6 +44,44 @@ test('unknown models, effort support and tiers retain host defaults with explici
   assert.match(resolveRoleTier({ modelTier: 'magic' }, { host: 'codex' }).warnings[0], /tier/);
   const ag = resolveRoleTier({ modelTier: 'deep' }, { host: 'antigravity', models: { deep: 'team-model' }, modelCapabilities: capability });
   assert.equal(ag.mode, 'instruction-only'); assert.equal(ag.model, null);
+});
+test('missing mappings request coordinator selection within the existing role tier', () => {
+  for (const tier of ['fast', 'standard', 'deep']) {
+    const result = resolveRoleTier({ modelTier: tier }, { host: 'codex' });
+    assert.equal(result.tier, tier);
+    assert.equal(result.mode, 'coordinator-selection');
+    assert.equal(result.model, null);
+    assert.equal(result.effort, null);
+    assert.equal(result.selectionPolicy.tier, tier);
+    assert.equal(result.selectionPolicy.owner, 'coordinator');
+    assert.equal(result.selectionPolicy.requireExplicitPair, true);
+    assert.equal(result.qualified, false);
+  }
+  const partial = resolveRoleTier({ modelTier: 'fast' }, { host: 'codex', models: { deep: 'another-tier' } });
+  assert.equal(partial.mode, 'coordinator-selection');
+  const configured = resolveRoleTier({ modelTier: 'deep' }, { host: 'codex',
+    models: { deep: { model: 'team-model', effort: 'high' } }, modelCapabilities: capability });
+  assert.equal(configured.mode, 'configured');
+  assert.equal(configured.selectionPolicy, undefined);
+  const invalid = resolveRoleTier({ modelTier: 'deep' }, { host: 'codex', models: { deep: 'unsupported' } });
+  assert.equal(invalid.mode, 'host-default');
+  assert.equal(invalid.selectionPolicy, undefined);
+});
+
+test('generated workflows and role instructions carry host-aware fallback selection', () => {
+  const catalog = { files: {}, skills: [{ id: 'execute', path: 'catalog/skills/pegatus-execute/SKILL.md' }],
+    agents: [{ id: 'reviewer', path: 'catalog/agents/reviewer.md', modelTier: 'deep' }] };
+  for (const host of ['codex', 'claude', 'antigravity']) {
+    const generated = generateHost(catalog, { host, scope: 'project', root: path.resolve('.') });
+    for (const operation of generated.operations) {
+      assert.match(operation.content, /fast:.*mechanical/);
+      assert.match(operation.content, /standard:.*integration/);
+      assert.match(operation.content, /deep:.*architecture/);
+      assert.match(operation.content, /both model and effort/);
+      assert.match(operation.content, /actual host.*allowlist/);
+    }
+    assert.doesNotMatch(generated.operations.map(op => op.content).join('\n'), /^model(?:_reasoning_effort)?\s*[:=]/m);
+  }
 });
 test('explicit model and effort config validates fields and replaces complete tier mappings', () => {
   const user = { hostModels: { codex: { deep: { model: 'old', effort: 'high' } } } };

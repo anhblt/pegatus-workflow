@@ -49,6 +49,10 @@ test('project configuration wins while user/project installations deduplicate',a
   assert.equal(doctor.locations.filter(f=>!f.inherited).length,1);
   const selected=await runAdministration(['role',...project,'--role','context-explorer'],options);
   assert.equal(selected.status,'passed');assert.equal(selected.selection.model,'project-model');assert.ok(selected.procedure.startsWith(options.home));await readFile(selected.procedure);
+  const automatic=await runAdministration(['role',...project,'--role','planner-architect'],options);
+  assert.equal(automatic.status,'passed');assert.equal(automatic.selection.mode,'coordinator-selection');
+  assert.equal(automatic.selection.selectionPolicy.tier,'deep');
+  assert.match(automatic.instructions,/records both model and effort/);
   assert.deepEqual((await runAdministration(['doctor',...user],options)).locations,inherited.locations.map(f=>({...f,inherited:false})));
   const second=path.join(path.dirname(options.cwd),'second');await mkdir(second);
   const secondDoctor=await runAdministration(['doctor','--host','codex','--scope','project','--root',second,'--user-root',options.home],options);

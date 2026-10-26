@@ -142,7 +142,7 @@ export async function runAdministration(argv,{cwd,securityPreflight=scanInstallP
     if(!role || !selection) throw new Error('Unknown portable role');
     return {status:'passed',evidence:[],reasons:[],activation,selection,tokenControls:installedPacket.tokenControls,
       procedure:path.join(userRoot,`.pegatus/runtime/${host}`,role.path),
-      instructions:'Read applicable solution instructions and the referenced procedure. Preserve authorized scope, ownership and required checks. Use exactly the returned fixed selection; unsupported pairs retain host defaults. Native execution remains unqualified.'};
+      instructions:'Read applicable solution instructions and the referenced procedure. Preserve authorized scope, ownership and required checks. Honor the returned configured selection; when selectionPolicy is present, the trusted coordinator follows it and records both model and effort before spawning within the assigned tier. Unsupported configured pairs retain host defaults. Native execution remains unqualified.'};
   }
   if(operation==='doctor') {
     const inherited=!current.files.length && Boolean(userLock?.files.length),effective=inherited?userLock:current,effectiveRoot=inherited?userRoot:root;

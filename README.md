@@ -308,7 +308,7 @@ Configuration does not execute checks by itself. The verification workflow/coord
 
 ### Optional fixed models
 
-Empty mappings retain host defaults with warnings. Team-selected mappings need matching declarations. Merge this fragment into config; names are placeholders, not availability recommendations:
+Unconfigured tiers use host-coordinator selection within fast, standard and deep; unavailable host selection retains defaults with a disclosed limitation. Team-selected mappings need matching declarations. Merge this fragment into config; names are placeholders, not availability recommendations:
 
 ```json
 {

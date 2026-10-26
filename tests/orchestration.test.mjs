@@ -100,6 +100,15 @@ test('handoff blocks missing or oversized required context and cannot turn worke
   assert.equal(brief.reason, 'required-handoff-exceeds-budget');
 });
 
+test('handoff carries the unconfigured role tier policy to the host coordinator', () => {
+  const brief = call('buildHandoff', task('a', { role: { modelTier: 'standard' } }), { ...context(), host: 'codex' });
+  assert.equal(brief.status, 'passed');
+  assert.equal(brief.model.mode, 'coordinator-selection');
+  assert.equal(brief.model.selectionPolicy.tier, 'standard');
+  assert.match(brief.model.selectionPolicy.instructions, /both model and effort/);
+  assert.equal(brief.model.model, null);
+});
+
 async function fixture(tasks, run, extra = {}) {
   const root = await mkdtemp(path.join(os.tmpdir(), 'pegatus-orchestration-'));
   const approval = { type: 'approvalGranted', kind: 'design', scopeHash: 'scope-1', evidence: 'chat:approval-1' };

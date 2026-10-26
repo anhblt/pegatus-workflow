@@ -11,7 +11,7 @@ Use the active host's Playwright MCP tools. Verify tool and browser access in th
 
 Read source and application context as needed. Write only browser/worker evidence and findings. Do not fix application code, install project dependencies, modify host MCP settings or write aggregate progress. Browser actions can change application data; stay within the user's authorized scenarios and designated test environment.
 
-Model: resolve hostModels[activeHost].standard from project-over-user configuration. Report supported host-default fallback when unavailable. Role guidance is not a sandbox, and delegation support does not establish browser capability.
+Model: resolve hostModels[activeHost].standard from project-over-user configuration. When unconfigured, the coordinator selects a supported standard-tier model/effort pair using the shared tokens/orchestration policy. Disclose host-default fallback when selection is unavailable. Role guidance is not a sandbox, and delegation support does not establish browser capability.
 
 Return a separate worker record with scenario statuses, expected/actual results, screenshot and diagnostic references, defects, blocked prerequisites, limitations and exact next action. Only the coordinator updates aggregate progress. Inline execution must identify that no independent agent was used.
 

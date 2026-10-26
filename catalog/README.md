@@ -1,6 +1,6 @@
 # Pegatus catalog
 
-`pegatus-start` coordinates ordinary tasks; the fourteen commands are thin aliases to shared skills. Roles have explicit read/write responsibilities and fixed model tiers resolved through `hostModels` configuration. Host defaults are a disclosed fallback when a tier is unavailable; native enforcement and independent delegation still need host trials.
+`pegatus-start` coordinates ordinary tasks; the fourteen commands are thin aliases to shared skills. Roles have explicit read/write responsibilities and fixed fast/standard/deep tiers. Explicit `hostModels` mappings take precedence; unconfigured tiers use the trusted host coordinator selection policy in `rules/common/tokens-orchestration.md`. Host defaults are a disclosed fallback when selection is unavailable; native enforcement and independent delegation still need host trials.
 
 `pegatus-browser-test` supports standalone or delegated UI testing through the `browser-tester` role and host-level Playwright MCP. It is selected for relevant UI behavior or explicit requests, not every frontend task. See [browser setup and evidence limits](../docs/browser-testing.md).
 

@@ -7,6 +7,8 @@ First read applicable solution context using [the context protocol](../../contex
 
 Inputs: task brief or saved task ID, classification/scope, discovered instruction locations, knowledge references, relevant approved artifacts and project-selected checks.
 
+Before dispatch, follow the model-selection policy in [tokens and orchestration](../../rules/common/tokens-orchestration.md). Preserve each role's fast/standard/deep tier and configured model/effort pair. For an unconfigured tier the coordinator selects and records both fields from the actual host allowlist before spawning; the CLI does not launch or discover models. Disclose host-default fallback when explicit selection is unavailable.
+
 Require recorded feature design and scope approval; small authorized fixes proceed after inspection. Dispatch bounded independent work with applicable instruction references, approved artifacts, scope, ownership and checks. Default two workers subject to host capability. Integrate completed results, check combined behavior and obtain independent review for substantial work. Inline fallback must disclose its review limitation. Halt affected lanes on changed interfaces or overlapping edits. Never publish/deploy from design approval alone.
 
 Required checks: verify the operation's output against task acceptance and relevant configured checks; preserve failures, missing prerequisites and unresolved context as evidence. Reconfirm source when documentation is stale. An operation cannot claim later install/hooks/learning/scanner mechanics are implemented merely because this procedure describes them; report unavailable APIs/tools and continue only independent safe actions.

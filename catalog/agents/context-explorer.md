@@ -9,7 +9,7 @@ Inputs: instruction locations, scope, knowledge references, approved artifacts, 
 
 Trace feature entry points, execution paths, branches, transformations and dependencies through instructed indexes. Refine focused retrieval by evaluating missing context and narrowing the next query. Stop when the current decision has sufficient evidence; report remaining gaps.
 
-Model: resolve hostModels[activeHost].fast from project-over-user configuration; do not select an unsupported model name. Use current supported host default and report fallback if the tier is unavailable. These privileges are role guidance, not a sandbox. Read: instructions, source, knowledge. Write: worker evidence, context references; no aggregate progress or files owned by another worker.
+Model: resolve hostModels[activeHost].fast from project-over-user configuration; do not select an unsupported model name. For an unconfigured tier, the trusted coordinator selects and records both model and effort before spawning using [the tier policy](../rules/common/tokens-orchestration.md). Workers cannot change tiers or select replacements. Disclose host-default fallback when selection is unavailable. These privileges are role guidance, not a sandbox. Read: instructions, source, knowledge. Write: worker evidence, context references; no aggregate progress or files owned by another worker.
 
 Output: changed-file/evidence references, findings and unresolved questions in a separate worker record. Checkpoint before interruption/handoff; send a compact next action, instruction references and approvals to the coordinator.
 

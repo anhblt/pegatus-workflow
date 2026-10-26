@@ -2,6 +2,12 @@ const object = value => value !== null && typeof value === 'object' && !Array.is
 const text = value => typeof value === 'string' && value.trim().length > 0 && !/[\r\n\0]/.test(value);
 const hosts = ['claude', 'codex', 'antigravity'];
 const tiers = ['fast', 'standard', 'deep'];
+const tierObjectives = Object.freeze({
+  fast: 'Use a cheap, fast model for mechanical tasks with clear specifications.',
+  standard: 'Use a balanced model for integration, debugging and multi-file coordination.',
+  deep: 'Use the strongest suitable model for architecture, complex reasoning and difficult review.',
+});
+export const modelSelectionInstructions = 'Keep each catalog role in its assigned fast, standard or deep tier. Honor explicit project-over-user model/effort mappings; do not replace unsupported configured mappings automatically. When a tier is unconfigured, the trusted coordinator selects from the actual host spawn allowlist: fast: cheap, fast model for mechanical tasks; standard: balanced model for integration and debugging; deep: strongest suitable model for architecture and complex reasoning. Select and specify both model and effort using current host capability evidence, never guessed model names or unsupported effort values. Record the selected pair, tier and reason in task evidence before spawning. Follow the actual spawn tool contract, including fork restrictions. If explicit selection or capability evidence is unavailable, disclose the limitation and retain host defaults. Workers cannot change their own model/effort or assigned tier.';
 export const tokenDefaults = Object.freeze({ maxContextChars: 32768, maxContextRefs: 128, maxOutputChars: 16384, maxSummaryChars: 4096 });
 
 export function resolveTokenControls(input = {}) {
@@ -46,7 +52,7 @@ export function recordUsage({ source, values = null } = {}) {
   return { schemaVersion: 1, source, available, values: available ? { ...values } : null };
 }
 
-/** Resolve the catalog role's fixed tier. Unsupported pairs never select another tier/model.
+/** Resolve the catalog role's fixed tier. Missing mappings request host-coordinator selection.
  * configured means declared by the team, not observed native enforcement. */
 export function resolveRoleTier(role, { host, models = {}, modelCapabilities } = {}) {
   if (!hosts.includes(host) || !object(models)) throw new TypeError('Host and fixed models are required');
@@ -58,8 +64,13 @@ export function resolveRoleTier(role, { host, models = {}, modelCapabilities } =
     support: 'unknown', qualified: false, evidenceSource: modelCapabilities?.source ?? null, warnings: [] };
   let reason;
   if (!tiers.includes(tier)) reason = `Unsupported role tier ${tier}`;
+  else if (!requested) {
+    resolved.mode = host === 'antigravity' ? 'instruction-only' : 'coordinator-selection';
+    resolved.selectionPolicy = { owner: 'coordinator', tier, objective: tierObjectives[tier],
+      requireExplicitPair: true, instructions: modelSelectionInstructions };
+    resolved.warnings.push(`No configured ${host} ${tier} model; coordinator selection required before spawning. Host defaults remain until a supported pair is selected; native enforcement is unverified.`);
+  }
   else if (host === 'antigravity') { resolved.mode = 'instruction-only'; reason = 'Native model/effort role mapping is unverified'; }
-  else if (!requested) reason = `No configured ${host} ${tier} model`;
   else if (!modelCapabilities) reason = `Exact ${host} model/effort support is unknown for ${tier}`;
   else {
     const declared = modelCapabilities.models.find(item => item.model === requested.model);

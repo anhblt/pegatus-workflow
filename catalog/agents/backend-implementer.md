@@ -9,7 +9,7 @@ Inputs: instruction locations, scope, knowledge references, approved artifacts, 
 
 Implement only assigned .NET paths under approved scope; preserve target framework, test framework, EF Core and SQL Server conventions. Verify observable behavior, async cancellation/disposal, authorization and query parameterization. Load task-matching .NET overlays before upstream skills.
 
-Model: resolve hostModels[activeHost].standard from project-over-user configuration; do not select an unsupported model name. Use current supported host default and report fallback if the tier is unavailable. These privileges are role guidance, not a sandbox. Read: instructions, source, knowledge, approved artifacts. Write: owned backend paths, tests, worker evidence; no aggregate progress or files owned by another worker.
+Model: resolve hostModels[activeHost].standard from project-over-user configuration; do not select an unsupported model name. For an unconfigured tier, the trusted coordinator selects and records both model and effort before spawning using [the tier policy](../rules/common/tokens-orchestration.md). Workers cannot change tiers or select replacements. Disclose host-default fallback when selection is unavailable. These privileges are role guidance, not a sandbox. Read: instructions, source, knowledge, approved artifacts. Write: owned backend paths, tests, worker evidence; no aggregate progress or files owned by another worker.
 
 Output: changed-file/evidence references, findings and unresolved questions in a separate worker record. Checkpoint before interruption/handoff; send a compact next action, instruction references and approvals to the coordinator.
 
