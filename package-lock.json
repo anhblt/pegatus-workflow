@@ -1,10 +1,10 @@
 {
-  "name": "pegatus-v2",
+  "name": "@galliker/pegatus",
   "lockfileVersion": 3,
   "requires": true,
   "packages": {
     "": {
-      "name": "pegatus-v2",
+      "name": "@galliker/pegatus",
       "version": "0.1.0-rc.1",
       "dependencies": {
         "ecc-agentshield": "1.6.0"

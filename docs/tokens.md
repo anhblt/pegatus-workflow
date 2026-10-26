@@ -1,5 +1,7 @@
 # Token controls and fixed role tiers
 
+The browser-tester role uses the `standard` tier, resolved through the existing per-host model/effort configuration and disclosed host-default fallback. It receives scoped scenarios and reference-based context, then returns bounded summaries with references to retained screenshots and diagnostics. Browser access is a separate host capability; model selection or generated role files do not establish Playwright MCP access. See [browser testing](browser-testing.md).
+
 `src/telemetry/usage.mjs` provides explicit, local helpers. It makes no model/provider requests, reads no personal configuration, and does not infer token counts from characters. Native host limits and actual model availability still require the Task 10 Windows/Linux trials.
 
 Project `.pegatus/config.json` overrides explicitly supplied user defaults. `hostModels[host][fast|standard|deep]` accepts a legacy model string or `{model,effort?}`. A project tier replaces the entire pair so a changed model cannot inherit another model's effort. Catalog roles retain their assigned tier; agents cannot choose replacement models or effort levels.

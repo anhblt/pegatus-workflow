@@ -15,7 +15,8 @@ async function fixture(t, { nested, extra } = {}) {
   });
   const kit = path.join(root, 'kit'), project = path.join(root, 'project');
   await mkdir(kit); await mkdir(project);
-  for (const directory of ['src', 'bin', 'catalog', 'vendor', 'audit']) {
+  // Keep catalog-linked documentation in the isolated package resource closure.
+  for (const directory of ['src', 'bin', 'catalog', 'vendor', 'audit', 'docs']) {
     await cp(path.join(source, directory), path.join(kit, directory), { recursive: true });
   }
   for (const file of ['package.json', 'sources.lock.json', 'release.json']) {

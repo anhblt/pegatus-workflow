@@ -109,9 +109,12 @@ function hookActivation(host,root) {
 /** Explicit roots are the only filesystem scopes inspected. project overrides user config.
  * securityPreflight is a Result or async (plan)=>Result supplied by the security adapter.
  */
-export async function runAdministration(argv,{cwd,securityPreflight=scanInstallPlan}={}) {
+export async function runAdministration(argv,{cwd,securityPreflight=scanInstallPlan,dryRun=false}={}) {
   const options=argumentsFor(argv,cwd),{operation,root,host,scope,userRoot}=options;
   await assertContained(root,root);
+  if(dryRun && (await fileBytes(root,`.pegatus/install-journal-${host}.json`,{internal:true})
+    || await fileBytes(root,`.pegatus/install-busy-${host}.json`,{internal:true})))
+    return {status:'blocked',evidence:[],reasons:['Pending installation recovery or active writer; inspect before setup'],preview:{writes:[],removes:[],conflicts:[]}};
   const user=await configuration(scope==='user'?root:userRoot),project=scope==='project'?await configuration(root):{};
   const config=resolveConfig({user,project}),catalog=await runtimeCatalog();
   const generated=generateHost(catalog,{host,scope,root,models:config.hostModels[host]??{},modelCapabilities:config.hostModelCapabilities[host],tokenControls:config.tokenControls});
@@ -155,7 +158,7 @@ export async function runAdministration(argv,{cwd,securityPreflight=scanInstallP
       commandLocations:locations.filter(f=>/[\\/](?:skills[\\/]pegatus-|commands[\\/]pegatus-|workflows[\\/]pegatus-|global_workflows[\\/]pegatus-)/.test(f.path)).map(f=>f.path),
       userInstalledVersion:userLock?.version??null};
   }
-  const recovery=await recoverInstall(root,host);
+  const recovery=dryRun?{status:'skipped'}:await recoverInstall(root,host);
   if(recovery.status==='blocked') return {...recovery,...details};
   // Re-read after recovery; a journal can restore a previous ownership snapshot.
   const owned=await readOwnership(root,host);
@@ -178,6 +181,8 @@ export async function runAdministration(argv,{cwd,securityPreflight=scanInstallP
     if(bytes!==null) currentFiles.push({path:op.path,actualHash:hashBytes(bytes)});
   }
   const plan=planInstall(currentFiles,desired,{root,host,scope,version,expectedLockHash:owned.lockHash,sourceRevisions:catalog.sourceLock.sources.map(s=>({id:s.id,revision:s.revision}))});
+  if(dryRun) return {status:plan.conflicts.length?'blocked':'passed',evidence:[],reasons:plan.conflicts.map(c=>`${c.path}: ${c.reason}`),
+    preview:{writes:plan.writes.map(f=>f.path),removes:plan.removes.map(f=>f.path),conflicts:plan.conflicts},...details};
   const security=typeof securityPreflight==='function'?await securityPreflight(plan):securityPreflight;
   return {...await applyInstall(plan,{securityPreflight:security}),security,...details};
 }

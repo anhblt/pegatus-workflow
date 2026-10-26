@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { homedir } from 'node:os';
 import { assertContained } from '../src/paths.mjs';
 import { loadProgress, saveProgress } from '../src/state/store.mjs';
 import { reconcile } from '../src/state/reconcile.mjs';
@@ -16,12 +17,13 @@ import { dispatchEvent } from '../src/hooks/dispatch.mjs';
 import { activationFor, mapNativeEvent, nativeResponse } from '../src/hooks/operations.mjs';
 import { runLearningCommand, learningCollector } from '../src/memory/cli.mjs';
 import { runOrchestrationCommand } from '../src/orchestration/cli.mjs';
+import { runSetup } from '../src/install/setup.mjs';
 
 const operations = new Set([
   'checkpoint', 'resume', 'learn', 'memory', 'security', 'status',
   'install', 'update', 'doctor', 'uninstall', 'role', 'catalog',
   'lifecycle', 'hook-native', 'hook-activation',
-  'orchestrate',
+  'orchestrate', 'setup',
 ]);
 const hostWorkflows = new Set(['start','design','plan','execute','investigate','review','verify']);
 
@@ -187,7 +189,9 @@ export async function main(argv, { cwd, home, securityPreflight, orchestrationCa
   if (!Array.isArray(argv) || typeof cwd !== 'string' || typeof home !== 'string') {
     throw new TypeError('main requires argv and cwd/home paths');
   }
-  if (argv.length === 0 || ['--help', '-h', 'help'].includes(argv[0])) {
+  if (argv.length === 0 || argv.length === 1 && ['install','setup'].includes(argv[0])) return runSetup({cwd,home});
+  if (['--help', '-h', 'help'].includes(argv[0])) {
+    process.stdout.write('Run pegatus (no arguments), setup, or install (no flags) in an interactive terminal for guided host detection and installation.\n');
     process.stdout.write('Usage: pegatus <operation> [options]\nOperations: ' + [...operations].join(', ') + '\nHost workflows: invoke installed pegatus-start, pegatus-design, pegatus-plan, pegatus-execute, pegatus-investigate, pegatus-review, pegatus-verify skills in your host. These are not CLI subcommands.\nPortable roles: role --host <host> --scope project --root <project> --user-root <defaults> --role <role-id>; consume the returned procedure and fixed selection in the coordinator.\n');
     return 0;
   }
@@ -266,5 +270,5 @@ export async function main(argv, { cwd, home, securityPreflight, orchestrationCa
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  process.exitCode = await main(process.argv.slice(2), { cwd: process.cwd(), home: process.env.HOME ?? process.env.USERPROFILE ?? '' });
+  process.exitCode = await main(process.argv.slice(2), { cwd: process.cwd(), home: homedir() });
 }

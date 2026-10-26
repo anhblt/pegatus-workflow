@@ -1,5 +1,9 @@
 # First-release acceptance: incomplete
 
+## Browser-testing extension qualification
+
+The October 2026 extension adds a ninth role and fourteenth workflow alias. Catalog/adapter tests verify packaging and entry points, not browser execution. In addition to the existing conditions below, retain actual host/OS evidence for: direct pegatus-browser-test without implementation; verifier-selected UI testing; actual Playwright MCP access inside the delegated role or disclosed inline fallback; screenshots and expected/actual scenario results; missing tool/login/service blocking; failure despite a passing build; and retesting after a fix. A task without observable UI impact may omit browser checks with a reason. No application Playwright installation is required. These native browser trials remain open; see [browser testing](../browser-testing.md).
+
 Candidate `0.1.0-rc.1`, 2026-10-13. All 17 conditions are required for release. Automated fixtures establish portable contracts only; native host behavior requires observed trials. CI is defined, not executed. The Vercel notice is a separate release blocker. See [Windows](0.1.0-windows.md), [Linux](0.1.0-linux.md), [native trials](0.1.0-live-hosts.md), and [licensing](0.1.0-licensing.md).
 
 | # | Spec condition | Portable evidence / remaining qualification |

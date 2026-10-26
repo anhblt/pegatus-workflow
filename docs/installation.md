@@ -1,5 +1,19 @@
 # Installation and ownership
 
+## Browser tester installation boundary
+
+The catalog includes nine roles and fourteen workflow aliases, including browser-tester and pegatus-browser-test. Update an existing installation through the normal ownership/security checks and reload the host to expose the new entry points. Claude/Codex receive generated native role wrappers; Antigravity uses portable role guidance and its workflow wrapper, subject to existing support limits.
+
+Playwright MCP and its compatible browser are configured separately at user/host scope. Pegatus install/update does not register MCP, download browsers or add Playwright to application dependencies. The active session and delegated tester must verify actual browser tool access; otherwise selected browser scenarios remain blocked. See [browser setup and invocation](browser-testing.md).
+
+## Guided terminal setup
+
+Run `node bin/pegatus.mjs` (or `setup` / bare `install`) from an interactive terminal. The guided flow uses ↑/↓ to navigate, Space to toggle agents, and Enter to confirm. Detected supported applications are preselected; configuration-only presence remains labeled unconfirmed. Scope and final confirmation use single-choice menus; final confirmation defaults to No. Destination paths remain editable text prompts. Ctrl-C cancels; during apply, the active transaction settles before setup stops.
+
+Detection, destination entry, preview, installation progress, doctor details, and completion share a connected console layout. `NO_COLOR` disables color; the focused row also has a visible marker. Explicit CLI commands retain their structured output and noninteractive behavior. No terminal UI dependency is installed.
+
+## Administration and ownership
+
 Administration always requires a host, scope, and explicit existing root. User scope uses the supplied root as the home layout; the installer never discovers or writes the machine's home automatically. Project defaults are read only from an explicitly supplied `--user-root`; project `.pegatus/config.json` overrides that root's configuration using `resolveConfig`. Existing configuration, instruction files, generators, and hook registrations are preserved.
 
 ```text

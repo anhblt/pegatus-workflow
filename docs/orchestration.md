@@ -1,5 +1,13 @@
 # Orchestration
 
+## Browser testing lane
+
+The verifier can request the browser-tester role through [pegatus-browser-test](../catalog/skills/pegatus-browser-test/SKILL.md) for selected UI scenarios. Direct user invocation can test an existing application with no implementation diff. Browser testing is not mandatory for every frontend task; record why it is unnecessary when observable UI behavior is unaffected.
+
+Pass the URL or startup procedure, scenarios/expected outcomes, test data, viewports and evidence ownership alongside normal handoff context. Browser actions can modify shared application state, so serialize scenarios that share accounts or records even when filesystem ownership is disjoint. The tester writes evidence/findings, not source fixes or aggregate progress.
+
+Native delegation and Playwright MCP availability are separate capabilities. Confirm tools in the actual worker session. Unsupported delegation uses the procedure inline with disclosure; missing browser tools, services or login block selected scenarios. Browser reports are separate from executable-command evidence and cannot be fabricated as successful command checks. Existing completion gates remain in force. See [browser testing](browser-testing.md).
+
 `node bin/pegatus.mjs orchestrate plan --root <solution-root> --task <task-id>` reads saved progress and returns `status: 'skipped'`, `planningOnly: true`, and proposed batches. It does not execute or verify work. Unknown delegation capability uses sequential inline scheduling. `--concurrency <n>` overrides the configured default of two. An explicit `--capabilities-file <relative-json>` may declare `{ "schemaVersion": 1, "delegation": true, "maxWorkers": 2 }`. This declaration is supplied by the host integrator; a host name does not establish support or qualification.
 
 The CLI reads project `.pegatus/config.json`; `runOrchestrationCommand` also accepts `userConfig` and preserves project-over-user precedence through `resolveConfig`. `--host` selects an existing team's host mapping for role briefs. Model and effort resolve through the Task 9c fixed-tier helper. Workers cannot select replacements.

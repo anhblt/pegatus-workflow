@@ -7,6 +7,8 @@ First read applicable solution context using [the context protocol](../../contex
 
 Inputs: task brief or saved task ID, classification/scope, discovered instruction locations, knowledge references, relevant approved artifacts and project-selected checks.
 
+Route explicit requests to test a running application in the browser to [pegatus-browser-test](../pegatus-browser-test/SKILL.md). Standalone testing needs no implementation diff or feature design approval. Preserve requested target and scenarios; testing does not authorize source fixes.
+
 Route a natural-language task by impact and uncertainty. Small understood fixes inspect, implement, verify and report within existing authorization, omitting spec/plan artifacts. Features inspect, design, plan, implement, independently review, verify and report after explicit design and scope approval. Investigations gather evidence and recommend action; subsequent edits follow the appropriate path. Escalate on broader interfaces/data or uncertainty; approvals are preserved until material scope changes. Coordinate only independent lanes with agreed interfaces and distinct ownership; default two workers capped by host/config. If delegation is unavailable, work inline and label the review limitation. Only the coordinator writes aggregate progress.
 
 Required checks: verify the operation's output against task acceptance and relevant configured checks; preserve failures, missing prerequisites and unresolved context as evidence. Reconfirm source when documentation is stale. An operation cannot claim later install/hooks/learning/scanner mechanics are implemented merely because this procedure describes them; report unavailable APIs/tools and continue only independent safe actions.

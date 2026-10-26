@@ -1,5 +1,9 @@
 # Host capability contract (source review, 2026-10-12)
 
+## Browser-testing extension (October 2026)
+
+The catalog now adds browser-tester and pegatus-browser-test. Existing adapters generate the role and skill/command wrappers at their normal paths; Antigravity retains portable role guidance and workflow invocation. Playwright MCP must be configured separately in each host execution environment. No native browser session or delegated MCP tool inheritance has been qualified by this extension. Verify actual worker access; missing tools block selected scenarios. Inline execution discloses the lack of independent delegation. See [browser setup and evidence](../browser-testing.md). The dated source review and historical observations below remain unchanged.
+
 Status labels: **documented** means a current official host page describes the capability; **live acceptance required** means the adapter must be tried in the target host/version and OS; **unsupported/unverified** means no official guarantee was found. A documented hook event is not proof that every tool path is enforceable. ECC and Pegatus V1 generated files are reference examples, not host evidence.
 
 | Surface | Claude Code | Codex | Antigravity IDE |

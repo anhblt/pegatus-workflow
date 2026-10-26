@@ -1,7 +1,10 @@
 {
-  "name": "pegatus-v2",
+  "name": "@galliker/pegatus",
   "version": "0.1.0-rc.1",
   "private": true,
+  "publishConfig": {
+    "registry": "https://npm.apps.openshift.galliker.local/"
+  },
   "type": "module",
   "bin": {
     "pegatus": "bin/pegatus.mjs"

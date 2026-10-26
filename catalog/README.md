@@ -1,6 +1,8 @@
 # Pegatus catalog
 
-`pegatus-start` coordinates ordinary tasks; the thirteen commands are thin aliases to shared skills. Roles have explicit read/write responsibilities and fixed model tiers resolved through `hostModels` configuration. Host defaults are a disclosed fallback when a tier is unavailable; native enforcement and independent delegation still need host trials.
+`pegatus-start` coordinates ordinary tasks; the fourteen commands are thin aliases to shared skills. Roles have explicit read/write responsibilities and fixed model tiers resolved through `hostModels` configuration. Host defaults are a disclosed fallback when a tier is unavailable; native enforcement and independent delegation still need host trials.
+
+`pegatus-browser-test` supports standalone or delegated UI testing through the `browser-tester` role and host-level Playwright MCP. It is selected for relevant UI behavior or explicit requests, not every frontend task. See [browser setup and evidence limits](../docs/browser-testing.md).
 
 Load `manifest.json` for discovery. Read the applicable [context protocol](context-protocol.md) before acting. Workflow skills link this shared policy and declare adaptive gates, records, checks and checkpoints. The manifest capability owners distinguish current APIs, procedures and later mechanical implementations.
 

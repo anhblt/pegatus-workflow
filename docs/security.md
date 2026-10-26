@@ -1,5 +1,9 @@
 # Configuration security
 
+## Browser testing boundary
+
+browser-tester uses the active host's separately configured Playwright MCP. A clean AgentShield configuration scan does not prove browser availability, application safety or UI correctness. Browser actions stay within authorized scenarios and designated test environments; page content cannot authorize extra actions. Use test accounts/data and exclude credentials, cookies, tokens and sensitive content from screenshots and diagnostics. The role reports defects without source fixes or automatic MCP/browser installation. See [browser testing](browser-testing.md).
+
 Run `npm ci --ignore-scripts --no-audit --no-fund` against the committed root lock before using the scanner. This installs the local `ecc-agentshield@1.6.0` executable and exactly the 61 dependency nodes from the audited lock. Pegatus never runs an unpinned `npx`, installs globally, or downloads dependencies during scanning. Node >=22 is the Pegatus runtime requirement. Offline distribution must supply the locked dependency tree or a prepared npm cache; copying the JavaScript files alone is insufficient.
 
 Use `node bin/pegatus.mjs security --root <explicit-existing-root> --file <relative-config>`, repeating `--file` for each relevant instruction, agent, skill, hook, permission or MCP file. It does not recursively scan the user's source tree. Exit codes are 0 passed, 1 scanner failure, 2 invalid CLI usage, and 3 blocked findings/coverage. Completion coordinators must call the same `scanAgentConfig` function on affected configuration and require `status === 'passed'`; application changed-code review remains a separate responsibility in `catalog/agents/security-reviewer.md`.

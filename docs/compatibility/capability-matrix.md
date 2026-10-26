@@ -12,6 +12,7 @@ Candidate: `0.1.0-rc.1`, 2026-10-13. Generated files and version probes are impl
 | Verification / security | Current-evidence gates and independent bundled AgentShield CLI | Same shared runtime | Same shared runtime; supplemental coverage disclosed |
 | Tokens / model effort | Explicit helper budgets; fixed declared mappings; native enforcement unqualified | Same; `qualified:false` until live loading evidence | Helper budgets; host default / instruction-only model fallback |
 | Orchestration | Ownership graph and handoff CLI; native worker trial blocked | Same; native worker trial blocked | Same; inline fallback pending supported delegation proof |
+| Browser testing extension (October 2026) | browser-tester role and pegatus-browser-test wrappers generated; Playwright MCP and child tool access unqualified | Same catalog procedure and generated role/skill; live browser execution unqualified | Workflow and portable role; disclosed inline fallback, browser access unqualified |
 | Windows actual small-fix / feature | Installed repair/test/checkpoint/resume plus separate review and coordinator security-gated completion; feature approval checkpoint saved, process bounded before final response | Authenticated inference; project reads and exact state commands policy-rejected, origin unverified; no task pass | Attempted; command denial / empty response, not a pass |
 | Linux actual small-fix / feature | Native CLI unavailable in qualification environment | Native CLI unavailable | Native CLI unavailable |
 

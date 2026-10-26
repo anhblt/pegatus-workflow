@@ -1,5 +1,7 @@
 # Upstream component audit (2026-10-12)
 
+October 2026 extension: browser-tester, pegatus-browser-test and its thin alias are original Pegatus procedures. They extend verification without altering this pinned upstream audit or bundling Playwright. Host-level Playwright MCP is an external prerequisite, with actual browser and delegated tool access still subject to live qualification. See [browser testing](../browser-testing.md).
+
 `sources.lock.json` is the byte-level inventory for this audit: four immutable Git commits, 371 named files, SHA-256 per file, plus the separately pinned AgentShield npm tarball. `audit/agentshield/package.json` and `audit/agentshield/package-lock.json` preserve the npm path-keyed dependency graph, resolved registry URLs, integrity values, dependency edges, and optional/platform metadata. Its source paths are **audit inputs**, not an instruction to ship whole directories. Later packaging must select files from this inventory, include their local reference/script closure, and rerun reference validation. Runtime fetches by a generated kit are forbidden.
 
 | Required capability | Pinned source examined | Pegatus first-release contract and decision |

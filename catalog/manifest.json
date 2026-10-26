@@ -2,6 +2,18 @@
   "schemaVersion": 1,
   "agents": [
     {
+      "id": "browser-tester",
+      "path": "catalog/agents/browser-tester.md",
+      "source": { "id": "pegatus", "path": "catalog/agents/browser-tester.md" },
+      "resources": ["catalog/agents/browser-tester.md", "catalog/skills/pegatus-browser-test/SKILL.md", "catalog/context-protocol.md", "src/context/instructions.mjs", "src/context/retrieve.mjs", "docs/browser-testing.md"],
+      "activation": { "tasks": ["browser-tester", "browser-test"] },
+      "dependencies": ["pegatus-browser-test"],
+      "modelTier": "standard",
+      "privileges": { "read": ["instructions", "source", "knowledge", "approved artifacts", "checks", "evidence"], "write": ["browser evidence", "worker evidence"], "aggregateProgress": false },
+      "handoff": { "required": ["instructionPaths", "scope", "knowledgeRefs", "approvedArtifacts", "ownedPaths", "checks", "evidence"] },
+      "adaptation": "Exercise selected scenarios in a running application through host-level Playwright MCP; inspect UI and capture browser evidence. Standalone testing requires no implementation diff. Missing browser prerequisites block selected checks; report findings without source edits."
+    },
+    {
       "id": "context-explorer",
       "path": "catalog/agents/context-explorer.md",
       "source": {
@@ -389,6 +401,21 @@
     }
   ],
   "skills": [
+    {
+      "id": "pegatus-browser-test",
+      "path": "catalog/skills/pegatus-browser-test/SKILL.md",
+      "source": { "id": "pegatus", "path": "catalog/skills/pegatus-browser-test/SKILL.md" },
+      "resources": ["catalog/skills/pegatus-browser-test/SKILL.md", "catalog/agents/browser-tester.md", "catalog/context-protocol.md", "src/context/instructions.mjs", "src/context/retrieve.mjs", "docs/browser-testing.md"],
+      "activation": { "tasks": ["browser-test"] },
+      "dependencies": [],
+      "workflow": {
+        "context": { "first": true, "semanticResolution": true, "uncertaintyRecord": true },
+        "inputs": ["task", "instructions", "scope", "contextRefs", "approvedArtifacts", "checks"],
+        "outputs": ["progress", "evidence", "report"],
+        "checkpoint": ["meaningful-step", "handoff", "compaction", "interruption"]
+      },
+      "adaptation": "Coordinate browser-tester or disclose inline fallback for standalone or selected browser testing. Use host Playwright MCP without application dependencies. Preserve scenario outcomes and browser evidence; do not substitute command success or modify source."
+    },
     {
       "id": "pegatus-start",
       "path": "catalog/skills/pegatus-start/SKILL.md",
@@ -4265,6 +4292,15 @@
     }
   ],
   "commands": [
+    {
+      "id": "command-browser-test",
+      "path": "catalog/commands/browser-test.md",
+      "skill": "pegatus-browser-test",
+      "source": { "id": "pegatus", "path": "catalog/commands/browser-test.md" },
+      "resources": ["catalog/commands/browser-test.md", "catalog/context-protocol.md"],
+      "activation": { "tasks": ["browser-test"] },
+      "dependencies": ["pegatus-browser-test"]
+    },
     {
       "id": "command-start",
       "path": "catalog/commands/start.md",

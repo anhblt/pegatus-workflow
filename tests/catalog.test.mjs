@@ -16,7 +16,7 @@ test('packaged catalog resolves commands, capabilities and complete source resou
   assert.equal((await lint())(catalog).filter(f => f.severity === 'error').length, 0);
   for (const command of catalog.commands) assert.ok(catalog.skills.some(s => s.id === command.skill));
   for (const category of ['agents','skills','commands','hooks','rules','memory','learning','verification','tokens','orchestration','security']) assert.ok(catalog.capabilities[category]?.owner);
-  assert.equal(catalog.agents.length, 8);
+  assert.equal(catalog.agents.length, 9);
   const plugins = new Set(catalog.skills.filter(s => s.source.id === 'dotnet-skills').map(s => s.source.path.split('/')[1]));
   assert.deepEqual([...plugins].sort(), ['dotnet','dotnet-advanced','dotnet-aspnetcore','dotnet-data','dotnet-test']);
   const sourceSkills = catalog.sourceLock.sources.find(s => s.id === 'dotnet-skills').paths.filter(p => p.endsWith('/SKILL.md'));

@@ -1,5 +1,7 @@
 # Audited adaptation decisions
 
+The October 2026 browser-testing extension is original Pegatus guidance, not copied upstream content. browser-tester and pegatus-browser-test use separately configured host-level Playwright MCP; no Playwright package, browser or new upstream bytes are vendored. The verifier selects relevant UI scenarios and preserves blocked prerequisites. Standalone testing requires no implementation. See [browser testing](../docs/browser-testing.md).
+
 ECC sources are audited originals, pinned and hashed in sources.lock.json. Manifest source paths identify what was read; entry adaptation notes describe the retained behavior. Host-specific model/tool labels and unsolicited proactive agent activation are removed.
 
 - code-explorer and iterative-retrieval: retain entry-point/path/dependency tracing and evaluate/refine retrieval. Instructed indexes/flows precede any broad fallback; trusted context resolution supplies readInstructions and provenance.
