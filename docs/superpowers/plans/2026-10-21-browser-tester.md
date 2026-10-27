@@ -1,5 +1,7 @@
 # Browser tester implementation plan
 
+**Current status (2026-10-27):** Implemented and independently reviewed. The results below describe this extension's original snapshot; the later [ECC parity record](2026-10-26-ecc-workflow-parity.md) covers the larger suite. [Current state](../../current-state.md) consolidates implemented features and remaining qualification without treating these dated counts as a fresh run.
+
 **Goal:** Add an optional browser testing role and a directly invocable host workflow, using host-level Playwright MCP without application dependencies.
 
 **Approved scope:** The conversation approves a separate browser-tester, delegation from frontend verification when relevant, standalone testing without implementation, and an explicit inline fallback. Browser checks are required only when selected or explicitly requested.

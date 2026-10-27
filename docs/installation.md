@@ -1,8 +1,14 @@
 # Installation and ownership
 
+## Current workflow delivery
+
+The catalog defines nine roles and seventeen host workflow aliases. ECC parity is implemented: context-budget, file-cache and prompt-cache guidance, bounded retrieval/compaction and scoped `memory read <entry-id>`. See [current state and validation](current-state.md). Install/update copies the current checkout runtime, including the separate guided setup/uninstall work; it does not update existing installations automatically.
+
+Use guided setup to review an existing installation's ownership diff and cancel before confirmation when only a preview is wanted. `runAdministration(argv,{cwd,dryRun:true})` is the read-only API used by that wizard: it skips recovery, scanning and managed writes, and blocks on pending journal/busy records. There is no CLI `--dry-run` option. Explicit `update` applies immediately with the real preflight and ownership checks. Uninstall/reinstall is also supported; retain task history, configuration, maintained instructions and edited-file evidence, then run doctor and reload the host. Matching version strings alone do not establish matching runtime bytes.
+
 ## Browser tester installation boundary
 
-The catalog includes nine roles and fourteen workflow aliases, including browser-tester and pegatus-browser-test. Update an existing installation through the normal ownership/security checks and reload the host to expose the new entry points. Claude/Codex receive generated native role wrappers; Antigravity uses portable role guidance and its workflow wrapper, subject to existing support limits.
+The catalog includes browser-tester and pegatus-browser-test among its nine roles and seventeen workflow aliases. Update an existing installation through the normal ownership/security checks and reload the host to expose the new entry points. Claude/Codex receive generated native role wrappers; Antigravity uses portable role guidance and its workflow wrapper, subject to existing support limits.
 
 Playwright MCP and its compatible browser are configured separately at user/host scope. Pegatus install/update does not register MCP, download browsers or add Playwright to application dependencies. The active session and delegated tester must verify actual browser tool access; otherwise selected browser scenarios remain blocked. See [browser setup and invocation](browser-testing.md).
 
@@ -14,6 +20,8 @@ Detection, destination entry, preview, installation progress, doctor details, an
 
 ## Administration and ownership
 
+Bare `node bin/pegatus.mjs uninstall` opens a guided uninstall using the same terminal menus as setup. Select project/user scope and an existing root, then choose one or more hosts with local ownership or recovery records. Hosts start unselected; final confirmation defaults to No. All selections receive a read-only administration preview before any apply. Edited files and pending recovery block removal. Apply uses the existing administration ownership, preflight and transaction checks; Ctrl-C waits for an active transaction to settle and prevents further hosts. Earlier completed removals remain if a later host blocks. User-wide removal affects inheriting projects; project removal leaves user defaults intact. Explicit flags retain structured noninteractive behavior, and bare uninstall without a TTY prints usage and exits 2.
+
 Administration always requires a host, scope, and explicit existing root. User scope uses the supplied root as the home layout; the installer never discovers or writes the machine's home automatically. Project defaults are read only from an explicitly supplied `--user-root`; project `.pegatus/config.json` overrides that root's configuration using `resolveConfig`. Existing configuration, instruction files, generators, and hook registrations are preserved.
 
 ```text
@@ -23,7 +31,7 @@ node bin/pegatus.mjs update --host codex --scope project --root <project-root> -
 node bin/pegatus.mjs uninstall --host antigravity --scope project --root <project-root>
 ```
 
-Install/update currently block without a passed security preflight supplied by the security integration. The CLI prints the blocked result and exits 3. Task 8 supplies the real scanner; an injected passed fixture is test evidence for transaction behavior, never scanning evidence. The current apply interface also requires preflight for uninstall. Do not change this to a fabricated clean scanner result.
+Install/update use the implemented `scanInstallPlan` integration by default and require a passed security preflight before managed mutations. An unavailable, blocked or failed preflight blocks administration with exit 3; failed apply results exit 1 and invalid usage exits 2. An injected passed fixture proves transaction behavior only. Removal-only uninstall retains the preflight contract and reports `coverage.operation:'removal-only'` rather than claiming removed files were scanned. See [security coverage](security.md).
 
 `generateHost(catalog,{host,scope,root,models,modelCapabilities,tokenControls})` returns `operations`, `capabilities`, `warnings`, user-managed `snippets`, `roleModels`, and effective `tokenControls`. Operations contain `relativePath`, `path`, `content` (string or Buffer), SHA-256 `hash`, and `sourceHash`. Models are the explicitly configured `hostModels[host]` tiers. Legacy strings and explicit `{model,effort?}` mappings require a matching team `hostModelCapabilities[host]` declaration before emitting native model/effort fields; missing mappings carry a coordinator-selection policy, while unsupported explicit mappings retain host defaults with warnings. These declarations are not proof of host qualification. See [token controls](tokens.md) for schema, limits and fallback behavior. No tool IDs or upstream native metadata are copied into generated roles. Doctor also returns an opt-in `hookActivation` proposal for Claude/Codex; see [hooks.md](hooks.md).
 

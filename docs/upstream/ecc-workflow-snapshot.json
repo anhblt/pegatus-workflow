@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "inspectedAt": "2026-10-26",
+  "root": "C:/Workspace/ECC",
+  "revision": "25278e7d7b6cf6e6a4e7a6c8e10f14ff22f0eb5b",
+  "pegatusPinnedEccRevision": "b92f181b3b748d1abbc2afd94af6aa7d8c8fca29",
+  "scope": "Selected workflow components; top-level breadth counts are not a semantic audit of every skill.",
+  "topLevelCounts": {
+    "agents": 71,
+    "skills": 311,
+    "commands": 97,
+    "rulesEntries": 23
+  },
+  "files": [
+    {
+      "path": "README.md",
+      "sha256": "891c1db3e717d893e625c9a87194a2dda07185911019a6e0e8b4c4bfd5d3b92c"
+    },
+    {
+      "path": "LICENSE",
+      "sha256": "326146379f01bb137c0a5d3c54770c1aa31076705c8b88a7f6b26a460f6221b2"
+    },
+    {
+      "path": "agents/planner.md",
+      "sha256": "63aba865206bac9cb5887542fb01b97656e7701faff98e091aa77057ba9860bc"
+    },
+    {
+      "path": "agents/code-reviewer.md",
+      "sha256": "9dd23be23d65f18126e10f7680fc1eb2576ec54a427d076ff2f870bd0bafd5d2"
+    },
+    {
+      "path": "rules/common/agents.md",
+      "sha256": "999178beefe41112856cc4949781558d9eb76177522e65ef0a69e777421e4418"
+    },
+    {
+      "path": "rules/common/performance.md",
+      "sha256": "39fd4c549823b4e10aefc4d427242ae8ac9e045ecf37affb087dc77f5faeba49"
+    },
+    {
+      "path": "skills/iterative-retrieval/SKILL.md",
+      "sha256": "b453b16d3e36174b8487c05ab807d0321a66c2d058812b2ae129d82824183725"
+    },
+    {
+      "path": "skills/strategic-compact/SKILL.md",
+      "sha256": "44a71c6dcc3fdde8061b8a78296c5d37233e4accc8cf3c794e29ac5b9f2eee28"
+    },
+    {
+      "path": "skills/context-budget/SKILL.md",
+      "sha256": "793d51ac6639a466213800c228189a48b102c88d7cfb5b0651baa3480a577206"
+    },
+    {
+      "path": "skills/content-hash-cache-pattern/SKILL.md",
+      "sha256": "c0242ee2fcb5c096d0625cb6957481fce2266e92985036795f5b5c13c329d802"
+    },
+    {
+      "path": "skills/prompt-caching-strategy/SKILL.md",
+      "sha256": "bde64446760754680a6e821fce96ed70e4a409adc7145cb056a815aa64eb5b81"
+    },
+    {
+      "path": "skills/unified-memory/SKILL.md",
+      "sha256": "c42e96155783a44a50f13ab63e9d7f33c9d03b7a1f30777ef434401469c1630a"
+    },
+    {
+      "path": "skills/continuous-learning-v2/SKILL.md",
+      "sha256": "ddad12451a0d582c6ef1b197b7be193bef613cbc74eba4117fcb74fc7a4ecd00"
+    },
+    {
+      "path": "skills/verification-loop/SKILL.md",
+      "sha256": "5b06be54d4852f60e6cf1b04c6e9a4748554334eb3e41af6c0959b544e6464ae"
+    },
+    {
+      "path": "skills/parallel-execution-optimizer/SKILL.md",
+      "sha256": "e7de2fff9971d7bc179ac1827d62de701fd8951142d9e17ec7c782481c8b7941"
+    },
+    {
+      "path": "skills/security-scan/SKILL.md",
+      "sha256": "74bc3006fb15eef9cea6bf70a4e9cc45ec118ef00733d1c8226c9dc428f8d658"
+    },
+    {
+      "path": "hooks/hooks.json",
+      "sha256": "b42745b13667e95ea520951506f5656d4439f5dff5f21b3015e77e9a622add36"
+    }
+  ]
+}

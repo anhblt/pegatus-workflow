@@ -1,7 +1,7 @@
 # Pegatus V2 workflow kit
 
 Date: 2026-10-12
-Status: Written spec approved by user; implementation plan awaiting review and execution-method selection
+Status: Approved design; implementation and subsequent browser, tier-selection and ECC parity repairs are complete at the portable runtime/catalog level. Native/release qualification remains incomplete. See [current state](../../current-state.md) and the [acceptance checklist](../../acceptance/checklist.md). The dated design and acceptance contract below remain the approved baseline.
 
 ## Purpose and scope
 

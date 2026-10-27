@@ -1,5 +1,9 @@
 # Upstream component audit (2026-10-12)
 
+The [2026-10-26 workflow integration audit](ecc-workflow-audit.md) compares local ECC with this pinned baseline and records context-budget/file-cache/prompt-cache guidance, bounded retrieval and scoped memory ID read. It supplements this map without changing the source lock or claiming native qualification.
+
+Current implementation overlay (2026-10-27): the catalog/runtime delivery below exists and is covered by portable tests and independent review. Historical audit inputs, revisions and observations retain their original scope. The current catalog has nine roles and seventeen workflow aliases; [current state](../current-state.md) records exact validation and open release gates.
+
 October 2026 extension: browser-tester, pegatus-browser-test and its thin alias are original Pegatus procedures. They extend verification without altering this pinned upstream audit or bundling Playwright. Host-level Playwright MCP is an external prerequisite, with actual browser and delegated tool access still subject to live qualification. See [browser testing](../browser-testing.md).
 
 `sources.lock.json` is the byte-level inventory for this audit: four immutable Git commits, 371 named files, SHA-256 per file, plus the separately pinned AgentShield npm tarball. `audit/agentshield/package.json` and `audit/agentshield/package-lock.json` preserve the npm path-keyed dependency graph, resolved registry URLs, integrity values, dependency edges, and optional/platform metadata. Its source paths are **audit inputs**, not an instruction to ship whole directories. Later packaging must select files from this inventory, include their local reference/script closure, and rerun reference validation. Runtime fetches by a generated kit are forbidden.
@@ -21,17 +25,18 @@ October 2026 extension: browser-tester, pegatus-browser-test and its thin alias 
 
 ## Component-to-host delivery crosswalk
 
-Each cell describes a planned adapter output, not a completed live-host test. The paths and support qualifications are sourced in [hosts.md](../compatibility/hosts.md). "Explicit" means a Pegatus CLI/workflow call; it does not claim host enforcement.
+Each cell describes the implemented portable adapter output or its retained host integration requirement, not a completed live-host test. The paths and support qualifications are sourced in [hosts.md](../compatibility/hosts.md). "Explicit" means a Pegatus CLI/workflow call; it does not claim host enforcement. The newer selected guidance supplements this pinned audit and does not change its source lock.
 
 | Selected component | Claude Code | Codex | Antigravity | Dependency/decision |
 | --- | --- | --- | --- | --- |
 | ECC planner, architect, explorer, reviewers and resolver | Adapt to named `.claude/agents/` | Adapt to named `.codex/agents/*.toml` | Inline role briefs from workflow; native custom agents unverified | Strip ECC tool/model labels; project instructions and approved task scope travel with each brief. |
 | ECC `verification-loop` | Task skill + optional hook trigger | Task skill + CLI gate | Workflow + CLI gate | Replace Bash pipelines, fixed coverage, and command assumptions with configured checks. |
 | ECC `iterative-retrieval` | Task skill | Task skill | Workflow reference | Use project index/discovery first; bounded retrieval, no service dependency. |
-| ECC `strategic-compact` | Skill + supported `PreCompact` | Skill + supported `PreCompact` | Explicit checkpoint | Persist task state before compact; host event alone is insufficient. |
+| ECC `strategic-compact` | Checkpoint skill + optional manual `PreCompact` bridge | Checkpoint skill + optional manual `PreCompact` bridge | Explicit checkpoint | Persist plan/task state before phase-boundary compaction; the default activation proposal does not register PreCompact. |
 | ECC `security-scan` | Skill + scanner CLI | Skill + scanner CLI | Workflow + scanner CLI | Requires pinned AgentShield package, explicit path, JSON parse, coverage check. |
 | ECC `continuous-learning-v2` | Skill + supported collection hook | Skill + supported collection hook | Workflow/CLI collection | Reimplement shell/Python observer and ECC homunculus store; reviewed promotion only. |
 | ECC `prompt-caching-strategy` | Skill guidance | Skill guidance | Workflow guidance | Keep stable context separate; do not assert cache telemetry without host evidence. |
+| Newer selected ECC context-budget/content-hash-cache guidance | Selected skills + thin aliases | Selected skills | Selected workflows | Live context requests use no tools; static audits require a named scope. File processing caches, prompt caches and approved-memory integrity remain distinct. |
 | ECC `parallel-execution-optimizer` and worktree script | Skill + bounded native agents | Skill + bounded native agents | Explicit/inline coordination | Replace tmux/shell launcher; ownership, dependency and integration checks are shared. |
 | ECC selected `commands/*.md` | Thin `/` skills or aliases | Direct skills + CLI | `.agents/workflows/*.md` + CLI | Route to one shared operation; no copied ECC command catalog. |
 | ECC hook manifest + selected hook script closure | Native event mapping | Native local event mapping | Explicit lifecycle calls | Reimplement bootstrap and preserve existing hook config; Codex coverage/denial limits apply. |
@@ -43,7 +48,7 @@ Each cell describes a planned adapter output, not a completed live-host test. Th
 | `dotnet-aspnetcore` plugin | Selected skills | Selected skills | Workflow-linked guidance | Preserve Web API skill inputs; Blazor conversion is task-specific, not default. |
 | Vercel `react-best-practices` | Skill | Skill | Workflow-linked guidance | Keep rule pages; gate Next.js-only rules on detected Next.js use. |
 | Vercel `composition-patterns` | Skill | Skill | Workflow-linked guidance | Keep rule pages and React 19 context; no framework rewrite implied. |
-| AgentShield 1.6.0 | CLI scan with Claude config scope | CLI scan with verified config scope | CLI scan with verified config scope | Exact npm lock, Node >=20; Codex/Antigravity coverage needs fixtures. Changed-code review remains separate. |
+| AgentShield 1.6.0 | CLI scan plus labeled supplemental coverage | CLI scan plus labeled supplemental coverage | CLI/supplemental coverage for supported paths | Exact npm lock; package requires Node >=20, Pegatus requires >=22. Windows/Linux scanner fixtures exist; coverage and native semantics retain the limits in security.md. Changed-code review remains separate. |
 
 ## Stack and dependency rules
 

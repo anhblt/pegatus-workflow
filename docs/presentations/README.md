@@ -1,6 +1,6 @@
 # Pegatus V2 presentation
 
-The October 2026 browser-testing extension is covered in the quality-controls presenter notes: browser-tester handles selected UI flows through host-level Playwright MCP, while pegatus-browser-test also supports standalone requests. Application dependencies are unchanged; missing tools or access block selected scenarios. See [browser testing](../browser-testing.md). Historical readiness figures retain their recorded date. The existing preview PNG predates this documentation update.
+The deck content was reconciled on 2026-10-27 with [current implementation and validation](../current-state.md): nine roles, seventeen workflow aliases, selected context-budget/file-cache/prompt-cache guidance, bounded retrieval, scoped memory ID reads, fixed-tier coordinator selection and guided installation/uninstall. Browser-testing presenter notes retain host-level Playwright MCP prerequisites and blocked-tool behavior; see [browser testing](../browser-testing.md). The existing preview PNG predates this content update.
 
 Open `pegatus-v2.html` directly in a modern browser. No server, internet connection, external fonts, framework or build step is required. Optional documentation links work when the file stays in this repository; the slides themselves can be shared as a single HTML file.
 
@@ -18,4 +18,6 @@ Open `pegatus-v2.html` directly in a modern browser. No server, internet connect
 
 Slide URLs use `#slide-1` through `#slide-16`. With JavaScript disabled, the presentation falls back to a scrollable document.
 
-The deck is a team introduction to the local candidate. Publishing is outside its scope. The readiness slide labels the recorded 21 October 2026 results and preserves the difference between implementation evidence and full native/release qualification; those figures do not update automatically.
+The deck is a team introduction to the private local candidate. Publishing is outside its scope. The readiness slide now shows the retained ECC parity result: 307/310 in the full Windows run, then 3/3 affected tests passed after the catalog link correction. This is split-run evidence, not a single clean full rerun or native/release qualification. Older Windows/Linux results remain dated evidence in the acceptance records and presenter notes; figures do not update automatically.
+
+The documentation follow-up checked local file links, script syntax and all sixteen slide sections. Visual verification is **BLOCKED** because the available browser policy rejects local `file:` URLs; no fresh rendering or preview image is claimed.

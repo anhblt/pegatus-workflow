@@ -6,6 +6,8 @@ Default stack guidance targets **.NET 10, EF Core, SQL Server, React 19, and Typ
 
 > **Candidate status:** `0.1.0-rc.1` is private and not release-qualified. Start with a disposable pilot. Native acceptance across all three hosts/both operating systems, hosted CI, and the complete applicable Vercel license notice remain unfinished. A passing install/doctor result does not prove native behavior. See the [acceptance checklist](docs/acceptance/checklist.md).
 
+The ECC workflow parity changes are implemented and independently reviewed in this checkout. The catalog now has nine roles and seventeen host workflow aliases, including context-budget, file-cache and prompt-cache guidance, bounded retrieval/compaction procedures and scoped memory ID reads. See [current implementation and exact validation results](docs/current-state.md); the completed work remains uncommitted and existing detached installations need a normal update or reinstall.
+
 ## Contents
 
 1. [Understand the kit](#1-understand-the-kit)
@@ -259,6 +261,9 @@ User defaults need explicit project activation through the snippet. Native custo
 | `pegatus-memory` | Retrieve scoped knowledge with freshness limits |
 | `pegatus-security` | Review relevant configuration/security evidence |
 | `pegatus-status` | Inspect state and next action |
+| `pegatus-context-budget` | Live native context meter guidance; explicit scoped overhead audits |
+| `pegatus-file-cache` | Selected content-hash guidance for expensive file processing |
+| `pegatus-prompt-cache` | Selected prompt-cache reuse and measurement guidance |
 
 Selected upstream skills come from the five .NET groups (`dotnet`, `dotnet-advanced`, `dotnet-data`, `dotnet-test`, `dotnet-aspnetcore`), plus Vercel React best practices/composition patterns. Some address other frameworks/test tools: invoke only when compatible with the actual project and authorized task. Installing guidance does not authorize a framework or test-library migration.
 
@@ -592,7 +597,19 @@ These roots are Windows examples. Linux uses its absolute root, e.g. `"$HOME/wor
 
 Update scans staged config and compares ownership. Edited managed files block: preserve edits/review conflicts before reconciliation. Do not erase ownership locks or force-copy catalog resources.
 
-Uninstall selected host/scope from the kit checkout:
+For a guided read-only preview, run the setup wizard from the intended solution, select the existing host/scope/root and review the changes before its final confirmation. Setup also reconciles an existing installation. Preview does not scan or apply; confirmation starts the real security/ownership transaction. The explicit `update` command above applies immediately through those gates; it is not a preview command and has no CLI `--dry-run` flag.
+
+If choosing uninstall/reinstall instead, complete the normal uninstall below and run guided setup again from this checkout. Uninstall preserves task history, team configuration and maintained instructions. Reinstall does not remove edited-file conflicts or activate hooks/MCP automatically. After either route, run doctor and reload the host. The unchanged candidate version alone does not prove that an older detached runtime contains the new workflow files.
+
+For guided uninstall, run from the target solution in an interactive terminal:
+
+```powershell
+node 'C:\Workspace\PegatusAgenticV2\bin\pegatus.mjs' uninstall
+```
+
+Choose project or user scope, confirm the existing destination, then select the hosts with ↑/↓ and Space. The menu lists hosts with Pegatus ownership or recovery records at that destination. Review the owned-file removals and confirm with **Yes**; **No** is selected by default. All selected hosts are previewed before any removal. Conflicts or pending recovery block the flow. Ctrl-C cancels; an active host transaction settles before stopping. Hosts apply sequentially, so completed removals remain if a later host blocks. Removing user defaults affects projects that inherit them; removing a project override preserves those defaults.
+
+For scripts, uninstall selected host/scope from the kit checkout:
 
 ```text
 node bin/pegatus.mjs uninstall --host claude --scope project --root C:/Samples/PegatusPilot
@@ -610,6 +627,7 @@ Run `node <kit-or-installed-runtime>/bin/pegatus.mjs <operation> ...`. Task-stat
 | --- | --- |
 | `--help` | Runnable operations and host workflow distinction |
 | no arguments, `setup`, bare `install` | Interactive host detection, scope/root selection, preview and confirmation; requires TTY |
+| bare `uninstall` | Interactive scope/root and installed-host selection, removal preview and confirmation; requires TTY |
 | `install`, `update`, `doctor`, `uninstall` | `--host <host> --scope <project-or-user> --root <existing-root> [--user-root <defaults>]` |
 | `role` | Administration flags plus `--role <catalog-role-id>`; portable procedure/selection |
 | `catalog lint` | Catalog/resource closure validation |
@@ -618,7 +636,7 @@ Run `node <kit-or-installed-runtime>/bin/pegatus.mjs <operation> ...`. Task-stat
 | `resume <task-id>` | Reconcile only; does not execute next work |
 | `security` | `--root <root> --file <relative-config>`; repeat files as needed |
 | `learn` | propose/list/review/approve/reject/supersede/retire/recover with scoped input records |
-| `memory` | `--root <root> --project <id> --path <relative> --query <text>`; optional resolution |
+| `memory` | `--root <root> --project <id> --path <relative> --query <text>`; or `memory read <entry-id>` with the same root/project/path scope; optional resolution |
 | `lifecycle` | Root/task/unique event ID/type plus gate-specific inputs |
 | `hook-activation` | Host/root; proposal only, Claude/Codex |
 | `hook-native` | Internal native bridge with bounded stdin/task binding |

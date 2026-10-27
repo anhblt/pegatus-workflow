@@ -18,6 +18,7 @@ import { activationFor, mapNativeEvent, nativeResponse } from '../src/hooks/oper
 import { runLearningCommand, learningCollector } from '../src/memory/cli.mjs';
 import { runOrchestrationCommand } from '../src/orchestration/cli.mjs';
 import { runSetup } from '../src/install/setup.mjs';
+import { runUninstall } from '../src/install/uninstall.mjs';
 
 const operations = new Set([
   'checkpoint', 'resume', 'learn', 'memory', 'security', 'status',
@@ -190,8 +191,10 @@ export async function main(argv, { cwd, home, securityPreflight, orchestrationCa
     throw new TypeError('main requires argv and cwd/home paths');
   }
   if (argv.length === 0 || argv.length === 1 && ['install','setup'].includes(argv[0])) return runSetup({cwd,home});
+  if (argv.length === 1 && argv[0] === 'uninstall') return runUninstall({cwd,home});
   if (['--help', '-h', 'help'].includes(argv[0])) {
     process.stdout.write('Run pegatus (no arguments), setup, or install (no flags) in an interactive terminal for guided host detection and installation.\n');
+    process.stdout.write('Run pegatus uninstall (no flags) for guided scope/root selection, installed host choices, removal preview and confirmation.\n');
     process.stdout.write('Usage: pegatus <operation> [options]\nOperations: ' + [...operations].join(', ') + '\nHost workflows: invoke installed pegatus-start, pegatus-design, pegatus-plan, pegatus-execute, pegatus-investigate, pegatus-review, pegatus-verify skills in your host. These are not CLI subcommands.\nPortable roles: role --host <host> --scope project --root <project> --user-root <defaults> --role <role-id>; consume the returned procedure and fixed selection in the coordinator.\n');
     return 0;
   }

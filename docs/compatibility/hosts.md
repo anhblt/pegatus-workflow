@@ -1,5 +1,9 @@
 # Host capability contract (source review, 2026-10-12)
 
+## Current implementation overlay — 2026-10-27
+
+The catalog has nine roles and seventeen host workflow aliases. ECC parity adds context-budget, file-cache and prompt-cache entry points on all three adapters; the shared runtime adds scoped `memory read <entry-id>`. Unconfigured tiers carry the coordinator-selection policy described in [token controls](../tokens.md). These implemented outputs and procedures add no native host qualification. The source-review table and dated trial observations below remain historical; see [current state](../current-state.md) and the [capability matrix](capability-matrix.md).
+
 ## Browser-testing extension (October 2026)
 
 The catalog now adds browser-tester and pegatus-browser-test. Existing adapters generate the role and skill/command wrappers at their normal paths; Antigravity retains portable role guidance and workflow invocation. Playwright MCP must be configured separately in each host execution environment. No native browser session or delegated MCP tool inheritance has been qualified by this extension. Verify actual worker access; missing tools block selected scenarios. Inline execution discloses the lack of independent delegation. See [browser setup and evidence](../browser-testing.md). The dated source review and historical observations below remain unchanged.

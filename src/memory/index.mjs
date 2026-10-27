@@ -13,7 +13,7 @@ const validScope = value => typeof value === 'string' && value.length > 0 &&
  * Each <entry>.md.json sidecar holds projectId, paths, keywords, approvalState,
  * sourceTask, evidence and freshness. Promotion/approval is a separate workflow.
  */
-export async function indexMemory({ root, projectId }) {
+export async function indexMemory({ root, projectId, requireComplete = false }) {
   if (typeof projectId !== 'string' || !projectId.trim()) throw new TypeError('Memory index requires a projectId');
   const directory = await assertContained(root, path.join(root, '.pegatus/memory'));
   const result = { entries: [], uncertainties: [] };
@@ -22,6 +22,19 @@ export async function indexMemory({ root, projectId }) {
       if (error.code !== 'ENOENT') throw error;
       return [];
     });
+    if (requireComplete) {
+      const bodies = new Set(files.filter(file => file.isFile()).map(file => file.name));
+      for (const file of files.filter(file => file.isFile() && file.name.endsWith('.md.json') && !bodies.has(file.name.slice(0,-5)))) {
+        const sidecar = await assertContained(directory, path.join(folder,file.name));
+        try {
+          const metadata = JSON.parse(await readFile(sidecar,'utf8'));
+          if (metadata?.projectId === projectId && metadata.approvalState === 'approved' && !['retired','superseded'].includes(metadata.status))
+            result.uncertainties.push({code:'memory-body-missing',path:sidecar,message:'Approved metadata has no regular Markdown body; ID lookup is incomplete.'});
+        } catch (error) {
+          result.uncertainties.push({code:'memory-metadata-invalid',path:sidecar,message:error.message});
+        }
+      }
+    }
     for (const file of files.sort((a, b) => a.name.localeCompare(b.name))) {
       if (file.isSymbolicLink()) continue;
       if (file.isDirectory()) {
@@ -54,7 +67,7 @@ export async function indexMemory({ root, projectId }) {
 }
 
 /** Pure project/path/keyword selection; stale claims remain visible for source review. */
-export function selectMemory(entries, { projectId, paths = [], query = '', branch }) {
+export function selectMemory(entries, { projectId, paths = [], query = '', branch, id }) {
   if (typeof projectId !== 'string' || !projectId.trim()) return [];
   const terms = new Set(words(query));
   return entries.filter(entry => entry.projectId === projectId && entry.approvalState === 'approved' &&
@@ -62,7 +75,7 @@ export function selectMemory(entries, { projectId, paths = [], query = '', branc
     !['retired', 'superseded'].includes(entry.status) &&
     Array.isArray(entry.paths) && entry.paths.every(validScope) &&
     paths.some(target => validScope(target) && entry.paths.some(scope => scoped(normalize(target), normalize(scope)))) &&
-    Array.isArray(entry.keywords) && entry.keywords.some(keyword => words(keyword).some(term => terms.has(term)))
+    Array.isArray(entry.keywords) && (id !== undefined ? entry.id === id : entry.keywords.some(keyword => words(keyword).some(term => terms.has(term))))
   ).map(entry => {
     const requiresSourceConfirmation = entry.freshness?.status !== 'current' ||
       Boolean(entry.freshness?.branch && entry.freshness.branch !== branch);

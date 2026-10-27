@@ -92,9 +92,17 @@ async function retrieve({ config, context, query, run }) {
     if (!context.projectId) result.uncertainties.push({ code: 'memory-project-required', message: 'Fallback memory requires an explicit projectId.' });
     else {
       result.trace.push({ operation: 'memory-index', path: path.join(context.root, '.pegatus/memory') });
-      const index = await indexMemory({ root: context.root, projectId: context.projectId });
+      const index = await indexMemory({ root: context.root, projectId: context.projectId, requireComplete: context.memoryId !== undefined });
       result.uncertainties.push(...index.uncertainties);
-      const selected = selectMemory(index.entries, { projectId: context.projectId, paths: context.targetPaths.map(target => path.relative(context.root, target.path)), query, branch: context.branch });
+      const selected = selectMemory(index.entries, { projectId: context.projectId, paths: context.targetPaths.map(target => path.relative(context.root, target.path)), query, branch: context.branch, id: context.memoryId });
+      if (context.memoryId !== undefined) {
+        const duplicates = index.entries.filter(entry => entry.id === context.memoryId).length > 1;
+        const code = index.uncertainties.length ? 'memory-read-incomplete' : duplicates ? 'memory-id-ambiguous' : !selected.length ? 'memory-id-not-found' : null;
+        if (code) {
+          result.uncertainties.push({code, message:'Scoped ID lookup did not establish one complete, unambiguous approved entry.'});
+          return result;
+        }
+      }
       for (const entry of selected) {
         const file = await assertContained(context.root, entry.path);
         result.trace.push({ operation: 'memory-read', path: file });

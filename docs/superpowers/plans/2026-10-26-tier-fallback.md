@@ -1,5 +1,7 @@
 # Tier fallback implementation plan
 
+**Current status (2026-10-27):** Implemented and independently reviewed. The 296-test result below is this task's historical snapshot; later [ECC parity validation](2026-10-26-ecc-workflow-parity.md) covers 310 cases with affected reruns. See [current state](../../current-state.md); no native tier-selection qualification is implied.
+
 **Goal:** Keep catalog fast/standard/deep assignments and explicit project-over-user mappings; use host-coordinator model selection when a tier has no mapping.
 
 **Approved design:** The user approved automatic fallback and explicitly retained the existing three tiers. Select both model and effort from the actual host allowlist. Workers cannot reroute themselves. Unsupported explicit mappings retain the existing safe fallback.

@@ -61,13 +61,17 @@ export async function learningCollector(root, file) {
 export async function runLearningCommand(argv, cwd) {
   const [operation, action, ...rest] = argv;
   if (operation === 'memory') {
-    const args = options(argv.slice(1), ['--root', '--project', '--path', '--query', '--branch', '--host', '--context-file']);
-    if (!args.root || !args.project || !args.paths.length || !args.query) throw new TypeError('Usage: pegatus memory --root <root> --project <id> --path <relative> --query <text> [--branch <name>]');
+    const byId = action === 'read';
+    const memoryId = byId ? argv[2] : undefined;
+    if (byId && !/^[a-f0-9]{64}$/.test(memoryId ?? '')) throw new TypeError('Memory read requires a stable SHA-256 entry ID');
+    const args = options(argv.slice(byId ? 3 : 1), ['--root', '--project', '--path', '--query', '--branch', '--host', '--context-file']);
+    if (!args.root || !args.project || !args.paths.length || (byId ? args.query : !args.query)) throw new TypeError('Usage: pegatus memory [read <id>] --root <root> --project <id> --path <relative> [--query <text>] [--branch <name>]');
     const root = path.resolve(cwd, args.root), config = await learningConfig(root);
     if (config.knowledge) return { status: 'blocked', entries: [], evidence: [], reasons: ['authoritative-knowledge-requires-instructed-retrieval'] };
     const context = await projectInstructions(root, args.paths, args.host);
     context.projectId = args.project;
     context.branch = args.branch;
+    if (byId) context.memoryId = memoryId;
     if (args.contextFile) context.resolution = (await readLearningJson(root, args.contextFile)).resolution;
     if (context.instructions.some(item => !context.resolution?.readInstructions?.includes(item.path)))
       return { status: 'blocked', entries: [], evidence: [], reasons: ['instruction-resolution-required'] };
@@ -75,9 +79,10 @@ export async function runLearningCommand(argv, cwd) {
     if (resolution.externalKnowledge || resolution.knowledgePaths?.length || resolution.discovery?.length)
       return { status: 'blocked', entries: [], evidence: [], reasons: ['authoritative-knowledge-requires-instructed-retrieval'] };
     const retrieved = await retrieveContext({ config, context, query: args.query });
-    const blocked = retrieved.contextManifest.status === 'blocked';
+    const lookupFailure = byId && retrieved.uncertainties.find(item => ['memory-read-incomplete','memory-id-ambiguous','memory-id-not-found','memory-unavailable'].includes(item.code));
+    const blocked = retrieved.contextManifest.status === 'blocked' || Boolean(lookupFailure);
     const result = { status: blocked ? 'blocked' : 'passed', entries: blocked ? [] : retrieved.refs,
-      contextManifest: retrieved.contextManifest, uncertainties: retrieved.uncertainties, evidence: [], reasons: blocked ? ['context-budget-exceeded'] : [] };
+      contextManifest: retrieved.contextManifest, uncertainties: retrieved.uncertainties, evidence: [], reasons: lookupFailure ? [lookupFailure.code] : blocked ? ['context-budget-exceeded'] : [] };
     // Count the actual aggregate envelope, including bodies and metadata. A
     // compact overflow result keeps the complete documents at this root-relative
     // index; no partial instructions or evidence can masquerade as complete.

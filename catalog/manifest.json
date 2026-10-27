@@ -402,6 +402,33 @@
   ],
   "skills": [
     {
+      "id": "pegatus-context-budget",
+      "path": "catalog/skills/pegatus-context-budget/SKILL.md",
+      "source": {"id":"pegatus","path":"catalog/skills/pegatus-context-budget/SKILL.md"},
+      "description": "Check live context capacity without tools; audit installed context overhead only when explicitly requested.",
+      "resources": ["catalog/skills/pegatus-context-budget/SKILL.md","catalog/context-protocol.md"],
+      "activation": {"tasks":["context-budget","context-capacity","context-overhead-audit"]},
+      "dependencies": []
+    },
+    {
+      "id": "pegatus-file-cache",
+      "path": "catalog/skills/pegatus-file-cache/SKILL.md",
+      "source": {"id":"pegatus","path":"catalog/skills/pegatus-file-cache/SKILL.md"},
+      "description": "Use content-hash caching for repeated expensive deterministic file processing.",
+      "resources": ["catalog/skills/pegatus-file-cache/SKILL.md","catalog/context-protocol.md"],
+      "activation": {"tasks":["file-processing-cache","content-hash-cache"]},
+      "dependencies": []
+    },
+    {
+      "id": "pegatus-prompt-cache",
+      "path": "catalog/skills/pegatus-prompt-cache/SKILL.md",
+      "source": {"id":"pegatus","path":"catalog/skills/pegatus-prompt-cache/SKILL.md"},
+      "description": "Review repeated model requests for prompt-cache reuse and measured cost or latency.",
+      "resources": ["catalog/skills/pegatus-prompt-cache/SKILL.md","catalog/context-protocol.md"],
+      "activation": {"tasks":["prompt-cache","prompt-caching-strategy"]},
+      "dependencies": []
+    },
+    {
       "id": "pegatus-browser-test",
       "path": "catalog/skills/pegatus-browser-test/SKILL.md",
       "source": { "id": "pegatus", "path": "catalog/skills/pegatus-browser-test/SKILL.md" },
@@ -4292,6 +4319,9 @@
     }
   ],
   "commands": [
+    {"id":"command-context-budget","path":"catalog/commands/context-budget.md","source":{"id":"pegatus","path":"catalog/commands/context-budget.md"},"skill":"pegatus-context-budget","resources":["catalog/commands/context-budget.md","catalog/skills/pegatus-context-budget/SKILL.md"],"activation":{"tasks":["context-budget"]},"dependencies":["pegatus-context-budget"]},
+    {"id":"command-file-cache","path":"catalog/commands/file-cache.md","source":{"id":"pegatus","path":"catalog/commands/file-cache.md"},"skill":"pegatus-file-cache","resources":["catalog/commands/file-cache.md","catalog/skills/pegatus-file-cache/SKILL.md"],"activation":{"tasks":["file-processing-cache"]},"dependencies":["pegatus-file-cache"]},
+    {"id":"command-prompt-cache","path":"catalog/commands/prompt-cache.md","source":{"id":"pegatus","path":"catalog/commands/prompt-cache.md"},"skill":"pegatus-prompt-cache","resources":["catalog/commands/prompt-cache.md","catalog/skills/pegatus-prompt-cache/SKILL.md"],"activation":{"tasks":["prompt-cache"]},"dependencies":["pegatus-prompt-cache"]},
     {
       "id": "command-browser-test",
       "path": "catalog/commands/browser-test.md",
@@ -4712,7 +4742,7 @@
     },
     "hooks": {
       "owner": "lifecycle adapters",
-      "implementation": "future host mapping; explicit checkpoint fallback"
+      "implementation": "explicit lifecycle API and opt-in Claude/Codex native bridge; PreCompact requires explicit unique-event binding; Antigravity uses explicit calls; native acceptance remains unqualified"
     },
     "rules": {
       "owner": "catalog/rules",
@@ -4720,11 +4750,11 @@
     },
     "memory": {
       "owner": "src/memory",
-      "implementation": "indexed fallback and instructed external sources"
+      "implementation": "reviewed fallback query and scoped stable-ID read with integrity/output guards; instructed external sources retain ownership; checkpoint/resume provides task handoff"
     },
     "learning": {
       "owner": "pegatus-learn",
-      "implementation": "proposal and reviewed promotion procedure; future mechanics"
+      "implementation": "evidence-backed collection, candidate deduplication, immutable review and guarded promotion/recovery APIs; no unattended activation"
     },
     "verification": {
       "owner": "pegatus-verify",
@@ -4732,15 +4762,15 @@
     },
     "tokens": {
       "owner": "src/telemetry/usage.mjs and role modelTier",
-      "implementation": "bounded context manifests/output previews/checkpoint summaries; fixed fast/standard/deep tiers with explicit mappings or host-coordinator selection policy for unconfigured tiers; unavailable usage remains null"
+      "implementation": "bounded reference/output/summary helpers; three-pass retrieval procedure; selected live-context/static-audit, file-cache and prompt-cache guidance; configured role tiers or host-coordinator selection; unavailable usage remains null; native context enforcement is unqualified"
     },
     "orchestration": {
       "owner": "pegatus-start and pegatus-execute",
-      "implementation": "dependency/ownership/handoff procedures"
+      "implementation": "dependency graph, ownership reservations, worker records and injected host callbacks with integration verification; standalone worker execution is blocked without callbacks"
     },
     "security": {
       "owner": "pegatus-security",
-      "implementation": "two-track procedure; future pinned scanner wrapper"
+      "implementation": "pinned AgentShield wrapper with coverage/result gates plus separate changed-code security review; no universal application or native enforcement claim"
     }
   },
   "vendoredFiles": [

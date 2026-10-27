@@ -6,7 +6,7 @@ The host workflow delegates to `browser-tester` when native delegation is availa
 
 ## Entry points and responsibilities
 
-The catalog has nine roles and fourteen workflow aliases. The portable role ID is `browser-tester`; generated Claude/Codex native role names are `pegatus-browser-tester`. Invoke the `pegatus-browser-test` skill in Claude/Codex or its generated workflow in Antigravity. These are AI-host entry points, not `pegatus browser-test` CLI commands. The general `verifier` selects browser checks and the coordinator handles task state; browser-tester returns evidence and findings.
+The catalog has nine roles and seventeen workflow aliases, including the three ECC optimization guidance workflows described in [current state](current-state.md). The portable role ID is `browser-tester`; generated Claude/Codex native role names are `pegatus-browser-tester`. Invoke the `pegatus-browser-test` skill in Claude/Codex or its generated workflow in Antigravity. These are AI-host entry points, not `pegatus browser-test` CLI commands. The general `verifier` selects browser checks and the coordinator handles task state; browser-tester returns evidence and findings.
 
 For an existing Pegatus installation, use the normal install/update ownership and security flow and reload the host. This exposes the new wrappers but does not provision MCP or guarantee that a child agent inherits browser tools. See [installation](installation.md), [orchestration](orchestration.md) and [host capability limits](compatibility/hosts.md).
 

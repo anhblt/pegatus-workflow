@@ -1,5 +1,7 @@
 # Orchestration
 
+Handoffs use the shared [context protocol](../catalog/context-protocol.md), including at most three retrieval passes per decision, explicit remaining gaps and bounded reference packets. Select context-budget, file-cache or prompt-cache guidance only for matching tasks; live context questions take the no-tools path. These are host procedures, and [current implementation validation](current-state.md) does not establish native worker execution.
+
 ## Browser testing lane
 
 The verifier can request the browser-tester role through [pegatus-browser-test](../catalog/skills/pegatus-browser-test/SKILL.md) for selected UI scenarios. Direct user invocation can test an existing application with no implementation diff. Browser testing is not mandatory for every frontend task; record why it is unnecessary when observable UI behavior is unaffected.
@@ -12,7 +14,7 @@ Native delegation and Playwright MCP availability are separate capabilities. Con
 
 The CLI reads project `.pegatus/config.json`; `runOrchestrationCommand` also accepts `userConfig` and preserves project-over-user precedence through `resolveConfig`. `--host` selects an existing team's host mapping for role briefs. Model and effort resolve through the fixed-tier helper. Explicit mappings take precedence; an unconfigured tier carries a pending `selectionPolicy` for the trusted host coordinator. Before spawning, the host callback selects and records a supported model/effort pair using the fast/standard/deep policy in [token controls](tokens.md), or discloses host-default fallback when unavailable. Workers cannot select replacements.
 
-`orchestrate run` requires an integrating host wrapper. The standalone binary reports blocked because it has no worker or verification callbacks. A wrapper may inject `orchestrationCallbacks` into exported `main`, or call the APIs below directly. There is no worker subprocess service, model API, automatic model selection, or inferred native launcher. Claude Code, Codex and Antigravity integrators must supply their supported native delegation callback or an explicit inline role executor; live host qualification is separate.
+`orchestrate run` requires an integrating host wrapper. The standalone binary reports blocked because it has no worker or verification callbacks. A wrapper may inject `orchestrationCallbacks` into exported `main`, or call the APIs below directly. There is no worker subprocess service, provider model-discovery API or inferred native launcher. The host coordinator resolves pending tier selection before dispatch. Claude Code, Codex and Antigravity integrators must supply their supported native delegation callback or an explicit inline role executor; live host qualification is separate.
 
 ## Saved input
 

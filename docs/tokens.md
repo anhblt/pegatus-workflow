@@ -1,6 +1,8 @@
 # Token controls and fixed role tiers
 
-The browser-tester role uses the `standard` tier, resolved through the existing per-host model/effort configuration and disclosed host-default fallback. It receives scoped scenarios and reference-based context, then returns bounded summaries with references to retained screenshots and diagnostics. Browser access is a separate host capability; model selection or generated role files do not establish Playwright MCP access. See [browser testing](browser-testing.md).
+The host selects `pegatus-context-budget` for live context questions or explicitly scoped installed-overhead audits. Live requests use no tools or file scans and retain unavailable measurements honestly. `pegatus-prompt-cache` covers authorized stable-prefix reuse and observed provider usage; `pegatus-file-cache` covers deterministic file-processing results. These are distinct selected guidance skills, exposed through start routing and host aliases, not additional CLI operations. See the [ECC integration audit](upstream/ecc-workflow-audit.md).
+
+The browser-tester role uses the `standard` tier, resolved through explicit supported per-host mappings or the coordinator-selection policy below, with a disclosed host-default fallback when selection is unavailable. It receives scoped scenarios and reference-based context, then returns bounded summaries with references to retained screenshots and diagnostics. Browser access is a separate host capability; model selection or generated role files do not establish Playwright MCP access. See [browser testing](browser-testing.md).
 
 `src/telemetry/usage.mjs` provides explicit, local helpers. It makes no model/provider requests, reads no personal configuration, and does not infer token counts from characters. Native host limits and actual model availability still require the Task 10 Windows/Linux trials.
 
