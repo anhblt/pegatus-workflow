@@ -36,7 +36,8 @@ test('detached installed runtime scans configuration and completes a vault-less 
   const installed = invoke(packedCli, root, ['install', '--host', 'claude', '--scope', 'project', '--root', root]);
   assert.equal(installed.status, 0, installed.stderr + installed.stdout);
   const cli = path.join(root, '.pegatus/runtime/claude/bin/pegatus.mjs');
-  const runtimeRoot = path.dirname(path.dirname(cli));
+  const hostOwnership=JSON.parse(await readFile(path.join(root,'.pegatus/install-lock-claude.json')));
+  const runtimeRoot = path.join(root,'.pegatus/runtime/shared',hostOwnership.runtime.id);
   const runtimeRelease = JSON.parse(await readFile(path.join(runtimeRoot, 'release.json')));
   assert.deepEqual(await readFile(path.join(runtimeRoot, runtimeRelease.dependencyLock)),
     await readFile(path.join(runtimeRoot, runtimeRelease.runtimeDependencyLock)), 'Runtime retains both declared lock resources');

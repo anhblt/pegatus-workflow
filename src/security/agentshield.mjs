@@ -131,7 +131,7 @@ export async function scanInstallPlan(plan,options={}) {
       relative(op.path);
       if(op.content===undefined || hashBytes(op.content)!==op.hash) throw new Error('Invalid staged configuration bytes');
       // Locked library documentation is dependency content, not agent config.
-      if(/^\.pegatus\/runtime\/[^/]+\/node_modules\//.test(op.path)) continue;
+      if(/^\.pegatus\/runtime\/(?:shared\/[^/]+|[^/]+)\/node_modules\//.test(op.path)) continue;
       if(!scannerSupported(op.path) && !staticSupported(op.path) && !/^\.(?:claude|codex|agents|gemini)\//.test(op.path)) continue;
       const target=path.join(stage,op.path);await mkdir(path.dirname(target),{recursive:true});await writeFile(target,op.content,{mode:0o600});files.push(op.path);
     }

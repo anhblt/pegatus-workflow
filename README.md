@@ -161,7 +161,7 @@ node ./bin/pegatus.mjs install --host claude --scope project --root "$HOME/work/
 node ./bin/pegatus.mjs doctor --host claude --scope project --root "$HOME/work/PegatusPilot"
 ```
 
-Exact host IDs are `claude`, `codex`, and `antigravity`. Repeat with the appropriate ID for another host. Each has its own runtime/ownership record; shared `.agents/` collisions must be reconciled explicitly.
+Exact host IDs are `claude`, `codex`, and `antigravity`. Repeat with the appropriate ID for another host. Each has its own ownership record; identical runtime content is shared inside the installation root. Shared `.agents/` collisions must be reconciled explicitly.
 
 | Host | Generated entry points |
 | --- | --- |
@@ -169,7 +169,9 @@ Exact host IDs are `claude`, `codex`, and `antigravity`. Repeat with the appropr
 | Codex | `.agents/skills/`, `.codex/agents/*.toml` |
 | Antigravity project | `.agents/workflows/`, `.agents/rules/`; portable skill/role references |
 
-Full installations include `.pegatus/runtime/<host>/`: CLI, modules, catalog, vendor resources, notices, provenance and prepared dependencies. Entry points link into this runtime.
+Full installations share `.pegatus/runtime/shared/<content-id>/`: CLI, modules, catalog, vendor resources, notices, provenance and prepared dependencies. Entry points link into their selected snapshot. The first host copies the runtime; later hosts with identical content reuse it. Different content can coexist during independent host updates. Projects remain self-contained if the original kit checkout moves or is deleted.
+
+`.pegatus/runtime/<host>/` contains only small compatibility files for the documented CLI and context-protocol paths. Normal preview/update migrates an unchanged legacy host runtime; edited files block migration. Uninstalling one host retains snapshots used by other hosts. See [shared runtime ownership and migration](docs/installation.md#shared-runtime-ownership-and-migration).
 
 Installation preserves existing `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, instruction generators and hook registrations. Hash ownership detects edited/foreign conflicts. Desired configuration is scanned before changes.
 

@@ -7,10 +7,11 @@ import {loadCatalog} from '../catalog/manifest.mjs';
 import {lintCatalog} from '../catalog/lint.mjs';
 import {generateHost} from '../adapters/capabilities.mjs';
 import {readOwnership,fileBytes,hashBytes,hostName} from './ownership.mjs';
-import {planInstall} from './plan.mjs';
 import {applyInstall,recoverInstall} from './apply.mjs';
 import {scanInstallPlan} from '../security/agentshield.mjs';
 import {activationFor} from '../hooks/operations.mjs';
+import {createRuntimeSnapshot,compatibilityOperations,runtimePath} from './runtime.mjs';
+import {planSharedInstall,hosts} from './shared-plan.mjs';
 
 const packageRoot=fileURLToPath(new URL('../../',import.meta.url));
 function argumentsFor(argv,cwd) {
@@ -109,23 +110,48 @@ function hookActivation(host,root) {
 /** Explicit roots are the only filesystem scopes inspected. project overrides user config.
  * securityPreflight is a Result or async (plan)=>Result supplied by the security adapter.
  */
-export async function runAdministration(argv,{cwd,securityPreflight=scanInstallPlan,dryRun=false}={}) {
+export function createAdministrationSession({prepare=runtimeCatalog}={}) {
+  let snapshot;
+  return (argv,options={})=>runAdministration(argv,{...options,prepareCatalog:()=>snapshot??=prepare()});
+}
+export async function runAdministration(argv,{cwd,securityPreflight=scanInstallPlan,dryRun=false,prepareCatalog=runtimeCatalog,afterWrite,projectedRuntimes,onPreviewPlan,approvedPreview}={}) {
   const options=argumentsFor(argv,cwd),{operation,root,host,scope,userRoot}=options;
   await assertContained(root,root);
-  if(dryRun && (await fileBytes(root,`.pegatus/install-journal-${host}.json`,{internal:true})
-    || await fileBytes(root,`.pegatus/install-busy-${host}.json`,{internal:true})))
+  let pending=false;
+  for(const name of [...hosts,'shared']) if(await fileBytes(root,`.pegatus/install-journal-${name}.json`,{internal:true})
+    || await fileBytes(root,`.pegatus/install-busy-${name}.json`,{internal:true})) pending=true;
+  if(dryRun && pending)
     return {status:'blocked',evidence:[],reasons:['Pending installation recovery or active writer; inspect before setup'],preview:{writes:[],removes:[],conflicts:[]}};
   const user=await configuration(scope==='user'?root:userRoot),project=scope==='project'?await configuration(root):{};
-  const config=resolveConfig({user,project}),catalog=await runtimeCatalog();
-  const generated=generateHost(catalog,{host,scope,root,models:config.hostModels[host]??{},modelCapabilities:config.hostModelCapabilities[host],tokenControls:config.tokenControls});
-  const current=await readOwnership(root,host),userLock=scope==='project' && userRoot && userRoot!==root?await readOwnership(userRoot,host):null;
-  const version=JSON.parse(catalog.files['package.json'].toString('utf8')).version;
+  const config=resolveConfig({user,project}),inspection=['doctor','role'].includes(operation);
+  // Inspection uses installed ownership for runtime integrity, not source dependencies.
+  const catalog=inspection?await loadCatalog(packageRoot):await prepareCatalog();
+  if(!inspection && !dryRun){const recovery=await recoverInstall(root,host);if(recovery.status==='blocked')return recovery;}
+  let current,userLock;
+  try {
+    current=await readOwnership(root,host);
+    userLock=scope==='project' && userRoot && userRoot!==root?await readOwnership(userRoot,host):null;
+  } catch(error){return {status:'blocked',evidence:[],reasons:[error.message]};}
+  const snapshot=inspection?null:createRuntimeSnapshot(catalog);
+  function generate(record,configuration,destination,destinationScope){
+    const descriptor=inspection?record?.runtime:snapshot.descriptor;
+    const runtime=descriptor?runtimePath(descriptor.id):`.pegatus/runtime/${host}`;
+    const generated=generateHost(catalog,{host,scope:destinationScope,root:destination,models:configuration.hostModels[host]??{},
+      modelCapabilities:configuration.hostModelCapabilities[host],tokenControls:configuration.tokenControls,runtimePath:runtime,includeRuntime:false});
+    const runtimeOperations=inspection?(record?.files??[]).filter(f=>descriptor?
+      f.path.startsWith(runtime+'/') || f.path===`.pegatus/runtime-manifests/${descriptor.id}.json`:f.path.startsWith(runtime+'/'))
+      .map(f=>({path:f.path,hash:f.installedHash,sourceHash:f.sourceHash})):snapshot.operations;
+    generated.operations=[...runtimeOperations,...(descriptor?compatibilityOperations(host,descriptor):[]),...generated.operations];
+    return generated;
+  }
+  const generated=generate(current.runtime || !userLock?current:userLock,config,root,scope);
+  const version=JSON.parse((catalog.files['package.json']??await readFile(path.join(packageRoot,'package.json'))).toString('utf8')).version;
   const details={capabilities:{...generated.capabilities,security:'explicit-call'},warnings:generated.warnings.filter(w=>!w.startsWith('Security scanner unavailable')),snippets:generated.snippets,
     hookActivation:hookActivation(host,root),roleModels:generated.roleModels,tokenControls:generated.tokenControls};
   const overridePath=`.pegatus/overrides/${host}.json`;
   const overrideOwned=current.files.find(file=>file.path===overridePath);
   const userConfig=resolveConfig({user});
-  const userGenerated=userLock?.files.length?generateHost(catalog,{host,scope:'user',root:userRoot,models:userConfig.hostModels[host]??{},modelCapabilities:userConfig.hostModelCapabilities[host],tokenControls:userConfig.tokenControls}):null;
+  const userGenerated=userLock?.files.length?generate(userLock,userConfig,userRoot,'user'):null;
   const inheritedClean=Boolean(userGenerated && userLock.version===version && userLock.files.length===userGenerated.operations.length
     && userGenerated.operations.every(op=>userLock.files.some(file=>file.path===op.path && file.installedHash===op.hash && file.actualHash===op.hash)));
   const packet={schemaVersion:1,host,version,userRoot:userRoot??null,userLockHash:userLock?.lockHash??null,
@@ -141,7 +167,7 @@ export async function runAdministration(argv,{cwd,securityPreflight=scanInstallP
     const role=catalog.agents.find(role=>role.id===options.role),selection=installedPacket.roleModels.find(role=>role.role===options.role);
     if(!role || !selection) throw new Error('Unknown portable role');
     return {status:'passed',evidence:[],reasons:[],activation,selection,tokenControls:installedPacket.tokenControls,
-      procedure:path.join(userRoot,`.pegatus/runtime/${host}`,role.path),
+      procedure:path.join(userRoot,userLock.runtime?runtimePath(userLock.runtime.id):`.pegatus/runtime/${host}`,role.path),
       instructions:'Read applicable solution instructions and the referenced procedure. Preserve authorized scope, ownership and required checks. Honor the returned configured selection; when selectionPolicy is present, the trusted coordinator follows it and records both model and effort before spawning within the assigned tier. Unsupported configured pairs retain host defaults. Native execution remains unqualified.'};
   }
   if(operation==='doctor') {
@@ -149,7 +175,8 @@ export async function runAdministration(argv,{cwd,securityPreflight=scanInstallP
     const adapted=(inherited || overrideOwned) && userGenerated?userGenerated:generated;
     const locations=effective.files.map(f=>({path:path.join(effectiveRoot,f.path),state:f.actualHash===null?'missing':f.actualHash===f.installedHash?'unchanged':'edited',inherited}));
     if(overrideOwned && userLock) locations.push(...userLock.files.map(f=>({path:path.join(userRoot,f.path),state:f.actualHash===null?'missing':f.actualHash===f.installedHash?'unchanged':'edited',inherited:true})));
-    return {status:overrideOwned && !portableReady?'blocked':'passed',evidence:[],reasons:overrideOwned && !portableReady?['Portable override or inherited runtime changed; reconcile before activation']:[],capabilities:{...adapted.capabilities,security:'explicit-call'},warnings:adapted.warnings.filter(w=>!w.startsWith('Security scanner unavailable')),snippets:adapted.snippets,
+    const broken=effective.files.some(f=>f.actualHash!==f.installedHash);
+    return {status:broken || overrideOwned && !portableReady?'blocked':'passed',evidence:[],reasons:broken?['Installed owned files changed or missing; reconcile before activation']:overrideOwned && !portableReady?['Portable override or inherited runtime changed; reconcile before activation']:[],capabilities:{...adapted.capabilities,security:'explicit-call'},warnings:adapted.warnings.filter(w=>!w.startsWith('Security scanner unavailable')),snippets:adapted.snippets,
       hookActivation:hookActivation(host,overrideOwned?userRoot??root:effectiveRoot),roleModels:adapted.roleModels,tokenControls:adapted.tokenControls,
       installedVersion:effective.version??null,configuration:config,inherited,...(inherited?{inheritedRoot:userRoot}:{}),
       requestedRoleModels:generated.roleModels,
@@ -158,10 +185,7 @@ export async function runAdministration(argv,{cwd,securityPreflight=scanInstallP
       commandLocations:locations.filter(f=>/[\\/](?:skills[\\/]pegatus-|commands[\\/]pegatus-|workflows[\\/]pegatus-|global_workflows[\\/]pegatus-)/.test(f.path)).map(f=>f.path),
       userInstalledVersion:userLock?.version??null};
   }
-  const recovery=dryRun?{status:'skipped'}:await recoverInstall(root,host);
-  if(recovery.status==='blocked') return {...recovery,...details};
-  // Re-read after recovery; a journal can restore a previous ownership snapshot.
-  const owned=await readOwnership(root,host);
+  const owned=current;
   let desired=operation==='uninstall'?[]:generated.operations;
   if(operation!=='uninstall' && userLock?.files.length) {
     if(!inheritedClean) return {status:'blocked',evidence:[],reasons:['User installation version, owned bytes or resource closure differs; reconcile explicit user runtime'],...details};
@@ -174,15 +198,22 @@ export async function runAdministration(argv,{cwd,securityPreflight=scanInstallP
     details.snippets=userGenerated.snippets;
     details.hookActivation=hookActivation(host,userRoot);
   }
-  const currentFiles=[...owned.files],ownedPaths=new Set(currentFiles.map(f=>f.path));
-  for(const op of desired) {
-    if(ownedPaths.has(op.path)) continue;
-    const bytes=await fileBytes(root,op.path);
-    if(bytes!==null) currentFiles.push({path:op.path,actualHash:hashBytes(bytes)});
+  let plan;
+  try {plan=await planSharedInstall({root,host,scope,version,owned,desired,
+    runtime:operation==='uninstall' || desired.length===1 && desired[0].path===overridePath?null:snapshot,
+    projectedRuntimes:dryRun?projectedRuntimes:undefined,
+    sourceRevisions:catalog.sourceLock.sources.map(s=>({id:s.id,revision:s.revision}))});}
+  catch(error){return {status:'blocked',evidence:[],reasons:[error.message],...details,...(dryRun?{preview:{writes:[],removes:[],conflicts:[{reason:error.message}]}}:{})};}
+  if(dryRun) {
+    if(!plan.conflicts.length)onPreviewPlan?.(plan.runtime);
+    return {status:plan.conflicts.length?'blocked':'passed',evidence:[],reasons:plan.conflicts.map(c=>`${c.path}: ${c.reason}`),
+      preview:{writes:plan.writes.map(f=>f.path),removes:plan.removes.map(f=>f.path),conflicts:plan.conflicts},...details};
   }
-  const plan=planInstall(currentFiles,desired,{root,host,scope,version,expectedLockHash:owned.lockHash,sourceRevisions:catalog.sourceLock.sources.map(s=>({id:s.id,revision:s.revision}))});
-  if(dryRun) return {status:plan.conflicts.length?'blocked':'passed',evidence:[],reasons:plan.conflicts.map(c=>`${c.path}: ${c.reason}`),
-    preview:{writes:plan.writes.map(f=>f.path),removes:plan.removes.map(f=>f.path),conflicts:plan.conflicts},...details};
+  if(approvedPreview){
+    const writes=new Set(approvedPreview.writes),removes=new Set(approvedPreview.removes);
+    if(plan.writes.some(op=>!writes.has(op.path)) || plan.removes.some(op=>!removes.has(op.path)))
+      return {status:'blocked',evidence:[],reasons:['Installation plan changed after preview; review the new writes/removals before applying'],...details};
+  }
   const security=typeof securityPreflight==='function'?await securityPreflight(plan):securityPreflight;
-  return {...await applyInstall(plan,{securityPreflight:security}),security,...details};
+  return {...await applyInstall(plan,{securityPreflight:security,afterWrite}),security,...details};
 }

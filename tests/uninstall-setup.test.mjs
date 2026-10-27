@@ -12,7 +12,7 @@ async function fixture(t) {
  const root=await mkdtemp(path.join(os.tmpdir(),'pegatus-uninstall-'));
  t.after(()=>rm(root,{recursive:true,force:true}));
  await mkdir(path.join(root,'.pegatus'));
- for(const host of ['claude','codex'])await writeFile(path.join(root,`.pegatus/install-lock-${host}.json`),'{}');
+ for(const host of ['claude','codex'])await writeFile(path.join(root,`.pegatus/install-lock-${host}.json`),JSON.stringify({schemaVersion:1,host,scope:'project',files:[]}));
  return root;
 }
 const preview={status:'passed',preview:{writes:[],removes:['.agents/skills/pegatus-test/SKILL.md'],conflicts:[]}};

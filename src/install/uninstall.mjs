@@ -2,13 +2,13 @@ import {stat} from 'node:fs/promises';
 import path from 'node:path';
 import {fileBytes,lockPath} from './ownership.mjs';
 import {createSetupTerminal} from './terminal.mjs';
-import {runAdministration} from './admin.mjs';
+import {createAdministrationSession} from './admin.mjs';
 
 const hosts=[{id:'claude',label:'Claude Code'},{id:'codex',label:'Codex'},{id:'antigravity',label:'Antigravity'}];
 const display=value=>String(value).replace(/[\x00-\x1f\x7f-\x9f]/g,'?');
 
 /** Guided presentation only; ownership, recovery and mutation stay in administration. */
-export async function runUninstall({cwd,home,ask,signal,write=message=>process.stdout.write(message+'\n'),admin=runAdministration}={}) {
+export async function runUninstall({cwd,home,ask,signal,write=message=>process.stdout.write(message+'\n'),admin=createAdministrationSession()}={}) {
  let terminal,interrupt;
  if(!ask) {
   if(!process.stdin.isTTY || !process.stdout.isTTY) {
@@ -62,23 +62,23 @@ export async function runUninstall({cwd,home,ask,signal,write=message=>process.s
   write('Task history, team configuration, unrelated settings and instructions are preserved. Edited managed files block removal.');
   if(scope==='user')write('Removing user-wide defaults affects projects that inherit this installation.');
   write('Hosts are removed sequentially; earlier removals remain if a later host blocks.');
-  const requests=[];
+  const requests=[],projectedRuntimes=new Map();
   for(const index of selected) {
    if(signal?.aborted){write('Cancelled; no uninstall applied.');return 0;}
    const host=installed[index],args=['uninstall','--host',host.id,'--scope',scope,'--root',root];
-   const preview=await admin(args,{cwd,dryRun:true});
+   const preview=await admin(args,{cwd,dryRun:true,projectedRuntimes,onPreviewPlan:runtime=>projectedRuntimes.set(host.id,runtime)});
    write(`${host.label}: ${preview.status}; ${preview.preview?.removes.length??0} removals.`);
    for(const file of preview.preview?.removes??[])write(`  Remove owned file: ${display(file)}`);
    for(const reason of preview.reasons??[])write(`  ${display(reason)}`);
    if(!['passed','skipped'].includes(preview.status)){write('No uninstall applied. Resolve the reported conflict/recovery condition first.');return 3;}
-   requests.push({host,args});
+   requests.push({host,args,preview:preview.preview});
   }
   const confirmation=terminal?(await terminal.select('Apply this uninstall?',[{label:'Yes',value:'yes'},{label:'No',value:'no'}],{initial:['no'],signal}))[0]:await ask('Apply this uninstall? [y/N]: ');
   if(!/^y(?:es)?$/i.test(confirmation?.trim()??'')){write('Cancelled; no uninstall applied.');return 0;}
-  for(const {host,args} of requests) {
+  for(const {host,args,preview} of requests) {
    if(signal?.aborted){write('Cancelled. Completed removals are retained.');return 0;}
    write(`Uninstalling ${host.label}…`);
-   const result=await admin(args,{cwd});
+   const result=await admin(args,{cwd,approvedPreview:preview});
    write(`${host.label}: ${result.status}`);
    for(const reason of result.reasons??[])write(`  ${display(reason)}`);
    if(!['passed','skipped'].includes(result.status)){write('Stopped. Earlier removals are retained; inspect doctor before retrying.');return result.status==='blocked'?3:1;}

@@ -3,6 +3,7 @@ import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { assertContained } from '../paths.mjs';
 import { fileBytes, hashBytes, hostName, lockPath, safeRelative } from './ownership.mjs';
+import {assertRuntimeTree} from './runtime.mjs';
 
 const result=(status,reasons=[],details={})=>({status,evidence:[],reasons,...details});
 const journalPath=host=>`.pegatus/install-journal-${hostName(host)}.json`;
@@ -70,8 +71,8 @@ async function recover(root,host,{afterRestore}={}) {
   await remove(root,journalPath(host));
   return result('passed',[],{recovered:true});
 }
-async function exclusive(root,host,action) {
-  const relative=`.pegatus/install-busy-${hostName(host)}.json`,target=path.resolve(root,relative);
+async function mutex(root,name,action) {
+  const relative=`.pegatus/install-busy-${name}.json`,target=path.resolve(root,relative);
   await assertContained(root,target); await mkdir(path.dirname(target),{recursive:true});
   let handle;
   try { handle=await open(target,'wx'); }
@@ -86,6 +87,15 @@ async function exclusive(root,host,action) {
   }
   try {await handle.writeFile(JSON.stringify({schemaVersion:1,pid:process.pid}));return await action();}
   finally {await handle.close();await remove(root,relative);}
+}
+async function exclusive(root,host,action) {
+  hostName(host);
+  const names=['claude','codex','antigravity'];
+  const enter=index=>index===names.length?action():mutex(root,names[index],()=>enter(index+1));
+  return mutex(root,'shared',async()=>{
+    for(const name of names) if(name!==host && await fileBytes(root,journalPath(name),{internal:true})) return result('blocked',[`Pending installation recovery for ${name}; recover before shared administration`]);
+    return enter(0);
+  });
 }
 /** Restore an interrupted apply only when every destination still matches the journal. */
 export async function recoverInstall(root,host,options={}) {
@@ -107,6 +117,14 @@ export async function applyInstall(plan,{securityPreflight,afterWrite}={}) {
       const recovered=await recover(plan.root,plan.host); if(recovered.status==='blocked') return recovered;
       const previous=await fileBytes(plan.root,lockPath(plan.host),{internal:true});
       if((previous===null?null:hashBytes(previous))!==plan.expectedLockHash) return result('blocked',['Ownership lock changed after planning; replan from the current snapshot']);
+      for(const [host,expected] of Object.entries(plan.expectedLocks??{})) {
+        const bytes=await fileBytes(plan.root,lockPath(host),{internal:true});
+        if((bytes===null?null:hashBytes(bytes))!==expected) return result('blocked',['Host ownership changed after shared-runtime planning; replan']);
+      }
+      for(const check of plan.runtimeChecks??[]) {
+        try {await assertRuntimeTree(plan.root,check.descriptor,check.creating?[]:check.files);}
+        catch(error){if(!check.creating || error.code!=='ENOENT')throw error;}
+      }
       const entries=[];
       for(const op of [...plan.writes,...plan.removes]) {
         safeRelative(op.path);
@@ -123,19 +141,35 @@ export async function applyInstall(plan,{securityPreflight,afterWrite}={}) {
           try {await assertOwned(plan.root,op);} catch(error) {return result('blocked',[error.message]);}
         }
       }
-      const lock={schemaVersion:1,host:plan.host,scope:plan.scope,version:plan.version,sourceRevisions:plan.sourceRevisions??[],files:plan.owned.map(op=>({path:op.path,installedHash:op.hash,sourceHash:op.sourceHash??op.hash}))};
-      const bytes=plan.owned.length?Buffer.from(JSON.stringify(lock,null,2)+'\n'):null;
-      entries.push({path:lockPath(plan.host),before:previous===null?null:previous.toString('base64'),afterHash:bytes===null?null:hashBytes(bytes)});
+      const hostOwned=plan.hostOwned??plan.owned;
+      const lock={schemaVersion:plan.runtime?2:1,host:plan.host,scope:plan.scope,version:plan.version,sourceRevisions:plan.sourceRevisions??[],
+        ...(plan.runtime?{runtime:plan.runtime}:{}),files:hostOwned.map(op=>({path:op.path,installedHash:op.hash,sourceHash:op.sourceHash??op.hash}))};
+      const bytes=hostOwned.length || plan.runtime?Buffer.from(JSON.stringify(lock,null,2)+'\n'):null;
+      const lockEntry={path:lockPath(plan.host),before:previous===null?null:previous.toString('base64'),afterHash:bytes===null?null:hashBytes(bytes)};
+      // Recovery reverses actual mutation order: restore obsolete snapshot bytes
+      // before reverting the host reference, then retire the new snapshot last.
+      if(plan.expectedLocks)entries.splice(plan.writes.length,0,lockEntry);
+      else entries.push(lockEntry);
       await replace(plan.root,journalPath(plan.host),JSON.stringify({schemaVersion:1,host:plan.host,entries}));
       try {
         // Journal contains all rollback bytes before the first managed mutation.
         for(const op of plan.writes) {await assertExpected(plan.root,op);await replace(plan.root,op.path,op.content);await afterWrite?.(op);}
+        for(const check of plan.runtimeChecks??[]) if(!check.removing) await assertRuntimeTree(plan.root,check.descriptor,check.files);
+        const publish=async()=>{
+          for(const op of plan.owned) await assertOwned(plan.root,op);
+          const currentLock=await fileBytes(plan.root,lockPath(plan.host),{internal:true});
+          if((currentLock===null?null:hashBytes(currentLock))!==(previous===null?null:hashBytes(previous))) throw new Error('Ownership lock changed during installation');
+          if(bytes===null) await remove(plan.root,lockPath(plan.host));
+          else await replace(plan.root,lockPath(plan.host),bytes);
+        };
+        if(plan.expectedLocks)await publish();
         for(const op of plan.removes) {await assertExpected(plan.root,op);await remove(plan.root,op.path);await afterWrite?.(op);}
+        for(const check of plan.runtimeChecks??[]) await assertRuntimeTree(plan.root,check.descriptor,check.files);
         for(const op of plan.owned) await assertOwned(plan.root,op);
-        const currentLock=await fileBytes(plan.root,lockPath(plan.host),{internal:true});
-        if((currentLock===null?null:hashBytes(currentLock))!==(previous===null?null:hashBytes(previous))) throw new Error('Ownership lock changed during installation');
-        if(bytes===null) await remove(plan.root,lockPath(plan.host));
-        else await replace(plan.root,lockPath(plan.host),bytes);
+        if(plan.expectedLocks){
+          const published=await fileBytes(plan.root,lockPath(plan.host),{internal:true});
+          if((published===null?null:hashBytes(published))!==(bytes===null?null:hashBytes(bytes))) throw new Error('Ownership lock changed after activation');
+        } else await publish();
         await remove(plan.root,journalPath(plan.host));
         return result('passed',[],{lock:bytes===null?null:lock,written:plan.writes.length,removed:plan.removes.length});
       } catch(error) {

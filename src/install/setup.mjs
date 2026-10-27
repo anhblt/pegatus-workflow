@@ -2,7 +2,7 @@ import {stat,access} from 'node:fs/promises';
 import {constants} from 'node:fs';
 import path from 'node:path';
 import {createSetupTerminal} from './terminal.mjs';
-import {runAdministration} from './admin.mjs';
+import {createAdministrationSession} from './admin.mjs';
 
 const hosts=[{id:'claude',label:'Claude Code',command:'claude',config:'.claude'},
   {id:'codex',label:'Codex',command:'codex',config:'.codex'},
@@ -45,7 +45,7 @@ export async function detectHosts({home,platform=process.platform,env=process.en
 
 /** Interactive front end only. All managed writes still pass through administration/scanning/CAS. */
 export async function runSetup({cwd,home,ask,signal,write=message=>process.stdout.write(message+'\n'),
-  detect=detectHosts,admin=runAdministration}={}) {
+  detect=detectHosts,admin=createAdministrationSession()}={}) {
   let terminal,interrupt;
   if(!ask) {
     if(!process.stdin.isTTY || !process.stdout.isTTY) {
@@ -105,11 +105,11 @@ export async function runSetup({cwd,home,ask,signal,write=message=>process.stdou
     if(userRoot)write(`Inherit defaults: ${display(userRoot)}`);
     write('Existing solution instructions, unrelated settings and hooks are preserved. Security checks run before each apply.');
     write('Selected hosts apply sequentially, not as one cross-host transaction; earlier successful hosts remain if a later host blocks.');
-    const requests=[];
+    const requests=[],projectedRuntimes=new Map();
     for(const index of selected) {
       if(cancelled()){write('Cancelled; no installation applied.');return 0;}
       const host=detected[index],args=['install','--host',host.id,'--scope',scope,'--root',root,...(userRoot?['--user-root',userRoot]:[])];
-      const preview=await admin(args,{cwd,dryRun:true});
+      const preview=await admin(args,{cwd,dryRun:true,projectedRuntimes,onPreviewPlan:runtime=>projectedRuntimes.set(host.id,runtime)});
       write(`${host.label}: ${preview.status}; ${preview.preview?.writes.length??0} writes, ${preview.preview?.removes.length??0} removals.`);
       const groups=new Map();
       for(const file of preview.preview?.writes??[]){const parts=file.split('/');const group=parts.slice(0,parts[0]==='.pegatus'?3:2).join('/');groups.set(group,(groups.get(group)??0)+1);}
@@ -117,14 +117,14 @@ export async function runSetup({cwd,home,ask,signal,write=message=>process.stdou
       for(const file of preview.preview?.removes??[])write(`  Remove owned file: ${display(file)}`);
       for(const reason of preview.reasons??[])write(`  ${display(reason)}`);
       if(!['passed','skipped'].includes(preview.status)){write('No installation applied. Resolve the reported conflict/recovery condition first.');return 3;}
-      requests.push({host,args});
+      requests.push({host,args,preview:preview.preview});
     }
     const confirmation=terminal?(await terminal.select('Apply this installation?',[{label:'Yes',value:'yes'},{label:'No',value:'no'}],{initial:['no'],signal}))[0]:await ask('Apply the preview? [y/N]: ');
     if(!/^y(?:es)?$/i.test(confirmation?.trim()??'')){write('Cancelled; no installation applied.');return 0;}
-    for(const {host,args} of requests) {
+    for(const {host,args,preview} of requests) {
       if(cancelled()){write('Cancelled. Earlier successful host installations are retained.');return 0;}
       write(`Installing ${host.label}…`);
-      const result=await admin(args,{cwd});
+      const result=await admin(args,{cwd,approvedPreview:preview});
       write(`${host.label}: ${result.status}`);
       for(const reason of result.reasons??[])write(`  ${display(reason)}`);
       if(!['passed','skipped'].includes(result.status)){write('Stopped. Earlier successful host installations are retained; inspect doctor before retrying.');return result.status==='blocked'?3:1;}

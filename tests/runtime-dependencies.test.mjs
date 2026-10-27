@@ -61,7 +61,8 @@ test('administration retains locked nested resolution and rejects a changed nest
   const { kit, project, runAdministration, args } = await fixture(t, { nested: true });
   const options = { cwd: project, securityPreflight: { status: 'passed', evidence: [], reasons: [] } };
   assert.equal((await runAdministration(['install', ...args], options)).status, 'passed');
-  const runtime = path.join(project, '.pegatus/runtime/codex');
+  const installedLock=JSON.parse(await readFile(path.join(project,'.pegatus/install-lock-codex.json')));
+  const runtime = path.join(project, '.pegatus/runtime/shared',installedLock.runtime.id);
   // Execute normal Node resolution from the installed locked dependency tree.
   const resolved = spawnSync(process.execPath, [path.join(runtime, 'node_modules/ecc-agentshield/index.cjs')], { encoding: 'utf8', env: { ...process.env, NODE_PATH: '' } });
   assert.equal(resolved.status, 0, resolved.stderr);
