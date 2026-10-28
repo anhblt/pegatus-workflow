@@ -4,8 +4,36 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadCatalog } from '../src/catalog/manifest.mjs';
 import { generateHost } from '../src/adapters/capabilities.mjs';
+import { planInstall } from '../src/install/plan.mjs';
 const root=fileURLToPath(new URL('../',import.meta.url));
 const catalog=await loadCatalog(root);
+
+test('Claude workflows have one slash entry point per alias',()=>{
+  for(const scope of ['project','user']) {
+    const generated=generateHost(catalog,{host:'claude',scope,root});
+    for(const command of catalog.commands) {
+      const name=command.skill;
+      const entries=generated.operations.filter(op=>op.path===`.claude/skills/${name}/SKILL.md` || op.path===`.claude/commands/${name}.md`);
+      assert.equal(entries.length,1,`${scope}: ${name}`);
+      assert.equal(entries[0].path,`.claude/skills/${name}/SKILL.md`);
+    }
+  }
+});
+
+test('Claude update removes owned legacy aliases but preserves edited aliases',()=>{
+  const generated=generateHost(catalog,{host:'claude',scope:'project',root});
+  const current=generated.operations.map(op=>({path:op.path,installedHash:op.hash,actualHash:op.hash}));
+  const legacy=catalog.commands.map(command=>({path:`.claude/commands/${command.skill}.md`,installedHash:'original',actualHash:'original'}));
+  const plan=planInstall([...current,...legacy],generated.operations);
+  assert.deepEqual(plan.conflicts,[]);
+  assert.deepEqual(plan.writes,[]);
+  assert.deepEqual(plan.removes.map(op=>op.path),legacy.map(op=>op.path));
+  legacy[0].actualHash='user edit';
+  const blocked=planInstall([...current,...legacy],generated.operations);
+  assert.ok(blocked.conflicts.some(conflict=>conflict.path===legacy[0].path));
+  assert.deepEqual(blocked.removes,[]);
+  assert.deepEqual(blocked.writes,[]);
+});
 test('adapters preserve runtime trees and instruction generators',()=>{
   for(const host of ['claude','codex','antigravity']) {
     const g=generateHost(catalog,{host,scope:'project',root,models:{}});

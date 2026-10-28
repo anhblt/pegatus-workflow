@@ -165,7 +165,7 @@ Exact host IDs are `claude`, `codex`, and `antigravity`. Repeat with the appropr
 
 | Host | Generated entry points |
 | --- | --- |
-| Claude | `.claude/skills/`, `.claude/agents/`, `.claude/commands/`, `.claude/rules/` |
+| Claude | `.claude/skills/` (including slash commands), `.claude/agents/`, `.claude/rules/` |
 | Codex | `.agents/skills/`, `.codex/agents/*.toml` |
 | Antigravity project | `.agents/workflows/`, `.agents/rules/`; portable skill/role references |
 

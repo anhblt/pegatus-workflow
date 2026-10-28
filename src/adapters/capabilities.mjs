@@ -32,7 +32,8 @@ export function generateHost(catalog,{host,scope,root,models={},modelCapabilitie
     add(file,`---\nname: ${name}\ndescription: ${quoted(activation(entry))}\n---\n\n${contextGuard(entry)}${instructions(file,entry)}`);
   }
   for(const entry of catalog.commands??[]) {
-    // Codex operation aliases are the existing direct workflow skills.
+    // Invocable skills already expose these aliases; avoid duplicate slash commands.
+    if(host==='claude' && catalog.skills?.some(skill=>skill.id===entry.skill)) continue;
     if(!adapter.commands) continue;
     const name=prefixed(entry.skill),file=`${adapter.commands}/${name}.md`;
     add(file,`---\nname: ${name}\ndescription: ${quoted(activation(entry))}\n---\n\n${contextGuard({...entry,id:entry.skill})}${instructions(file,entry)}The operation uses the shared ${entry.skill} procedure; resolve its catalog references.\n`);
