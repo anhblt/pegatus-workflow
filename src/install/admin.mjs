@@ -215,5 +215,5 @@ export async function runAdministration(argv,{cwd,securityPreflight=scanInstallP
       return {status:'blocked',evidence:[],reasons:['Installation plan changed after preview; review the new writes/removals before applying'],...details};
   }
   const security=typeof securityPreflight==='function'?await securityPreflight(plan):securityPreflight;
-  return {...await applyInstall(plan,{securityPreflight:security,afterWrite}),security,...details};
+  return {...await applyInstall(plan,{securityPreflight:security,afterWrite,pruneEmptyDirectories:operation==='uninstall'}),security,...details};
 }

@@ -84,7 +84,7 @@ export async function runUninstall({cwd,home,ask,signal,write=message=>process.s
    if(!['passed','skipped'].includes(result.status)){write('Stopped. Earlier removals are retained; inspect doctor before retrying.');return result.status==='blocked'?3:1;}
   }
   if(signal?.aborted){write('Cancelled after the active transaction settled. Completed removals are retained.');return 0;}
-  write('◇ Uninstall complete. Empty directories may remain. Reload the selected hosts.');return 0;
+  write('◇ Uninstall complete. Empty owned-file parent directories were pruned where possible. Reload the selected hosts.');return 0;
  } catch(error) {
   if(signal?.aborted || ['ABORT_ERR','ERR_USE_AFTER_CLOSE'].includes(error.code)){write('Cancelled.');return 0;}
   write(`Uninstall failed: ${display(error.message)}. Inspect installation state with doctor before retrying.`);return 1;

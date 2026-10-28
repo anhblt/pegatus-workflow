@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, readFile, writeFile, symlink, rm } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, writeFile, symlink, rm, lstat } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { planInstall } from '../src/install/plan.mjs';
@@ -16,6 +16,33 @@ async function fixture(t) {
 }
 const desired = (file,content) => ({path:file,content,hash:hashBytes(content),sourceHash:hashBytes(content)});
 const options = (root,expectedLockHash=null) => ({root,host:'codex',scope:'project',version:'test',sourceRevisions:[],expectedLockHash});
+
+test('uninstall directory cleanup preserves links introduced during removal',async t=>{
+  const root=await fixture(t),outside=await fixture(t);
+  const file='.agents/skills/pegatus-test/SKILL.md',dir=path.join(root,'.agents/skills/pegatus-test');
+  assert.equal((await applyInstall(planInstall([],[desired(file,'owned')],options(root)),{securityPreflight:passed})).status,'passed');
+  const lock=await readOwnership(root,'codex');
+  const result=await applyInstall(planInstall(lock.files,[],options(root,lock.lockHash)),{
+    securityPreflight:passed,pruneEmptyDirectories:true,
+    afterWrite:async()=>{await rm(dir,{recursive:true});await symlink(outside,dir,process.platform==='win32'?'junction':'dir');}
+  });
+  assert.equal(result.status,'passed');
+  assert.ok((await lstat(dir)).isSymbolicLink());
+  assert.ok((await lstat(outside)).isDirectory());
+  assert.ok(result.reasons.some(reason=>reason.includes('cleanup skipped')));
+});
+
+test('failed uninstall restores files without pruning directories',async t=>{
+  const root=await fixture(t),file='.agents/skills/pegatus-test/SKILL.md';
+  await applyInstall(planInstall([],[desired(file,'owned')],options(root)),{securityPreflight:passed});
+  const lock=await readOwnership(root,'codex');
+  const result=await applyInstall(planInstall(lock.files,[],options(root,lock.lockHash)),{
+    securityPreflight:passed,pruneEmptyDirectories:true,afterWrite:()=>{throw new Error('interrupted removal');}
+  });
+  assert.equal(result.status,'failed');
+  assert.equal(await readFile(path.join(root,file),'utf8'),'owned');
+  assert.equal((await readOwnership(root,'codex')).files.length,1);
+});
 test('updates refuse edited managed files',()=>{
   const p=planInstall([{path:'skill.md',installedHash:'old',actualHash:'edited'}],[{path:'skill.md',hash:'new'}]);
   assert.equal(p.conflicts.length,1); assert.equal(p.writes.length,0);

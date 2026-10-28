@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtemp,mkdir,writeFile,rm,readdir} from 'node:fs/promises';
+import {mkdtemp,mkdir,writeFile,rm,readdir,stat} from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import {spawnSync} from 'node:child_process';
@@ -16,6 +16,22 @@ async function fixture(t) {
  return root;
 }
 const preview={status:'passed',preview:{writes:[],removes:['.agents/skills/pegatus-test/SKILL.md'],conflicts:[]}};
+
+test('uninstall prunes owned directory ancestors and preserves unrelated directories and files',async t=>{
+ const root=await fixture(t);
+ await rm(path.join(root,'.pegatus/install-lock-codex.json'));
+ const files=['.claude/skills/pegatus-test/SKILL.md','.pegatus/runtime/claude/catalog/entry.md'];
+ for(const file of files){await mkdir(path.dirname(path.join(root,file)),{recursive:true});await writeFile(path.join(root,file),'owned');}
+ await mkdir(path.join(root,'.claude/skills/user-empty'),{recursive:true});
+ await writeFile(path.join(root,'.claude/settings.local.json'),'user settings');
+ await writeFile(path.join(root,'.pegatus/install-lock-claude.json'),JSON.stringify({schemaVersion:1,host:'claude',scope:'project',files:files.map(file=>({path:file,installedHash:hashBytes('owned')}))}));
+ const answers=['1','','1','yes'];
+ assert.equal(await runUninstall({cwd:root,home:root,ask:async()=>answers.shift(),write:()=>{}}),0);
+ await assert.rejects(stat(path.join(root,'.claude/skills/pegatus-test')),{code:'ENOENT'});
+ await assert.rejects(stat(path.join(root,'.pegatus')),{code:'ENOENT'});
+ assert.ok((await stat(path.join(root,'.claude/skills/user-empty'))).isDirectory());
+ assert.equal(await readFile(path.join(root,'.claude/settings.local.json'),'utf8'),'user settings');
+});
 test('uninstall previews all selected hosts and defaults to cancellation',async t=>{
  const root=await fixture(t),answers=['1','','1,2',''],calls=[],output=[];
  const before=await readdir(path.join(root,'.pegatus'));

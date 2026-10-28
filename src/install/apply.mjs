@@ -1,4 +1,4 @@
-import { mkdir, writeFile, rename, unlink, open, readdir } from 'node:fs/promises';
+import { mkdir, writeFile, rename, unlink, open, readdir, rmdir, lstat } from 'node:fs/promises';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { assertContained } from '../paths.mjs';
@@ -7,6 +7,28 @@ import {assertRuntimeTree} from './runtime.mjs';
 
 const result=(status,reasons=[],details={})=>({status,evidence:[],reasons,...details});
 const journalPath=host=>`.pegatus/install-journal-${hostName(host)}.json`;
+// Only ancestors of removed owned files are eligible; never traverse a tree.
+async function pruneEmptyParents(root,files,{preserveMetadata=false}={}) {
+  const directories=new Set(),reasons=[];
+  for(const file of files) {
+    for(let dir=path.posix.dirname(file);dir!=='.';dir=path.posix.dirname(dir)) directories.add(dir);
+  }
+  for(const dir of [...directories].sort((a,b)=>b.split('/').length-a.split('/').length)) {
+    if(preserveMetadata && dir==='.pegatus') continue;
+    try {
+      let target=root;
+      for(const part of dir.split('/')) {
+        target=path.join(target,part);
+        if((await lstat(target)).isSymbolicLink()) throw new Error('Directory link preserved');
+      }
+      await assertContained(root,target);
+      await rmdir(target);
+    } catch(error) {
+      if(!['ENOENT','ENOTEMPTY','EEXIST'].includes(error.code)) reasons.push(`Empty directory cleanup skipped ${dir}: ${error.message}`);
+    }
+  }
+  return reasons;
+}
 async function rejectCaseCollision(root,file) {
   let parent=root;
   for(const component of file.split('/')) {
@@ -74,8 +96,16 @@ async function recover(root,host,{afterRestore}={}) {
 async function mutex(root,name,action) {
   const relative=`.pegatus/install-busy-${name}.json`,target=path.resolve(root,relative);
   await assertContained(root,target); await mkdir(path.dirname(target),{recursive:true});
+  // A committed uninstall may prune the empty metadata directory between
+  // mkdir and open. Recreate it without bypassing exclusive file creation.
+  const acquire=async()=>{
+    for(;;) {
+      try {return await open(target,'wx');}
+      catch(error){if(error.code!=='ENOENT')throw error;await assertContained(root,target);await mkdir(path.dirname(target),{recursive:true});}
+    }
+  };
   let handle;
-  try { handle=await open(target,'wx'); }
+  try { handle=await acquire(); }
   catch(error) {
     if(error.code!=='EEXIST') throw error;
     const bytes=await fileBytes(root,relative,{internal:true});
@@ -83,7 +113,7 @@ async function mutex(root,name,action) {
     if(!Number.isSafeInteger(pid) || pid<1) return result('blocked',['Invalid installation mutex; inspect before recovery']);
     try {process.kill(pid,0);return result('blocked',['Another installation is active']);}
     catch(probe) {if(probe.code!=='ESRCH') return result('blocked',['Cannot determine installer liveness']);}
-    await remove(root,relative); handle=await open(target,'wx');
+    await remove(root,relative); handle=await acquire();
   }
   try {await handle.writeFile(JSON.stringify({schemaVersion:1,pid:process.pid}));return await action();}
   finally {await handle.close();await remove(root,relative);}
@@ -107,13 +137,13 @@ export async function recoverInstall(root,host,options={}) {
 /** Security is injected by the scanner integration, not inferred from exit 0 or filenames.
  * afterWrite is an optional transaction observer; throwing from it rolls back the apply.
  */
-export async function applyInstall(plan,{securityPreflight,afterWrite}={}) {
+export async function applyInstall(plan,{securityPreflight,afterWrite,pruneEmptyDirectories=false}={}) {
   if(plan.conflicts?.length) return result('blocked',['Installation ownership conflicts'],{conflicts:plan.conflicts});
   if(securityPreflight?.status!=='passed') return result('blocked',['Security preflight unavailable or not passed'],{security:securityPreflight??{status:'unavailable'}});
   try {
     if(!path.isAbsolute(plan.root) || !['project','user'].includes(plan.scope)) throw new TypeError('Explicit absolute root and scope are required');
     if(plan.expectedLockHash!==null && !/^[a-f0-9]{64}$/.test(plan.expectedLockHash??'')) throw new TypeError('Planning ownership snapshot expectedLockHash is required');
-    return await exclusive(plan.root,plan.host,async()=>{
+    const applied=await exclusive(plan.root,plan.host,async()=>{
       const recovered=await recover(plan.root,plan.host); if(recovered.status==='blocked') return recovered;
       const previous=await fileBytes(plan.root,lockPath(plan.host),{internal:true});
       if((previous===null?null:hashBytes(previous))!==plan.expectedLockHash) return result('blocked',['Ownership lock changed after planning; replan from the current snapshot']);
@@ -171,11 +201,17 @@ export async function applyInstall(plan,{securityPreflight,afterWrite}={}) {
           if((published===null?null:hashBytes(published))!==(bytes===null?null:hashBytes(bytes))) throw new Error('Ownership lock changed after activation');
         } else await publish();
         await remove(plan.root,journalPath(plan.host));
-        return result('passed',[],{lock:bytes===null?null:lock,written:plan.writes.length,removed:plan.removes.length});
+        const cleanupReasons=pruneEmptyDirectories?await pruneEmptyParents(plan.root,plan.removes.map(op=>op.path),{preserveMetadata:true}):[];
+        return result('passed',cleanupReasons,{lock:bytes===null?null:lock,written:plan.writes.length,removed:plan.removes.length});
       } catch(error) {
         const rollback=await recover(plan.root,plan.host);
         return result(rollback.status==='blocked' || error.message.startsWith('Owned destination changed before ownership commit:')?'blocked':'failed',[error.message,...rollback.reasons],{rollback});
       }
     });
+    // Wait for journals and mutexes to retire before considering .pegatus itself.
+    // Cleanup cannot roll back a committed uninstall and never removes files.
+    if(applied.status==='passed' && pruneEmptyDirectories)
+      applied.reasons.push(...await pruneEmptyParents(plan.root,[lockPath(plan.host)]));
+    return applied;
   } catch(error) {return result('blocked',[error.message]);}
 }

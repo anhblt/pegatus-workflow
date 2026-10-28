@@ -617,7 +617,7 @@ For scripts, uninstall selected host/scope from the kit checkout:
 node bin/pegatus.mjs uninstall --host claude --scope project --root C:/Samples/PegatusPilot
 ```
 
-Uninstall removes unchanged owned files; edits block the transaction. It protects unrelated files/instructions. Task history and team config are not disposable installation files. Empty directories may remain; removing a project override leaves global defaults intact.
+Uninstall removes unchanged owned files; edits block the transaction. It protects unrelated files/instructions. Task history and team config are not disposable installation files. After successful uninstall, empty ancestors of removed owned files are pruned where possible; unrelated directories and nonempty folders are preserved. Removing a project override leaves global defaults intact.
 
 Interrupted administration retains a journal and attempts guarded recovery on subsequent administration. Concurrent edits can block recovery. See [installation recovery](docs/installation.md); there is no generic `pegatus recover` command.
 
