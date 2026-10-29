@@ -127,6 +127,15 @@ async function exclusive(root,host,action) {
     return enter(0);
   });
 }
+/** Coordinate directory maintenance with all installation writers without recovery. */
+export async function withInstallationLock(root,action) {
+  return exclusive(root,'claude',async()=>{
+    for(const host of ['claude','codex','antigravity'])
+      if(await fileBytes(root,journalPath(host),{internal:true})) return result('blocked',['Pending installation recovery; resolve before cleanup']);
+    return action();
+  });
+}
+
 /** Restore an interrupted apply only when every destination still matches the journal. */
 export async function recoverInstall(root,host,options={}) {
   try {

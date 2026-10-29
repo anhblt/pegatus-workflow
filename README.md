@@ -587,6 +587,14 @@ Use a new unique ID for each new event; reuse only for exact retries. `complete`
 
 ## 14. Update and uninstall
 
+To clean up empty folders left by older uninstall versions, run from the target solution:
+
+```powershell
+node 'C:\Workspace\PegatusAgenticV2\bin\pegatus.mjs' cleanup
+```
+
+Confirm the existing destination, review the empty-directory preview, then select Yes (No is the default). An explicit destination is supported with `cleanup --root C:\Workspace\CM`. Use `cleanup --root C:\Workspace\CM --dry-run` for a read-only preview without an interactive terminal. This works after reinstalling and needs no old ownership record. It removes only empty directories in legacy host runtimes, unreferenced shared runtime snapshots, and `pegatus-*` skills under `.claude/skills` or `.agents/skills`. Files, referenced snapshots, owned file ancestors, directory links, unrelated folders, history, configuration and shared container directories remain. Pending recovery or installation mutex records block the preview; resolve them through normal administration first. Cleanup never deletes obsolete files.
+
 Update from the approved new **kit checkout**, not an old detached catalog. Review changes/pins and prepare locked dependencies first. From the kit checkout:
 
 ```text
@@ -630,6 +638,7 @@ Run `node <kit-or-installed-runtime>/bin/pegatus.mjs <operation> ...`. Task-stat
 | `--help` | Runnable operations and host workflow distinction |
 | no arguments, `setup`, bare `install` | Interactive host detection, scope/root selection, preview and confirmation; requires TTY |
 | bare `uninstall` | Interactive scope/root and installed-host selection, removal preview and confirmation; requires TTY |
+| `cleanup` | `[--root <existing-root>] [--dry-run]`; preview empty obsolete Pegatus folders; apply requires TTY confirmation |
 | `install`, `update`, `doctor`, `uninstall` | `--host <host> --scope <project-or-user> --root <existing-root> [--user-root <defaults>]` |
 | `role` | Administration flags plus `--role <catalog-role-id>`; portable procedure/selection |
 | `catalog lint` | Catalog/resource closure validation |

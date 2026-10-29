@@ -19,12 +19,13 @@ import { runLearningCommand, learningCollector } from '../src/memory/cli.mjs';
 import { runOrchestrationCommand } from '../src/orchestration/cli.mjs';
 import { runSetup } from '../src/install/setup.mjs';
 import { runUninstall } from '../src/install/uninstall.mjs';
+import { runCleanup } from '../src/install/cleanup.mjs';
 
 const operations = new Set([
   'checkpoint', 'resume', 'learn', 'memory', 'security', 'status',
   'install', 'update', 'doctor', 'uninstall', 'role', 'catalog',
   'lifecycle', 'hook-native', 'hook-activation',
-  'orchestrate', 'setup',
+  'orchestrate', 'setup', 'cleanup',
 ]);
 const hostWorkflows = new Set(['start','design','plan','execute','investigate','review','verify']);
 
@@ -192,9 +193,11 @@ export async function main(argv, { cwd, home, securityPreflight, orchestrationCa
   }
   if (argv.length === 0 || argv.length === 1 && ['install','setup'].includes(argv[0])) return runSetup({cwd,home});
   if (argv.length === 1 && argv[0] === 'uninstall') return runUninstall({cwd,home});
+  if (argv[0] === 'cleanup') return runCleanup(argv.slice(1),{cwd});
   if (['--help', '-h', 'help'].includes(argv[0])) {
     process.stdout.write('Run pegatus (no arguments), setup, or install (no flags) in an interactive terminal for guided host detection and installation.\n');
     process.stdout.write('Run pegatus uninstall (no flags) for guided scope/root selection, installed host choices, removal preview and confirmation.\n');
+    process.stdout.write('Run pegatus cleanup [--root <existing-root>] to preview and confirm empty Pegatus folder cleanup; --dry-run previews without a terminal or changes.\n');
     process.stdout.write('Usage: pegatus <operation> [options]\nOperations: ' + [...operations].join(', ') + '\nHost workflows: invoke installed pegatus-start, pegatus-design, pegatus-plan, pegatus-execute, pegatus-investigate, pegatus-review, pegatus-verify skills in your host. These are not CLI subcommands.\nPortable roles: role --host <host> --scope project --root <project> --user-root <defaults> --role <role-id>; consume the returned procedure and fixed selection in the coordinator.\n');
     return 0;
   }
