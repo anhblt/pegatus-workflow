@@ -123,22 +123,6 @@ Detection is a bounded presence check, not proof of authentication, execution pe
 
 Scripts/piped input do not receive interactive prompts: use the explicit commands below. `--help` remains available without a terminal.
 
-### Future Verdaccio entry point
-
-The package is named `@galliker/pegatus`, with publish destination set to your internal registry. **It is not published by this change:** `private:true`, release qualification and licensing gates remain in place. Once an approved release is published, the same wizard can be launched using:
-
-```ini
-# .npmrc — scoped registry; keep authentication outside versioned files
-@galliker:registry=https://npm.apps.openshift.galliker.local/
-```
-
-```text
-npx @galliker/pegatus@latest
-pnpm dlx @galliker/pegatus@latest
-```
-
-These registry commands require a published version and working company registry access/authentication. `latest` is a release tag, not a promise that this candidate exists there. Use an exact approved version for repeatable installs. Package-manager acquisition starts the wizard; it does not need a separate postinstall script or a global package installation.
-
 ### Explicit installation for automation
 
 Start with project scope in a disposable solution. Run from the kit checkout.
