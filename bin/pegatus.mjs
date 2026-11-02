@@ -20,6 +20,7 @@ import { runOrchestrationCommand } from '../src/orchestration/cli.mjs';
 import { runSetup } from '../src/install/setup.mjs';
 import { runUninstall } from '../src/install/uninstall.mjs';
 import { runCleanup } from '../src/install/cleanup.mjs';
+import { runHookActivation, previewHookSetup, applyHookSetup } from '../src/hooks/setup.mjs';
 
 const operations = new Set([
   'checkpoint', 'resume', 'learn', 'memory', 'security', 'status',
@@ -58,8 +59,17 @@ async function nativeInput() {
 async function runLifecycleCommand(argv, cwd) {
   const [operation, ...args] = argv;
   if (operation === 'hook-activation') {
-    const options = flags(args, ['--host', '--root']);
+    const options = flags(args, ['--host', '--root', '--preview', '--apply']);
     if (!options.host || !options.root) throw new TypeError('Usage: pegatus hook-activation --host claude|codex --root <installed-root>');
+    if(options.preview && options.apply || options.preview && options.preview!=='yes')throw new TypeError('Use --preview yes or --apply <preview-token>');
+    if(options.preview) {
+      const preview=await previewHookSetup(path.resolve(cwd,options.root),options.host);
+      process.stdout.write(JSON.stringify(preview)+'\n');return 0;
+    }
+    if(options.apply) {
+      const result=await applyHookSetup(path.resolve(cwd,options.root),options.host,options.apply);
+      process.stdout.write(JSON.stringify(result)+'\n');return 0;
+    }
     process.stdout.write(JSON.stringify(activationFor(options.host, path.resolve(cwd, options.root))) + '\n');
     return 0;
   }
@@ -193,6 +203,7 @@ export async function main(argv, { cwd, home, securityPreflight, orchestrationCa
   }
   if (argv.length === 0 || argv.length === 1 && ['install','setup'].includes(argv[0])) return runSetup({cwd,home});
   if (argv.length === 1 && argv[0] === 'uninstall') return runUninstall({cwd,home});
+  if (argv.length === 1 && argv[0] === 'hook-activation') return runHookActivation({cwd});
   if (argv[0] === 'cleanup') return runCleanup(argv.slice(1),{cwd});
   if (['--help', '-h', 'help'].includes(argv[0])) {
     process.stdout.write('Run pegatus (no arguments), setup, or install (no flags) in an interactive terminal for guided host detection and installation.\n');
@@ -207,7 +218,7 @@ export async function main(argv, { cwd, home, securityPreflight, orchestrationCa
   }
   if (['lifecycle', 'hook-native', 'hook-activation'].includes(argv[0])) {
     try { return await runLifecycleCommand(argv, cwd); }
-    catch (error) { process.stderr.write(`${error.message}\n`); return 2; }
+    catch (error) { process.stderr.write(`${error.message}\n`); return !(error instanceof TypeError) && argv[0]==='hook-activation' && (argv.includes('--preview') || argv.includes('--apply')) ? 3 : 2; }
   }
   if (argv[0] === 'orchestrate') {
     try {

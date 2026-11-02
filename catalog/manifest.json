@@ -429,6 +429,15 @@
       "dependencies": []
     },
     {
+      "id": "pegatus-hook-activation",
+      "path": "catalog/skills/pegatus-hook-activation/SKILL.md",
+      "source": { "id": "pegatus", "path": "catalog/skills/pegatus-hook-activation/SKILL.md" },
+      "description": "Set up optional project hooks for a selected installed host.",
+      "resources": ["catalog/skills/pegatus-hook-activation/SKILL.md", "catalog/context-protocol.md"],
+      "activation": { "tasks": ["hook-activation"] },
+      "dependencies": []
+    },
+    {
       "id": "pegatus-browser-test",
       "path": "catalog/skills/pegatus-browser-test/SKILL.md",
       "source": { "id": "pegatus", "path": "catalog/skills/pegatus-browser-test/SKILL.md" },
@@ -4319,6 +4328,7 @@
     }
   ],
   "commands": [
+    {"id":"command-hook-activation","path":"catalog/commands/hook-activation.md","source":{"id":"pegatus","path":"catalog/commands/hook-activation.md"},"skill":"pegatus-hook-activation","resources":["catalog/commands/hook-activation.md","catalog/skills/pegatus-hook-activation/SKILL.md"],"activation":{"tasks":["hook-activation"]},"dependencies":["pegatus-hook-activation"]},
     {"id":"command-context-budget","path":"catalog/commands/context-budget.md","source":{"id":"pegatus","path":"catalog/commands/context-budget.md"},"skill":"pegatus-context-budget","resources":["catalog/commands/context-budget.md","catalog/skills/pegatus-context-budget/SKILL.md"],"activation":{"tasks":["context-budget"]},"dependencies":["pegatus-context-budget"]},
     {"id":"command-file-cache","path":"catalog/commands/file-cache.md","source":{"id":"pegatus","path":"catalog/commands/file-cache.md"},"skill":"pegatus-file-cache","resources":["catalog/commands/file-cache.md","catalog/skills/pegatus-file-cache/SKILL.md"],"activation":{"tasks":["file-processing-cache"]},"dependencies":["pegatus-file-cache"]},
     {"id":"command-prompt-cache","path":"catalog/commands/prompt-cache.md","source":{"id":"pegatus","path":"catalog/commands/prompt-cache.md"},"skill":"pegatus-prompt-cache","resources":["catalog/commands/prompt-cache.md","catalog/skills/pegatus-prompt-cache/SKILL.md"],"activation":{"tasks":["prompt-cache"]},"dependencies":["pegatus-prompt-cache"]},

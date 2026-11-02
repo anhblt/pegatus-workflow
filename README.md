@@ -6,7 +6,7 @@ Default stack guidance targets **.NET 10, EF Core, SQL Server, React 19, and Typ
 
 > **Candidate status:** `0.1.0-rc.1` is private and not release-qualified. Start with a disposable pilot. Native acceptance across all three hosts/both operating systems, hosted CI, and the complete applicable Vercel license notice remain unfinished. A passing install/doctor result does not prove native behavior. See the [acceptance checklist](docs/acceptance/checklist.md).
 
-The catalog contains nine roles and seventeen host workflow aliases, including context-budget, file-cache and prompt-cache guidance, bounded retrieval/compaction procedures and scoped memory ID reads. The [implementation and validation record](docs/current-state.md) describes the evidence retained on 2026-10-27; its statements about uncommitted work and package counts describe that historical snapshot, not necessarily this checkout. Existing detached installations do not update automatically: use the normal update or reinstall flow when they need the current kit.
+The catalog contains nine roles and eighteen host workflow aliases, including context-budget, file-cache and prompt-cache guidance, bounded retrieval/compaction procedures and scoped memory ID reads. The [implementation and validation record](docs/current-state.md) describes the evidence retained on 2026-10-27; its statements about uncommitted work and package counts describe that historical snapshot, not necessarily this checkout. Existing detached installations do not update automatically: use the normal update or reinstall flow when they need the current kit.
 
 ## Contents
 
@@ -540,7 +540,13 @@ This is planning only; `skipped` plus `planningOnly:true` does not mean work exe
 
 ## 13. Optional hooks
 
-Start with explicit workflows. Native registration is opt-in; installation does not merge/enable hooks in existing settings.
+Start with explicit workflows. Native registration is opt-in; installation does not merge/enable hooks in existing settings. From an installed project, run the guided hook setup and choose an installed host:
+
+```text
+node .pegatus/runtime/claude/bin/pegatus.mjs hook-activation
+```
+
+The menu previews the merged configuration and asks for confirmation before a security scan and apply. Alternatively, invoke `pegatus-hook-activation` in the host chat. After setup, restart the selected host. Antigravity native hooks remain unverified and use explicit operations.
 
 Print an activation proposal for installed Claude/Codex:
 
@@ -548,7 +554,7 @@ Print an activation proposal for installed Claude/Codex:
 node .pegatus/runtime/claude/bin/pegatus.mjs hook-activation --host claude --root .
 ```
 
-Review the proposal before manually merging into existing host configuration. Preserve other settings/hooks. Bind an existing selected task before launching the host:
+The explicit host/root form prints a proposal without applying it. For chat-driven setup, `--preview yes` returns the merged configuration and a token; after confirmation, `--apply <token>` rescans and applies only if the preview is still current. Bind an existing selected task before launching the host:
 
 ```powershell
 $env:PEGATUS_ROOT = 'C:\Samples\PegatusPilot'
@@ -636,7 +642,7 @@ Run `node <kit-or-installed-runtime>/bin/pegatus.mjs <operation> ...`. Task-stat
 | `learn` | propose/list/review/approve/reject/supersede/retire/recover with scoped input records |
 | `memory` | `--root <root> --project <id> --path <relative> --query <text>`; or `memory read <entry-id>` with the same root/project/path scope; optional resolution |
 | `lifecycle` | Root/task/unique event ID/type plus gate-specific inputs |
-| `hook-activation` | Host/root; proposal only, Claude/Codex |
+| `hook-activation` | Guided setup; explicit host/root proposal, preview or confirmed apply for Claude/Codex |
 | `hook-native` | Internal native bridge with bounded stdin/task binding |
 | `orchestrate plan` | Planning-only task schedule |
 | `orchestrate run` | Host callbacks required; standalone blocks |

@@ -1,6 +1,6 @@
 # Pegatus catalog
 
-The manifest currently defines nine roles, seventeen workflow aliases, fifty-four skills including selected stack guidance, and six rules. Installation and runtime APIs are implemented; native qualification remains separate from catalog and fixture validation.
+The manifest includes nine roles, workflow aliases, selected stack guidance, and six rules. Installation and runtime APIs are implemented; native qualification remains separate from catalog and fixture validation.
 
 `pegatus-start` coordinates ordinary tasks; host commands are thin aliases to shared skills. Roles have explicit read/write responsibilities and fixed fast/standard/deep tiers. Explicit `hostModels` mappings take precedence; unconfigured tiers use the trusted host coordinator selection policy in `rules/common/tokens-orchestration.md`. Host defaults are a disclosed fallback when selection is unavailable; native enforcement and independent delegation still need host trials.
 
