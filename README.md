@@ -69,6 +69,20 @@ node .\bin\pegatus.mjs --help
 npm run lint
 ```
 
+#### Optional: register the Windows `pegatus` command
+
+Each teammate can register their own stable checkout once. From that checkout, run:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup-windows-command.ps1
+```
+
+The script checks Node 22+, prepares locked dependencies with `npm ci --ignore-scripts`, and uses `npm link` to create npm's global Windows launchers pointing to this checkout. It stops if a `pegatus` command or its global npm destinations already exist; inspect and resolve the conflict before retrying. It does not modify PATH or a PowerShell profile. Ensure the npm global prefix printed by the script is on your user PATH, then open a new terminal and run `pegatus --help`. If PowerShell blocks `pegatus.ps1` under its execution policy, use `pegatus.cmd` or run the command in Command Prompt; no policy change is needed.
+
+From the target project, `pegatus` opens guided setup and `pegatus uninstall` opens guided removal. Explicit commands such as `pegatus update --host claude --scope project --root 'C:\Samples\PegatusPilot'` retain their existing behavior and apply immediately. To update an installed workflow, first pull the approved changes in the linked checkout and run `npm ci --ignore-scripts` there, then run `pegatus` from the target project for a guided preview and update, or use the explicit update command. Reload the host afterward. The command uses the checkout's current files, not the project's detached runtime; moving or deleting the checkout breaks the link.
+
+To remove only the npm command, first verify the global link belongs to this checkout, then run `npm unlink --global @galliker/pegatus`. This does not uninstall workflows from projects; use `pegatus uninstall` before removing the command if those should also be removed. If moving the checkout, remove the old link first and run setup from the new location.
+
 ### Linux — Bash
 
 Replace the example checkout location with your actual path:
