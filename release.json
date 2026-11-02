@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "version": "0.1.0-rc.1",
+  "qualification": "incomplete",
+  "releaseReady": false,
+  "sourceLock": "sources.lock.json",
+  "dependencyLock": "npm-shrinkwrap.json",
+  "runtimeDependencyLock": "package-lock.json",
+  "acceptanceChecklist": "docs/acceptance/checklist.md",
+  "blockers": [
+    "Native small-fix and gated-feature qualification in all three hosts on Windows and Linux remains required",
+    "Pinned Vercel source declares MIT but lacks a complete root LICENSE notice; redistribution review unresolved",
+    "CI operating-system and Node-version matrix has not been executed"
+  ]
+}

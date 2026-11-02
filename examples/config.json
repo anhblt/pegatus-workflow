@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "concurrency": 2,
+  "repairLimit": 3,
+  "repositories": [
+    {
+      "id": "app",
+      "path": "app",
+      "verify": [
+        { "command": "dotnet", "args": ["test"], "cwd": ".", "requires": [] }
+      ]
+    }
+  ],
+  "knowledge": null,
+  "hostModels": {},
+  "evidenceExclusions": ["**/secrets/**"]
+}

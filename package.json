@@ -1,0 +1,39 @@
+{
+  "name": "@galliker/pegatus",
+  "version": "0.1.0-rc.1",
+  "private": true,
+  "publishConfig": {
+    "registry": "https://npm.apps.openshift.galliker.local/"
+  },
+  "type": "module",
+  "bin": {
+    "pegatus": "bin/pegatus.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test",
+    "lint": "node bin/pegatus.mjs catalog lint"
+  },
+  "dependencies": {
+    "ecc-agentshield": "1.6.0"
+  },
+  "bundleDependencies": [
+    "ecc-agentshield"
+  ],
+  "files": [
+    "bin",
+    "src",
+    "catalog",
+    "vendor",
+    "audit/agentshield/package.json",
+    "audit/agentshield/package-lock.json",
+    "sources.lock.json",
+    "npm-shrinkwrap.json",
+    "release.json",
+    "docs",
+    "README.md"
+  ],
+  "description": "Pinned cross-harness workflow kit; qualification candidate, release blocked"
+}
