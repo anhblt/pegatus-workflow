@@ -20,7 +20,7 @@ try {
             (Join-Path $prefix 'pegatus'),
             (Join-Path $prefix 'pegatus.cmd'),
             (Join-Path $prefix 'pegatus.ps1'),
-            (Join-Path $prefix 'node_modules/@galliker/pegatus')
+            (Join-Path $prefix 'node_modules/pegatus-workflow')
         )
         foreach ($path in $paths) {
             if (Test-Path -LiteralPath $path) { throw "Existing npm destination found: $path. Resolve the conflict before setup." }

@@ -1,10 +1,7 @@
 {
-  "name": "@galliker/pegatus",
+  "name": "pegatus-workflow",
   "version": "0.1.0-rc.1",
   "private": true,
-  "publishConfig": {
-    "registry": "https://npm.apps.openshift.galliker.local/"
-  },
   "type": "module",
   "bin": {
     "pegatus": "bin/pegatus.mjs"

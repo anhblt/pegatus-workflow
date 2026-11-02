@@ -15,7 +15,7 @@ async function fixture() {
   await mkdir(join(checkout, 'scripts'), { recursive: true });
   await mkdir(join(checkout, 'bin'), { recursive: true });
   await mkdir(prefix, { recursive: true });
-  const pkg = { name: '@galliker/pegatus', version: '1.0.0', bin: { pegatus: 'bin/pegatus.mjs' } };
+  const pkg = { name: 'pegatus-workflow', version: '1.0.0', bin: { pegatus: 'bin/pegatus.mjs' } };
   await writeFile(join(checkout, 'package.json'), JSON.stringify(pkg));
   await writeFile(join(checkout, 'package-lock.json'), JSON.stringify({ name: pkg.name, version: pkg.version, lockfileVersion: 3, requires: true, packages: { '': pkg } }));
   await writeFile(join(checkout, 'bin/pegatus.mjs'), '#!/usr/bin/env node\nconsole.log("fixture-cli", process.argv.slice(2).join(" "));\n');

@@ -81,7 +81,7 @@ The script checks Node 22+, prepares locked dependencies with `npm ci --ignore-s
 
 From the target project, `pegatus` opens guided setup and `pegatus uninstall` opens guided removal. Explicit commands such as `pegatus update --host claude --scope project --root 'C:\Samples\PegatusPilot'` retain their existing behavior and apply immediately. To update an installed workflow, first pull the approved changes in the linked checkout and run `npm ci --ignore-scripts` there, then run `pegatus` from the target project for a guided preview and update, or use the explicit update command. Reload the host afterward. The command uses the checkout's current files, not the project's detached runtime; moving or deleting the checkout breaks the link.
 
-To remove only the npm command, first verify the global link belongs to this checkout, then run `npm unlink --global @galliker/pegatus`. This does not uninstall workflows from projects; use `pegatus uninstall` before removing the command if those should also be removed. If moving the checkout, remove the old link first and run setup from the new location.
+To remove only the npm command, first verify the global link belongs to this checkout, then run `npm unlink --global pegatus-workflow`. This does not uninstall workflows from projects; use `pegatus uninstall` before removing the command if those should also be removed. If moving the checkout, remove the old link first and run setup from the new location.
 
 ### Linux — Bash
 
