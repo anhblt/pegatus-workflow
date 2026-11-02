@@ -6,7 +6,7 @@ Default stack guidance targets **.NET 10, EF Core, SQL Server, React 19, and Typ
 
 > **Candidate status:** `0.1.0-rc.1` is private and not release-qualified. Start with a disposable pilot. Native acceptance across all three hosts/both operating systems, hosted CI, and the complete applicable Vercel license notice remain unfinished. A passing install/doctor result does not prove native behavior. See the [acceptance checklist](docs/acceptance/checklist.md).
 
-The ECC workflow parity changes are implemented and independently reviewed in this checkout. The catalog now has nine roles and seventeen host workflow aliases, including context-budget, file-cache and prompt-cache guidance, bounded retrieval/compaction procedures and scoped memory ID reads. See [current implementation and exact validation results](docs/current-state.md); the completed work remains uncommitted and existing detached installations need a normal update or reinstall.
+The catalog contains nine roles and seventeen host workflow aliases, including context-budget, file-cache and prompt-cache guidance, bounded retrieval/compaction procedures and scoped memory ID reads. The [implementation and validation record](docs/current-state.md) describes the evidence retained on 2026-10-27; its statements about uncommitted work and package counts describe that historical snapshot, not necessarily this checkout. Existing detached installations do not update automatically: use the normal update or reinstall flow when they need the current kit.
 
 ## Contents
 
@@ -57,8 +57,10 @@ Confirm the host can read a disposable project, edit an allowed file and run tes
 
 ### Windows — PowerShell
 
+Replace the example checkout location with your actual path:
+
 ```powershell
-Set-Location 'C:\Workspace\PegatusAgenticV2'
+Set-Location 'C:\Workspace\PegatusWorkflow'
 node --version
 npm --version
 git --version
@@ -72,7 +74,7 @@ npm run lint
 Replace the example checkout location with your actual path:
 
 ```bash
-cd "$HOME/work/PegatusAgenticV2"
+cd "$HOME/work/PegatusWorkflow"
 node --version
 npm --version
 git --version
@@ -102,12 +104,12 @@ Run from the solution where you want to install Pegatus:
 
 ```powershell
 Set-Location 'C:\Samples\PegatusPilot'
-node 'C:\Workspace\PegatusAgenticV2\bin\pegatus.mjs'
+node 'C:\Workspace\PegatusWorkflow\bin\pegatus.mjs'
 ```
 
 ```bash
 cd "$HOME/work/PegatusPilot"
-node "$HOME/work/PegatusAgenticV2/bin/pegatus.mjs"
+node "$HOME/work/PegatusWorkflow/bin/pegatus.mjs"
 ```
 
 The target directory must exist. With an interactive terminal, no arguments, `setup`, or bare `install` opens the wizard:
@@ -131,7 +133,7 @@ Start with project scope in a disposable solution. Run from the kit checkout.
 
 ```powershell
 New-Item -ItemType Directory -Force 'C:\Samples\PegatusPilot' | Out-Null
-Set-Location 'C:\Workspace\PegatusAgenticV2'
+Set-Location 'C:\Workspace\PegatusWorkflow'
 node .\bin\pegatus.mjs install --host claude --scope project --root 'C:\Samples\PegatusPilot'
 node .\bin\pegatus.mjs doctor --host claude --scope project --root 'C:\Samples\PegatusPilot'
 ```
@@ -140,7 +142,7 @@ node .\bin\pegatus.mjs doctor --host claude --scope project --root 'C:\Samples\P
 
 ```bash
 mkdir -p "$HOME/work/PegatusPilot"
-cd "$HOME/work/PegatusAgenticV2"
+cd "$HOME/work/PegatusWorkflow"
 node ./bin/pegatus.mjs install --host claude --scope project --root "$HOME/work/PegatusPilot"
 node ./bin/pegatus.mjs doctor --host claude --scope project --root "$HOME/work/PegatusPilot"
 ```
@@ -185,7 +187,7 @@ The installer never guesses your home. Select an explicit existing user root. A 
 
 ```powershell
 New-Item -ItemType Directory -Force 'C:\Samples\PegatusUser' | Out-Null
-Set-Location 'C:\Workspace\PegatusAgenticV2'
+Set-Location 'C:\Workspace\PegatusWorkflow'
 node .\bin\pegatus.mjs install --host codex --scope user --root 'C:\Samples\PegatusUser'
 node .\bin\pegatus.mjs install --host codex --scope project --root 'C:\Samples\PegatusPilot' --user-root 'C:\Samples\PegatusUser'
 node .\bin\pegatus.mjs doctor --host codex --scope project --root 'C:\Samples\PegatusPilot' --user-root 'C:\Samples\PegatusUser'
@@ -342,7 +344,8 @@ Solution/
   .vault/                       # optional authoritative knowledge
   .pegatus/
     config.json                 # team/project configuration
-    runtime/<host>/             # generated hash-owned runtime
+    runtime/shared/<content-id>/ # shared hash-owned runtime snapshot
+    runtime/<host>/             # compatibility entry points
     overrides/<host>.json       # optional inherited-install override
     work/<task-id>/
       brief.md
@@ -574,7 +577,7 @@ Use a new unique ID for each new event; reuse only for exact retries. `complete`
 To clean up empty folders left by older uninstall versions, run from the target solution:
 
 ```powershell
-node 'C:\Workspace\PegatusAgenticV2\bin\pegatus.mjs' cleanup
+node 'C:\Workspace\PegatusWorkflow\bin\pegatus.mjs' cleanup
 ```
 
 Confirm the existing destination, review the empty-directory preview, then select Yes (No is the default). An explicit destination is supported with `cleanup --root C:\Workspace\CM`. Use `cleanup --root C:\Workspace\CM --dry-run` for a read-only preview without an interactive terminal. This works after reinstalling and needs no old ownership record. It removes only empty directories in legacy host runtimes, unreferenced shared runtime snapshots, and `pegatus-*` skills under `.claude/skills` or `.agents/skills`. Files, referenced snapshots, owned file ancestors, directory links, unrelated folders, history, configuration and shared container directories remain. Pending recovery or installation mutex records block the preview; resolve them through normal administration first. Cleanup never deletes obsolete files.
@@ -598,7 +601,7 @@ If choosing uninstall/reinstall instead, complete the normal uninstall below and
 For guided uninstall, run from the target solution in an interactive terminal:
 
 ```powershell
-node 'C:\Workspace\PegatusAgenticV2\bin\pegatus.mjs' uninstall
+node 'C:\Workspace\PegatusWorkflow\bin\pegatus.mjs' uninstall
 ```
 
 Choose project or user scope, confirm the existing destination, then select the hosts with ↑/↓ and Space. The menu lists hosts with Pegatus ownership or recovery records at that destination. Review the owned-file removals and confirm with **Yes**; **No** is selected by default. All selected hosts are previewed before any removal. Conflicts or pending recovery block the flow. Ctrl-C cancels; an active host transaction settles before stopping. Hosts apply sequentially, so completed removals remain if a later host blocks. Removing user defaults affects projects that inherit them; removing a project override preserves those defaults.

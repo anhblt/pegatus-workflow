@@ -10,7 +10,7 @@ Pegatus V2 is a Node.js ESM workflow kit for Claude Code, Codex, and Antigravity
 - For architecture or acceptance changes, consult `docs/superpowers/specs/2026-10-12-pegatus-v2-design.md` and `docs/superpowers/plans/2026-10-12-pegatus-v2.md`.
 - For catalog or workflow changes, read `catalog/README.md`, `catalog/context-protocol.md`, and the applicable entries in `catalog/manifest.json`. Load only the selected skill's required references and linked resource closure.
 - For host behavior, installation, security, state, learning, hooks, tokens, or orchestration, read the relevant guide under `docs/` and check `docs/compatibility/` or `docs/acceptance/` for the current support limits.
-- When continuing an existing task, read its `.superpowers/sdd/<task>/progress.md` and the cited current reports or snapshots before repeating work. Do not treat old plans, generated files, or test fixtures as proof of current host behavior.
+- When continuing an existing Pegatus workflow task, inspect its `.pegatus/work/<task-id>/` state with the documented CLI and read its referenced artifacts before repeating work. For repository tasks that have historical `.superpowers/sdd/<task>/progress.md` records, read the relevant record and cited reports or snapshots as well. Do not treat old plans, generated files, or test fixtures as proof of current host behavior.
 - When a task targets another solution, follow that solution's instruction chain, code map, business flows, and prescribed discovery tools before broad searches or edits. Pegatus guidance does not replace target-solution instructions.
 
 ## Product and safety invariants
@@ -28,6 +28,7 @@ Pegatus V2 is a Node.js ESM workflow kit for Claude Code, Codex, and Antigravity
 ## Code and repository conventions
 
 - Use the existing JavaScript modules and Node built-ins; keep the package in ESM form and preserve the locked dependency graph. Add dependencies only when the task requires them, and update the relevant lock files consistently.
+- Use the current checkout for Pegatus work unless the user explicitly requests a worktree. Inspect the branch and working-tree changes before editing, and preserve unrelated changes.
 - Keep changes within the requested behavior. Preserve JSON result shapes, exit-code distinctions, explicit capability limits, and safe failure behavior unless the task specifically changes those contracts.
 - Keep scratch outputs and task evidence out of distributable package content unless explicitly required. Review `package.json`'s `files` list before changing package contents.
 - Do not modify `.superpowers/sdd/` records, release metadata, source locks, vendored upstream files, or generated artifacts unless the task calls for those files.
@@ -43,3 +44,5 @@ npm pack --dry-run
 ```
 
 Use task-specific checks and the documented prerequisites. A package dry run checks package contents; it does not authorize publication or prove licensing or native-host acceptance. Report checks actually requested and run, with their outcomes and limitations.
+
+`docs/current-state.md` and dated acceptance records describe the evidence and checkout state at the time recorded. Verify current Git status, source, and applicable evidence before repeating their claims.
