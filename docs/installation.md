@@ -16,7 +16,7 @@ Playwright MCP and its compatible browser are configured separately at user/host
 
 ## Guided terminal setup
 
-Run `node bin/pegatus.mjs` (or `setup` / bare `install`) from an interactive terminal. The guided flow uses ↑/↓ to navigate, Space to toggle agents, and Enter to confirm. Detected supported applications are preselected; configuration-only presence remains labeled unconfirmed. Scope and final confirmation use single-choice menus; final confirmation defaults to No. Destination paths remain editable text prompts. Ctrl-C cancels; during apply, the active transaction settles before setup stops.
+Run `node bin/pegatus.mjs setup` (or bare `install`) from an interactive terminal. Running without arguments prints command help and descriptions. The guided flow uses ↑/↓ to navigate, Space to toggle agents, and Enter to confirm. Detected supported applications are preselected; configuration-only presence remains labeled unconfirmed. Scope and final confirmation use single-choice menus; final confirmation defaults to No. Destination paths remain editable text prompts. Ctrl-C cancels; during apply, the active transaction settles before setup stops.
 
 Detection, destination entry, preview, installation progress, doctor details, and completion share a connected console layout. `NO_COLOR` disables color; the focused row also has a visible marker. Explicit CLI commands retain their structured output and noninteractive behavior. No terminal UI dependency is installed.
 

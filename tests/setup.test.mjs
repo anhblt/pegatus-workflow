@@ -73,9 +73,9 @@ test('real dry-run neither scans nor writes, reports foreign files and pending r
  await mkdir(path.join(project,'.pegatus'));await writeFile(path.join(project,'.pegatus','install-journal-codex.json'),'{}');
  const pending=await runAdministration(args,options);assert.equal(pending.status,'blocked');assert.match(pending.reasons.join(),/recovery/i);
 });
-test('noninteractive no-argument invocation and bare install terminate with actionable usage',()=>{
+test('noninteractive bare install and setup terminate with actionable usage',()=>{
  const cli=fileURLToPath(new URL('../bin/pegatus.mjs',import.meta.url));
- for(const args of [[],['install'],['setup']]){
+ for(const args of [['install'],['setup']]){
   const result=spawnSync(process.execPath,[cli,...args],{encoding:'utf8',timeout:5000});
   assert.equal(result.status,2);assert.match(result.stderr,/interactive terminal|--host/i);
  }

@@ -77,9 +77,9 @@ Each teammate can register their own stable checkout once. From that checkout, r
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup-windows-command.ps1
 ```
 
-The script checks Node 22+, prepares locked dependencies with `npm ci --ignore-scripts`, and uses `npm link` to create npm's global Windows launchers pointing to this checkout. It stops if a `pegatus` command or its global npm destinations already exist; inspect and resolve the conflict before retrying. It does not modify PATH or a PowerShell profile. Ensure the npm global prefix printed by the script is on your user PATH, then open a new terminal and run `pegatus --help`. If PowerShell blocks `pegatus.ps1` under its execution policy, use `pegatus.cmd` or run the command in Command Prompt; no policy change is needed.
+The script checks Node 22+, prepares locked dependencies with `npm ci --ignore-scripts`, and uses `npm link` to create npm's global Windows launchers pointing to this checkout. Rerunning it preserves an existing link to this checkout. It stops on conflicting or unexpected commands and destinations; inspect and resolve those before retrying. It does not modify PATH or a PowerShell profile. Ensure the npm global prefix printed by the script is on your user PATH, then open a new terminal and run `pegatus --help`. If PowerShell blocks `pegatus.ps1` under its execution policy, use `pegatus.cmd` or run the command in Command Prompt; no policy change is needed.
 
-From the target project, `pegatus` opens guided setup and `pegatus uninstall` opens guided removal. Explicit commands such as `pegatus update --host claude --scope project --root 'C:\Samples\PegatusPilot'` retain their existing behavior and apply immediately. To update an installed workflow, first pull the approved changes in the linked checkout and run `npm ci --ignore-scripts` there, then run `pegatus` from the target project for a guided preview and update, or use the explicit update command. Reload the host afterward. The command uses the checkout's current files, not the project's detached runtime; moving or deleting the checkout breaks the link.
+From any directory, `pegatus` shows available commands and their descriptions. From the target project, `pegatus setup` opens guided setup and `pegatus uninstall` opens guided removal. Explicit commands such as `pegatus update --host claude --scope project --root 'C:\Samples\PegatusPilot'` retain their existing behavior and apply immediately. To update an installed workflow, first pull the approved changes in the linked checkout and run `npm ci --ignore-scripts` there, then run `pegatus setup` from the target project for a guided preview and update, or use the explicit update command. Reload the host afterward. The command uses the checkout's current files, not the project's detached runtime; moving or deleting the checkout breaks the link.
 
 To remove only the npm command, first verify the global link belongs to this checkout, then run `npm unlink --global pegatus-workflow`. This does not uninstall workflows from projects; use `pegatus uninstall` before removing the command if those should also be removed. If moving the checkout, remove the old link first and run setup from the new location.
 
@@ -118,15 +118,15 @@ Run from the solution where you want to install Pegatus:
 
 ```powershell
 Set-Location 'C:\Samples\PegatusPilot'
-node 'C:\Workspace\PegatusWorkflow\bin\pegatus.mjs'
+node 'C:\Workspace\PegatusWorkflow\bin\pegatus.mjs' setup
 ```
 
 ```bash
 cd "$HOME/work/PegatusPilot"
-node "$HOME/work/PegatusWorkflow/bin/pegatus.mjs"
+node "$HOME/work/PegatusWorkflow/bin/pegatus.mjs" setup
 ```
 
-The target directory must exist. With an interactive terminal, no arguments, `setup`, or bare `install` opens the wizard:
+The target directory must exist. With an interactive terminal, `setup` or bare `install` opens the wizard. Running with no arguments shows help. The wizard will:
 
 1. Detect supported host executables/applications and show detection status. Configuration-only detection is labeled unconfirmed; no credentials are read and no discovered executable is run.
 2. Select one or more hosts with ↑/↓ and Space, then press Enter. Detected CLI/application hosts are preselected; undetected hosts remain manually selectable for IDE-only/custom setups. The focused row has a visible marker even without color.
@@ -642,8 +642,8 @@ Run `node <kit-or-installed-runtime>/bin/pegatus.mjs <operation> ...`. Task-stat
 
 | Operation | Inputs / behavior |
 | --- | --- |
-| `--help` | Runnable operations and host workflow distinction |
-| no arguments, `setup`, bare `install` | Interactive host detection, scope/root selection, preview and confirmation; requires TTY |
+| no arguments, `--help` | Commands with descriptions and host workflow distinction |
+| `setup`, bare `install` | Interactive host detection, scope/root selection, preview and confirmation; requires TTY |
 | bare `uninstall` | Interactive scope/root and installed-host selection, removal preview and confirmation; requires TTY |
 | `cleanup` | `[--root <existing-root>] [--dry-run]`; preview empty obsolete Pegatus folders; apply requires TTY confirmation |
 | `install`, `update`, `doctor`, `uninstall` | `--host <host> --scope <project-or-user> --root <existing-root> [--user-root <defaults>]` |

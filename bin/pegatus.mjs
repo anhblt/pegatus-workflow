@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { readFile } from 'node:fs/promises';
+import { realpathSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -201,12 +202,34 @@ export async function main(argv, { cwd, home, securityPreflight, orchestrationCa
   if (!Array.isArray(argv) || typeof cwd !== 'string' || typeof home !== 'string') {
     throw new TypeError('main requires argv and cwd/home paths');
   }
-  if (argv.length === 0 || argv.length === 1 && ['install','setup'].includes(argv[0])) return runSetup({cwd,home});
+  if (argv.length === 1 && ['install','setup'].includes(argv[0])) return runSetup({cwd,home});
   if (argv.length === 1 && argv[0] === 'uninstall') return runUninstall({cwd,home});
   if (argv.length === 1 && argv[0] === 'hook-activation') return runHookActivation({cwd});
   if (argv[0] === 'cleanup') return runCleanup(argv.slice(1),{cwd});
-  if (['--help', '-h', 'help'].includes(argv[0])) {
-    process.stdout.write('Run pegatus (no arguments), setup, or install (no flags) in an interactive terminal for guided host detection and installation.\n');
+  if (argv.length === 0 || ['--help', '-h', 'help'].includes(argv[0])) {
+    process.stdout.write('Pegatus — shared workflows for AI coding agents\n\n');
+    process.stdout.write('Commands:\n' + [
+      ['setup', 'Open guided host detection, installation and update (interactive).'],
+      ['install', 'Install workflows; no flags opens guided setup.'],
+      ['update', 'Update an owned host installation.'],
+      ['doctor', 'Inspect an installation and report configuration issues.'],
+      ['uninstall', 'Remove owned workflows; no flags opens guided removal.'],
+      ['cleanup', 'Preview and confirm empty Pegatus folder cleanup.'],
+      ['checkpoint', 'Save a task checkpoint with revision checks.'],
+      ['status', 'Show saved task progress and reconciliation.'],
+      ['resume', 'Reconcile a saved task before continuing in the host.'],
+      ['security', 'Scan explicitly selected agent configuration files.'],
+      ['learn', 'Propose, review and manage lessons.'],
+      ['memory', 'Query or read scoped project memory.'],
+      ['role', 'Return a portable role procedure and configured selection.'],
+      ['catalog lint', 'Validate the workflow catalog and resources.'],
+      ['orchestrate', 'Plan task schedules; execution requires host callbacks.'],
+      ['hook-activation', 'Review or configure optional host hooks.'],
+      ['lifecycle', 'Dispatch a task lifecycle event.'],
+      ['hook-native', 'Internal native host hook bridge.'],
+      ['--help, -h', 'Show this help.'],
+    ].map(([command, description]) => `  ${command.padEnd(18)} ${description}`).join('\n') + '\n\n');
+    process.stdout.write('Run pegatus setup or install (no flags) in an interactive terminal for guided host detection and installation.\n');
     process.stdout.write('Run pegatus uninstall (no flags) for guided scope/root selection, installed host choices, removal preview and confirmation.\n');
     process.stdout.write('Run pegatus cleanup [--root <existing-root>] to preview and confirm empty Pegatus folder cleanup; --dry-run previews without a terminal or changes.\n');
     process.stdout.write('Usage: pegatus <operation> [options]\nOperations: ' + [...operations].join(', ') + '\nHost workflows: invoke installed pegatus-start, pegatus-design, pegatus-plan, pegatus-execute, pegatus-investigate, pegatus-review, pegatus-verify skills in your host. These are not CLI subcommands.\nPortable roles: role --host <host> --scope project --root <project> --user-root <defaults> --role <role-id>; consume the returned procedure and fixed selection in the coordinator.\n');
@@ -286,6 +309,6 @@ export async function main(argv, { cwd, home, securityPreflight, orchestrationCa
   return 2;
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (process.argv[1] && import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href) {
   process.exitCode = await main(process.argv.slice(2), { cwd: process.cwd(), home: homedir() });
 }

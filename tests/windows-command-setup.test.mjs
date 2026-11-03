@@ -41,6 +41,33 @@ test('Windows setup registers a command that forwards arguments from a different
   } finally { await rm(f.root, { recursive: true, force: true }); }
 });
 
+test('Windows setup can be repeated for an existing checkout link', { skip: process.platform !== 'win32' }, async () => {
+  const f = await fixture();
+  try {
+    const first = setup(f);
+    assert.equal(first.status, 0, first.stdout + first.stderr);
+    f.extraPath = f.prefix;
+    const second = setup(f);
+    assert.equal(second.status, 0, second.stdout + second.stderr);
+    const call = spawnSync('cmd.exe', ['/d', '/s', '/c', `""${join(f.prefix, 'pegatus.cmd')}" repeat"`], { cwd: f.root, encoding: 'utf8', windowsVerbatimArguments: true });
+    assert.equal(call.status, 0, call.stdout + call.stderr);
+    assert.match(call.stdout, /fixture-cli repeat/);
+  } finally { await rm(f.root, { recursive: true, force: true }); }
+});
+
+test('Windows setup preserves a modified launcher even when the checkout is linked', { skip: process.platform !== 'win32' }, async () => {
+  const f = await fixture();
+  try {
+    const first = setup(f);
+    assert.equal(first.status, 0, first.stdout + first.stderr);
+    const target = join(f.prefix, 'pegatus.cmd');
+    await writeFile(target, 'foreign command');
+    const second = setup(f);
+    assert.notEqual(second.status, 0);
+    assert.equal(await readFile(target, 'utf8'), 'foreign command');
+  } finally { await rm(f.root, { recursive: true, force: true }); }
+});
+
 test('Windows setup preserves an existing global command', { skip: process.platform !== 'win32' }, async () => {
   const f = await fixture();
   try {
