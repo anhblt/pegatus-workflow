@@ -6,7 +6,7 @@ Default stack guidance targets **.NET 10, EF Core, SQL Server, React 19, and Typ
 
 > **Candidate status:** `0.1.0-rc.1` is private and not release-qualified. Start with a disposable pilot. Native acceptance across all three hosts/both operating systems, hosted CI, and the complete applicable Vercel license notice remain unfinished. A passing install/doctor result does not prove native behavior. See the [acceptance checklist](docs/acceptance/checklist.md).
 
-The catalog contains nine roles and eighteen host workflow aliases, including context-budget, file-cache and prompt-cache guidance, bounded retrieval/compaction procedures and scoped memory ID reads. The [implementation and validation record](docs/current-state.md) describes the evidence retained on 2026-10-27; its statements about uncommitted work and package counts describe that historical snapshot, not necessarily this checkout. Existing detached installations do not update automatically: use the normal update or reinstall flow when they need the current kit.
+The catalog contains nine roles and nineteen host workflow aliases, including general brainstorming, context-budget, file-cache and prompt-cache guidance, bounded retrieval/compaction procedures and scoped memory ID reads. The [implementation and validation record](docs/current-state.md) describes the evidence retained on 2026-10-27; its statements about uncommitted work and package counts describe that historical snapshot, not necessarily this checkout. Existing detached installations do not update automatically: use the normal update or reinstall flow when they need the current kit.
 
 ## Contents
 
@@ -250,6 +250,7 @@ User defaults need explicit project activation through the snippet. Native custo
 | Skill | Purpose |
 | --- | --- |
 | `pegatus-start` | Classify/coordinate a natural-language task |
+| `pegatus-brainstorm` | Explore ideas or decisions on any subject; conversation first, notes only when requested |
 | `pegatus-design` | Clarify requirements and propose scope/design |
 | `pegatus-plan` | Plan an approved design |
 | `pegatus-execute` | Implement authorized work with checks/checkpoints |
@@ -266,6 +267,17 @@ User defaults need explicit project activation through the snippet. Native custo
 | `pegatus-context-budget` | Live native context meter guidance; explicit scoped overhead audits |
 | `pegatus-file-cache` | Selected content-hash guidance for expensive file processing |
 | `pegatus-prompt-cache` | Selected prompt-cache reuse and measurement guidance |
+
+For personal, creative or other general brainstorming, ask your host:
+
+```text
+Use pegatus-brainstorm to help me explore ideas for my YouTube channel.
+Keep it conversational.
+```
+
+No codebase, project root or task ID is required for the conversation. Notes are saved only when requested; specify a destination when you want them saved. `pegatus-start` also routes brainstorming here. Project-dependent ideas still use applicable project context, and moving into implementation retains the existing approval gates. This is a self-contained Pegatus skill with no Superpowers dependency, invoked through the host rather than `pegatus brainstorm` in a terminal. Update an existing installation through normal setup and reload the host to expose it; user-wide installation makes the procedure available outside individual projects where supported.
+
+Its conversational method adapts the installed Superpowers 7.0.0 reference: questions about real situations and motivation, preferences and constraints, incremental checks of understanding, and selective visuals, experiments and design review. These stay within the requested scope; no visual server or automatic file creation is required. Reference hashes, adaptation boundaries and the retained upstream license are recorded in the [brainstorming attribution](catalog/skills/pegatus-brainstorm/reference.md).
 
 Selected upstream skills come from the five .NET groups (`dotnet`, `dotnet-advanced`, `dotnet-data`, `dotnet-test`, `dotnet-aspnetcore`), plus Vercel React best practices/composition patterns. Some address other frameworks/test tools: invoke only when compatible with the actual project and authorized task. Installing guidance does not authorize a framework or test-library migration.
 

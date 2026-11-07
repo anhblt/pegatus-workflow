@@ -1,5 +1,7 @@
 # Pegatus catalog
 
+`pegatus-brainstorm` supports conversational exploration on any subject, including personal and non-software topics. It requires no project root or task state and saves notes only when requested. Start routes brainstorming to it before project discovery; project-dependent recommendations retain scoped context and implementation approval requirements. This Pegatus-owned procedure has no external skill dependency.
+
 The manifest includes nine roles, workflow aliases, selected stack guidance, and six rules. Installation and runtime APIs are implemented; native qualification remains separate from catalog and fixture validation.
 
 `pegatus-start` coordinates ordinary tasks; host commands are thin aliases to shared skills. Roles have explicit read/write responsibilities and fixed fast/standard/deep tiers. Explicit `hostModels` mappings take precedence; unconfigured tiers use the trusted host coordinator selection policy in `rules/common/tokens-orchestration.md`. Host defaults are a disclosed fallback when selection is unavailable; native enforcement and independent delegation still need host trials.

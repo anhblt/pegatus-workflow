@@ -402,6 +402,15 @@
   ],
   "skills": [
     {
+      "id": "pegatus-brainstorm",
+      "path": "catalog/skills/pegatus-brainstorm/SKILL.md",
+      "source": {"id":"pegatus","path":"catalog/skills/pegatus-brainstorm/SKILL.md"},
+      "description": "Use when brainstorming ideas, possibilities or decisions on any subject, including personal and non-software topics.",
+      "resources": ["catalog/skills/pegatus-brainstorm/SKILL.md","catalog/skills/pegatus-brainstorm/reference.md","catalog/skills/pegatus-brainstorm/SUPERPOWERS-LICENSE.txt","catalog/context-protocol.md"],
+      "activation": {"tasks":["brainstorm","brainstorming"]},
+      "dependencies": []
+    },
+    {
       "id": "pegatus-context-budget",
       "path": "catalog/skills/pegatus-context-budget/SKILL.md",
       "source": {"id":"pegatus","path":"catalog/skills/pegatus-context-budget/SKILL.md"},
@@ -462,6 +471,7 @@
       },
       "resources": [
         "catalog/skills/pegatus-start/SKILL.md",
+        "catalog/skills/pegatus-brainstorm/SKILL.md",
         "catalog/context-protocol.md",
         "src/context/instructions.mjs",
         "src/context/retrieve.mjs"
@@ -4328,6 +4338,7 @@
     }
   ],
   "commands": [
+    {"id":"command-brainstorm","path":"catalog/commands/brainstorm.md","source":{"id":"pegatus","path":"catalog/commands/brainstorm.md"},"skill":"pegatus-brainstorm","resources":["catalog/commands/brainstorm.md","catalog/skills/pegatus-brainstorm/SKILL.md","catalog/context-protocol.md"],"activation":{"tasks":["brainstorm","brainstorming"]},"dependencies":["pegatus-brainstorm"]},
     {"id":"command-hook-activation","path":"catalog/commands/hook-activation.md","source":{"id":"pegatus","path":"catalog/commands/hook-activation.md"},"skill":"pegatus-hook-activation","resources":["catalog/commands/hook-activation.md","catalog/skills/pegatus-hook-activation/SKILL.md"],"activation":{"tasks":["hook-activation"]},"dependencies":["pegatus-hook-activation"]},
     {"id":"command-context-budget","path":"catalog/commands/context-budget.md","source":{"id":"pegatus","path":"catalog/commands/context-budget.md"},"skill":"pegatus-context-budget","resources":["catalog/commands/context-budget.md","catalog/skills/pegatus-context-budget/SKILL.md"],"activation":{"tasks":["context-budget"]},"dependencies":["pegatus-context-budget"]},
     {"id":"command-file-cache","path":"catalog/commands/file-cache.md","source":{"id":"pegatus","path":"catalog/commands/file-cache.md"},"skill":"pegatus-file-cache","resources":["catalog/commands/file-cache.md","catalog/skills/pegatus-file-cache/SKILL.md"],"activation":{"tasks":["file-processing-cache"]},"dependencies":["pegatus-file-cache"]},
@@ -4351,6 +4362,7 @@
       },
       "resources": [
         "catalog/commands/start.md",
+        "catalog/skills/pegatus-brainstorm/SKILL.md",
         "catalog/context-protocol.md"
       ],
       "activation": {

@@ -5,7 +5,9 @@ description: Direct start procedure for Pegatus tasks; invoke when start is requ
 
 Route live-context capacity/headroom requests to [pegatus-context-budget](../pegatus-context-budget/SKILL.md) without tools or file reads. Only explicit installed-overhead audits select that skill's bounded inspection path. Route repeated expensive file-processing cache tasks to [pegatus-file-cache](../pegatus-file-cache/SKILL.md), and repeated model-request cache tasks to [pegatus-prompt-cache](../pegatus-prompt-cache/SKILL.md). These are selected procedures, not new CLI operations.
 
-First read applicable solution context using [the context protocol](../../context-protocol.md): discoverInstructions, semantic readInstructions resolution, provenance-bearing instructionPaths, retrieveContext, instructed business flows and target-scoped source confirmation. Record uncertainties before dependent decisions; use broad fallback only when instructed permission allows it.
+Route brainstorming and open-ended idea exploration on any subject to [pegatus-brainstorm](../pegatus-brainstorm/SKILL.md) before project discovery or task-state creation. General conversation requires no project root or files. Project-dependent recommendations follow that skill's scoped context rules; brainstorming alone does not authorize implementation.
+
+For other project tasks, first read applicable solution context using [the context protocol](../../context-protocol.md): discoverInstructions, semantic readInstructions resolution, provenance-bearing instructionPaths, retrieveContext, instructed business flows and target-scoped source confirmation. Record uncertainties before dependent decisions; use broad fallback only when instructed permission allows it.
 
 Inputs: task brief or saved task ID, classification/scope, discovered instruction locations, knowledge references, relevant approved artifacts and project-selected checks.
 

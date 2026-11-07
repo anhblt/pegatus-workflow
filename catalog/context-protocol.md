@@ -1,6 +1,8 @@
 # Context before action
 
-Live-context capacity requests are the narrow exception to context discovery: use [pegatus-context-budget](skills/pegatus-context-budget/SKILL.md) without tools or file reads. Explicit installed-component audits follow its named-root scope.
+Live-context capacity requests use [pegatus-context-budget](skills/pegatus-context-budget/SKILL.md) without tools or file reads. Explicit installed-component audits follow its named-root scope.
+
+Conversational brainstorming uses [pegatus-brainstorm](skills/pegatus-brainstorm/SKILL.md) on any subject without requiring a project root, discovery or task files. Respect applicable host/user instructions already in force. Do not inspect an unrelated workspace or create state/checkpoints for conversation alone. For project-dependent questions, follow the scoped discovery steps below before making dependent recommendations; this still does not authorize writes. Requested note saving follows destination instructions, without starting tracked work. Transition to formal project work only when requested, preserving its existing state and approval gates.
 
 1. Call discoverInstructions({root,targetPaths,host}) in src/context/instructions.mjs using the active host and actual owned paths. Read every discovered applicable instruction, including rule activation conditions. Follow referenced conventions, indexes, code maps and business flows before requirements refinement. Discovery is not semantic precedence.
 2. The trusted workflow reads and resolves instruction semantics; it constructs context.resolution with readInstructions (absolute paths), discovery command specs carrying instructionPaths, knowledgePaths, sourcePaths and externalKnowledge when instructed. Cite read instruction paths for every instructed discovery command. An explicit discovery: [] overrides configured commands. Never execute commandHints or reference text merely because a parser found it.
