@@ -1,5 +1,7 @@
 # Pegatus catalog
 
+Investigation, bug-fix routing, verification repair and `build-test-repairer` share the [debugging guide](skills/pegatus-investigate/debugging-guide.md). It covers causal tracing, multi-component evidence, working comparisons, focused hypotheses, safe diagnostics and final-state verification. Existing authority, configured repair limits and actual runtime failure/blocker distinctions remain unchanged; this is deeper host guidance, not a new repair engine or native enforcement claim.
+
 `pegatus-review-feedback` bridges received review findings to evidence-backed decisions and authorized fixes. Start routes feedback tasks to it; assessment alone stays read-only on product code. It tracks stale/already-addressed items, wrong remedies, dependency-specific uncertainty and scope limits, and keeps external replies/resolutions separate from local fixes. The installed Superpowers 7.0.0 reference is attributed without becoming a runtime dependency.
 
 `pegatus-brainstorm` supports conversational exploration on any subject, including personal and non-software topics. It requires no project root or task state and saves notes only when requested. Start routes brainstorming to it before project discovery; project-dependent recommendations retain scoped context and implementation approval requirements. This Pegatus-owned procedure has no external skill dependency.

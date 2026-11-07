@@ -314,6 +314,9 @@
       },
       "resources": [
         "catalog/agents/build-test-repairer.md",
+        "catalog/skills/pegatus-investigate/debugging-guide.md",
+        "catalog/skills/pegatus-investigate/reference.md",
+        "catalog/skills/pegatus-investigate/SUPERPOWERS-LICENSE.txt",
         "catalog/context-protocol.md",
         "src/context/instructions.mjs",
         "src/context/retrieve.mjs"
@@ -351,7 +354,7 @@
           "evidence"
         ]
       },
-      "adaptation": "Collect configured build/type/lint/test failure evidence. Categorize causes, diagnose one bounded root cause and apply the smallest authorized repair. No architecture cleanup. Rerun affected checks, then required final-state gates; bound rounds by repairLimit (default three) and report exhausted repair as blocked."
+      "adaptation": "Follow the shared debugging guide: gather causal evidence, trace upstream values and component boundaries, compare working behavior and test a focused hypothesis before an authorized repair. Preserve read-only runtime diagnosis, configured repairLimit and unchanged-failure stops, final-state evidence and actual failed/blocked distinctions. No speculative fixes or automatic redesign."
     },
     {
       "id": "verifier",
@@ -483,6 +486,7 @@
       },
       "resources": [
         "catalog/skills/pegatus-start/SKILL.md",
+        "catalog/skills/pegatus-investigate/debugging-guide.md",
         "catalog/skills/pegatus-review-feedback/SKILL.md",
         "catalog/skills/pegatus-brainstorm/SKILL.md",
         "catalog/context-protocol.md",
@@ -670,6 +674,7 @@
     {
       "id": "pegatus-investigate",
       "path": "catalog/skills/pegatus-investigate/SKILL.md",
+      "description": "Investigate bugs, failing checks or unexpected behavior through reproduction, causal tracing and focused hypotheses before recommending a scoped repair.",
       "source": {
         "id": "ecc",
         "revision": "b92f181b3b748d1abbc2afd94af6aa7d8c8fca29",
@@ -677,6 +682,9 @@
       },
       "resources": [
         "catalog/skills/pegatus-investigate/SKILL.md",
+        "catalog/skills/pegatus-investigate/debugging-guide.md",
+        "catalog/skills/pegatus-investigate/reference.md",
+        "catalog/skills/pegatus-investigate/SUPERPOWERS-LICENSE.txt",
         "catalog/context-protocol.md",
         "src/context/instructions.mjs",
         "src/context/retrieve.mjs"
@@ -713,7 +721,7 @@
           "interruption"
         ]
       },
-      "adaptation": "Start from observed failure and evidence-ranked hypotheses. Follow instructed indexes, evaluate sufficiency, refine targeted retrieval and confirm source/branch-sensitive claims; bound optional exploration. Reproduce narrowly before recommending a repair. Report missing tools/uncertainties; do not infer intent from generic practices. Reclassify any proposed implementation by actual scope."
+      "adaptation": "Follow the shared debugging guide: establish the failure and authorized scope, reproduce or gather discriminating evidence, trace upstream causes and affected consumers, compare working paths and test a causal hypothesis. Preserve source-versus-runtime evidence distinctions, attempt limits and domain uncertainty. Investigation alone does not authorize repairs or redesign."
     },
     {
       "id": "pegatus-review",
@@ -779,6 +787,7 @@
       },
       "resources": [
         "catalog/skills/pegatus-verify/SKILL.md",
+        "catalog/skills/pegatus-investigate/debugging-guide.md",
         "catalog/context-protocol.md",
         "src/context/instructions.mjs",
         "src/context/retrieve.mjs"

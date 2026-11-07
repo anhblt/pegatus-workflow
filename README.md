@@ -426,6 +426,17 @@ business flow/query map. Gather evidence for slow SQL before edits. Report
 hypotheses, measured findings, prerequisites and the narrowest supported fix.
 ```
 
+For an authorized bug fix:
+
+```text
+Use pegatus-start to fix this failure. Reproduce it or establish the causal
+source path, trace upstream inputs and affected components, and test a focused
+hypothesis before applying the smallest justified fix. Verify the original
+failure and relevant regressions; preserve unrelated changes.
+```
+
+The [shared debugging guide](catalog/skills/pegatus-investigate/debugging-guide.md) also governs verification repairs and the repairer role. It distinguishes symptoms from upstream causes, investigates intermittent failures and test pollution, and keeps diagnostics scoped and secret-safe. Investigation-only remains read-only on product code. Existing fix authorization is preserved; missing prerequisites or exhausted repair budgets are reported honestly. Repeated failure prompts reassessment, not automatic architecture changes. The guide adapts installed Superpowers 7.0.0 without a runtime dependency; update an existing installation normally and reload the host to receive it.
+
 ### Review
 
 ```text
