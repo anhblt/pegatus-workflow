@@ -1,3 +1,4 @@
 # Preserve pinned audit bytes across Windows/Linux checkouts, including CRLF.
 vendor/** -text
 catalog/skills/pegatus-brainstorm/SUPERPOWERS-LICENSE.txt -text
+catalog/skills/pegatus-review/SUPERPOWERS-LICENSE.txt -text

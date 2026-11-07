@@ -433,6 +433,18 @@ EF Core queries, tests and relevant security. Follow solution instructions and
 report actionable findings with locations.
 ```
 
+For committed work before a PR merge:
+
+```text
+Use pegatus-review on the complete committed feature/my-change branch against
+origin/develop before merge. Pin the target, merge-base and head SHAs. Review
+logic and affected callers/consumers, compatibility, failure paths and tests.
+Keep product files and Git state read-only. Report findings, actual coverage,
+unresolved risks and an evidence-backed merge assessment.
+```
+
+Use the actual branch and intended PR target; an explicit commit range or working-change review keeps its requested scope. Local remote-tracking refs are snapshots unless freshness is verified. The [shared review guide](catalog/skills/pegatus-review/review-guide.md) requires revision-correct source inspection even when the checkout has unrelated edits, downstream-impact tracing and test sufficiency checks. Passing lint/build or inspecting syntax alone does not establish behavioral correctness. Partial coverage or material missing context limits merge readiness; a review verdict does not authorize fixes or a merge. The guide adapts the installed Superpowers 7.0.0 reviewer without a runtime dependency; existing installations need the normal update and host reload.
+
 ### Quota limit or handoff
 
 ```text

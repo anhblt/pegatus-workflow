@@ -213,6 +213,9 @@
       },
       "resources": [
         "catalog/agents/code-reviewer.md",
+        "catalog/skills/pegatus-review/review-guide.md",
+        "catalog/skills/pegatus-review/reference.md",
+        "catalog/skills/pegatus-review/SUPERPOWERS-LICENSE.txt",
         "catalog/context-protocol.md",
         "src/context/instructions.mjs",
         "src/context/retrieve.mjs"
@@ -250,7 +253,7 @@
           "evidence"
         ]
       },
-      "adaptation": "Review actual diff, callers, surrounding source and test behavior against approved requirements. Include .NET async/data or React hooks/accessibility and TypeScript correctness when relevant. Every actionable finding states exact location, trigger, failure and defensible severity; high/critical findings explain why guards fail. Consolidate repeats and omit speculative preferences. Zero findings is valid. Report independent context or inline limitation."
+      "adaptation": "Follow the shared behavior and impact review guide: confirm pinned review scope, inspect revision-correct source, trace logic through callers and consumers, assess target compatibility and test sufficiency, and report concrete findings, coverage limits and a qualified verdict. Keep review read-only on source and Git state; preserve configured role tier and disclose independence limits."
     },
     {
       "id": "security-reviewer",
@@ -705,6 +708,7 @@
     {
       "id": "pegatus-review",
       "path": "catalog/skills/pegatus-review/SKILL.md",
+      "description": "Review working changes, commit ranges or branches/PRs for logic, downstream impacts, compatibility and evidence-backed merge readiness.",
       "source": {
         "id": "ecc",
         "revision": "b92f181b3b748d1abbc2afd94af6aa7d8c8fca29",
@@ -712,6 +716,10 @@
       },
       "resources": [
         "catalog/skills/pegatus-review/SKILL.md",
+        "catalog/agents/code-reviewer.md",
+        "catalog/skills/pegatus-review/review-guide.md",
+        "catalog/skills/pegatus-review/reference.md",
+        "catalog/skills/pegatus-review/SUPERPOWERS-LICENSE.txt",
         "catalog/context-protocol.md",
         "src/context/instructions.mjs",
         "src/context/retrieve.mjs"
@@ -748,7 +756,7 @@
           "interruption"
         ]
       },
-      "adaptation": "Receive instruction references, approved decisions, exact diff/base, scope and verification evidence. Read surrounding source and callers. Assess concrete behavior, failure paths and requirements, then relevant stack/security lanes. Findings need exact location, trigger and consequence; high/critical requires guard-failure proof. Omit speculative style preferences and accept zero findings. Record independent review when supported; explicitly label inline review otherwise. Repair stays within granted scope and invalidates prior evidence."
+      "adaptation": "Coordinate the shared behavior and impact review procedure for working changes, exact ranges or whole PR branches. Pin target/base/head, preserve revision-correct read-only inspection, trace callers and consumers, assess relevant integration and test gaps, and report findings, coverage, unresolved risks and a qualified merge assessment. Select independent review when appropriate/supported; disclose inline limits. Review does not authorize repairs or merge."
     },
     {
       "id": "pegatus-verify",
