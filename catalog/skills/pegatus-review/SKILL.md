@@ -13,6 +13,8 @@ For substantial work, default to one independent [code-reviewer](../../agents/co
 
 Required checks: verify the operation's output against task acceptance and relevant configured checks; preserve failures, missing prerequisites and unresolved context as evidence. Reconfirm source when documentation is stale. Use the implemented runtime APIs for installation, hooks, reviewed learning and configuration scanning where applicable. Distinguish host guidance and generated entry points from actual native execution or enforcement; report unavailable tools and continue only independent safe actions.
 
+When the user asks to assess or address returned findings, hand off to [pegatus-review-feedback](../pegatus-review-feedback/SKILL.md) with finding IDs, reviewed revisions, evidence and current authorization. Performing this review alone does not authorize fixes or external replies.
+
 Output records: .pegatus/work/<task-id>/brief.md, progress.json, evidence/ and report.md as applicable; spec.md/plan.md only when required by feature classification; lessons/ holds proposals. Use atomic state APIs and coordinator-only aggregate writes. Checkpoint after meaningful work and before handoff/compaction/interruption with approvals, next action and uncertainties.
 
 Adapted from ECC agents/code-reviewer.md at b92f181b3b748d1abbc2afd94af6aa7d8c8fca29; [license](../../../vendor/ecc/LICENSE).

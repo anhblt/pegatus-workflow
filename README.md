@@ -6,7 +6,7 @@ Default stack guidance targets **.NET 10, EF Core, SQL Server, React 19, and Typ
 
 > **Candidate status:** `0.1.0-rc.1` is private and not release-qualified. Start with a disposable pilot. Native acceptance across all three hosts/both operating systems, hosted CI, and the complete applicable Vercel license notice remain unfinished. A passing install/doctor result does not prove native behavior. See the [acceptance checklist](docs/acceptance/checklist.md).
 
-The catalog contains nine roles and nineteen host workflow aliases, including general brainstorming, context-budget, file-cache and prompt-cache guidance, bounded retrieval/compaction procedures and scoped memory ID reads. The [implementation and validation record](docs/current-state.md) describes the evidence retained on 2026-10-27; its statements about uncommitted work and package counts describe that historical snapshot, not necessarily this checkout. Existing detached installations do not update automatically: use the normal update or reinstall flow when they need the current kit.
+The catalog contains nine roles and twenty host workflow aliases, including general brainstorming, review-feedback handling, context-budget, file-cache and prompt-cache guidance, bounded retrieval/compaction procedures and scoped memory ID reads. The [implementation and validation record](docs/current-state.md) describes the evidence retained on 2026-10-27; its statements about uncommitted work and package counts describe that historical snapshot, not necessarily this checkout. Existing detached installations do not update automatically: use the normal update or reinstall flow when they need the current kit.
 
 ## Contents
 
@@ -256,6 +256,7 @@ User defaults need explicit project activation through the snippet. Native custo
 | `pegatus-execute` | Implement authorized work with checks/checkpoints |
 | `pegatus-investigate` | Gather evidence before choosing a fix |
 | `pegatus-review` | Review behavior, integration and relevant risks |
+| `pegatus-review-feedback` | Validate received findings, explain dispositions and apply justified fixes when authorized |
 | `pegatus-verify` | Run checks and retain actual results |
 | `pegatus-browser-test` | Test a running application through host-level Playwright MCP |
 | `pegatus-checkpoint` | Save resumable state |
@@ -444,6 +445,24 @@ unresolved risks and an evidence-backed merge assessment.
 ```
 
 Use the actual branch and intended PR target; an explicit commit range or working-change review keeps its requested scope. Local remote-tracking refs are snapshots unless freshness is verified. The [shared review guide](catalog/skills/pegatus-review/review-guide.md) requires revision-correct source inspection even when the checkout has unrelated edits, downstream-impact tracing and test sufficiency checks. Passing lint/build or inspecting syntax alone does not establish behavioral correctness. Partial coverage or material missing context limits merge readiness; a review verdict does not authorize fixes or a merge. The guide adapts the installed Superpowers 7.0.0 reviewer without a runtime dependency; existing installations need the normal update and host reload.
+
+### Receiving review feedback
+
+```text
+Use pegatus-review-feedback to assess these PR comments against current code
+and requirements. Explain which are valid, already addressed, unsupported or
+need clarification. Do not change code or post replies.
+```
+
+For authorized fixes instead:
+
+```text
+Use pegatus-review-feedback to address these findings within the approved scope.
+Verify each claim first, apply justified fixes, and report per-item checks and
+remaining questions. Do not post or resolve remote threads.
+```
+
+The procedure checks the reviewed revision against current source, distinguishes defects from proposed remedies, and preserves existing authorization. It continues independent authorized fixes while holding changes that depend on unanswered questions. A local disposition is not a remote thread resolution. See the [feedback workflow](catalog/skills/pegatus-review-feedback/SKILL.md) and [reference attribution](catalog/skills/pegatus-review-feedback/reference.md). Invoke it through the host, not a `pegatus review-feedback` CLI command; update an existing installation normally and reload the host.
 
 ### Quota limit or handoff
 

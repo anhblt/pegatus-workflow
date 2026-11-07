@@ -405,6 +405,15 @@
   ],
   "skills": [
     {
+      "id": "pegatus-review-feedback",
+      "path": "catalog/skills/pegatus-review-feedback/SKILL.md",
+      "source": {"id":"pegatus","path":"catalog/skills/pegatus-review-feedback/SKILL.md"},
+      "description": "Use when assessing or addressing received code-review findings or PR comments; validate claims before making authorized fixes.",
+      "resources": ["catalog/skills/pegatus-review-feedback/SKILL.md","catalog/skills/pegatus-review-feedback/reference.md","catalog/skills/pegatus-review-feedback/SUPERPOWERS-LICENSE.txt","catalog/context-protocol.md","src/context/instructions.mjs","src/context/retrieve.mjs","catalog/skills/pegatus-execute/SKILL.md","catalog/skills/pegatus-verify/SKILL.md","catalog/skills/pegatus-review/SKILL.md"],
+      "activation": {"tasks":["review-feedback","receive-code-review","address-review-feedback"]},
+      "dependencies": []
+    },
+    {
       "id": "pegatus-brainstorm",
       "path": "catalog/skills/pegatus-brainstorm/SKILL.md",
       "source": {"id":"pegatus","path":"catalog/skills/pegatus-brainstorm/SKILL.md"},
@@ -474,6 +483,7 @@
       },
       "resources": [
         "catalog/skills/pegatus-start/SKILL.md",
+        "catalog/skills/pegatus-review-feedback/SKILL.md",
         "catalog/skills/pegatus-brainstorm/SKILL.md",
         "catalog/context-protocol.md",
         "src/context/instructions.mjs",
@@ -716,6 +726,7 @@
       },
       "resources": [
         "catalog/skills/pegatus-review/SKILL.md",
+        "catalog/skills/pegatus-review-feedback/SKILL.md",
         "catalog/agents/code-reviewer.md",
         "catalog/skills/pegatus-review/review-guide.md",
         "catalog/skills/pegatus-review/reference.md",
@@ -4346,6 +4357,7 @@
     }
   ],
   "commands": [
+    {"id":"command-review-feedback","path":"catalog/commands/review-feedback.md","source":{"id":"pegatus","path":"catalog/commands/review-feedback.md"},"skill":"pegatus-review-feedback","resources":["catalog/commands/review-feedback.md","catalog/skills/pegatus-review-feedback/SKILL.md","catalog/context-protocol.md"],"activation":{"tasks":["review-feedback","receive-code-review","address-review-feedback"]},"dependencies":["pegatus-review-feedback"]},
     {"id":"command-brainstorm","path":"catalog/commands/brainstorm.md","source":{"id":"pegatus","path":"catalog/commands/brainstorm.md"},"skill":"pegatus-brainstorm","resources":["catalog/commands/brainstorm.md","catalog/skills/pegatus-brainstorm/SKILL.md","catalog/context-protocol.md"],"activation":{"tasks":["brainstorm","brainstorming"]},"dependencies":["pegatus-brainstorm"]},
     {"id":"command-hook-activation","path":"catalog/commands/hook-activation.md","source":{"id":"pegatus","path":"catalog/commands/hook-activation.md"},"skill":"pegatus-hook-activation","resources":["catalog/commands/hook-activation.md","catalog/skills/pegatus-hook-activation/SKILL.md"],"activation":{"tasks":["hook-activation"]},"dependencies":["pegatus-hook-activation"]},
     {"id":"command-context-budget","path":"catalog/commands/context-budget.md","source":{"id":"pegatus","path":"catalog/commands/context-budget.md"},"skill":"pegatus-context-budget","resources":["catalog/commands/context-budget.md","catalog/skills/pegatus-context-budget/SKILL.md"],"activation":{"tasks":["context-budget"]},"dependencies":["pegatus-context-budget"]},

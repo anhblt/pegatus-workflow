@@ -1,5 +1,7 @@
 # Pegatus catalog
 
+`pegatus-review-feedback` bridges received review findings to evidence-backed decisions and authorized fixes. Start routes feedback tasks to it; assessment alone stays read-only on product code. It tracks stale/already-addressed items, wrong remedies, dependency-specific uncertainty and scope limits, and keeps external replies/resolutions separate from local fixes. The installed Superpowers 7.0.0 reference is attributed without becoming a runtime dependency.
+
 `pegatus-brainstorm` supports conversational exploration on any subject, including personal and non-software topics. It requires no project root or task state and saves notes only when requested. Start routes brainstorming to it before project discovery; project-dependent recommendations retain scoped context and implementation approval requirements. This Pegatus-owned procedure has no external skill dependency.
 
 The manifest includes nine roles, workflow aliases, selected stack guidance, and six rules. Installation and runtime APIs are implemented; native qualification remains separate from catalog and fixture validation.
