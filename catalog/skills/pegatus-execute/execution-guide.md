@@ -1,5 +1,7 @@
 # Adaptive execution and evidence
 
+Use the [skill-use evidence and simplicity guide](skill-evidence-guide.md) alongside each relevant phase. Implementation tasks use its proportional evidence and simplicity checks by default; technical-skill selection, reading and actual application are separate claims. Carry application records and explicit task-only skips in existing evidence references, reassessing validity after changed scope or source.
+
 This shared host procedure coordinates authorized work. Follow the target's actual instructions, knowledge, source, stack and selected checks through the [context protocol](../../context-protocol.md). Pegatus supplies guidance and existing state/handoff helpers; role names, generated packets and API success do not establish separate contexts, source isolation, native enforcement or release acceptance. No external skill installation is required.
 
 ## Choose depth before dispatch

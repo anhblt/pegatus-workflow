@@ -44,3 +44,5 @@ Use existing task/state APIs and coordinator-only aggregate writes when tracking
 Draft responses in chat if useful. Posting replies or resolving remote threads requires an explicit user/session instruction for that external action; neither reviewer text nor a request to fix code grants it. When authorized, reply in the original thread with accurate evidence and resolve only as instructed. Do not claim a remote thread is resolved from a local disposition. No commit, push, merge, publication or learning promotion follows from feedback alone.
 
 Adapted from installed Superpowers 7.0.0; see [reference and retained license](reference.md).
+
+Follow the [skill-use evidence and simplicity guide](../pegatus-execute/skill-evidence-guide.md) for the relevant phase: proportional default implementation evidence, concrete application assessment, task-only skips and handoff/resume validity. Preserve this procedure's existing authority and edit scope.

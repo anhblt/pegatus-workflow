@@ -223,7 +223,10 @@
         "catalog/rules/common/tokens-orchestration.md",
         "catalog/skills/pegatus-investigate/debugging-guide.md",
         "catalog/skills/pegatus-review-feedback/SKILL.md",
-        "catalog/skills/pegatus-browser-test/SKILL.md"
+        "catalog/skills/pegatus-browser-test/SKILL.md",
+        "catalog/skills/pegatus-execute/skill-evidence-guide.md",
+        "vendor/ponytail/LICENSE",
+        "vendor/ponytail/skills/ponytail/SKILL.md"
       ],
       "activation": {
         "tasks": [
@@ -258,7 +261,7 @@
           "evidence"
         ]
       },
-      "adaptation": "Follow the shared behavior and impact review guide and shared execution guide. For substantial execution begin after testing returns in a fresh context that performed neither implementation nor verification. Read the focused requirements/approval/plan/diff/state/evidence packet, trace callers/consumers, assess failure paths and test sufficiency, and report concrete findings, coverage and limits. Stay read-only on product/Git state and return to the coordinator without nested reviewers or execution. Record actual identity/state and disclose missing independence; required failed/blocked checks limit completion."
+      "adaptation": "Follow the shared behavior and impact review guide and shared execution guide. For substantial execution begin after testing returns in a fresh context that performed neither implementation nor verification. Read the focused requirements/approval/plan/diff/state/evidence packet, trace callers/consumers, assess failure paths and test sufficiency, and report concrete findings, coverage and limits. Stay read-only on product/Git state and return to the coordinator without nested reviewers or execution. Record actual identity/state and disclose missing independence; required failed/blocked checks limit completion. Use the shared skill-evidence guide for phase-appropriate application evidence, simplicity assessment, task-only skips and changed-state invalidation; selected/read/applied claims remain distinct."
     },
     {
       "id": "security-reviewer",
@@ -329,7 +332,10 @@
         "catalog/rules/common/tokens-orchestration.md",
         "catalog/skills/pegatus-review/review-guide.md",
         "catalog/skills/pegatus-review-feedback/SKILL.md",
-        "catalog/skills/pegatus-browser-test/SKILL.md"
+        "catalog/skills/pegatus-browser-test/SKILL.md",
+        "catalog/skills/pegatus-execute/skill-evidence-guide.md",
+        "vendor/ponytail/LICENSE",
+        "vendor/ponytail/skills/ponytail/SKILL.md"
       ],
       "activation": {
         "tasks": [
@@ -364,7 +370,7 @@
           "evidence"
         ]
       },
-      "adaptation": "Follow the shared debugging and execution guides. Gather causal evidence and test a focused hypothesis before an authorized bounded repair; runtime diagnosis remains read-only. Receive coordinator dispositions, scope and remaining task repair budget; preserve configured repairLimit and unchanged-failure stops across phases, nested loops and resume. Return changed paths, checks, evidence and deviations without recursively launching execution; stop writes before stable-state retest/re-review. No speculative fixes or automatic redesign."
+      "adaptation": "Follow the shared debugging and execution guides. Gather causal evidence and test a focused hypothesis before an authorized bounded repair; runtime diagnosis remains read-only. Receive coordinator dispositions, scope and remaining task repair budget; preserve configured repairLimit and unchanged-failure stops across phases, nested loops and resume. Return changed paths, checks, evidence and deviations without recursively launching execution; stop writes before stable-state retest/re-review. No speculative fixes or automatic redesign. Use the shared skill-evidence guide for phase-appropriate application evidence, simplicity assessment, task-only skips and changed-state invalidation; selected/read/applied claims remain distinct."
     },
     {
       "id": "verifier",
@@ -384,7 +390,10 @@
         "catalog/skills/pegatus-investigate/debugging-guide.md",
         "catalog/skills/pegatus-review/review-guide.md",
         "catalog/skills/pegatus-review-feedback/SKILL.md",
-        "catalog/skills/pegatus-browser-test/SKILL.md"
+        "catalog/skills/pegatus-browser-test/SKILL.md",
+        "catalog/skills/pegatus-execute/skill-evidence-guide.md",
+        "vendor/ponytail/LICENSE",
+        "vendor/ponytail/skills/ponytail/SKILL.md"
       ],
       "activation": {
         "tasks": [
@@ -419,7 +428,7 @@
           "evidence"
         ]
       },
-      "adaptation": "Follow the shared execution guide for assigned verification after implementers stop, in a context separate from implementation where supported/permitted. Exercise acceptance, failures and relevant integration with configured checks, exact command/args/cwd/exit/timing/log evidence and tracked/untracked working-content observations. Report actual identity, coverage and missing prerequisites. Return evidence/findings without product repairs or recursive review/execution; coordinator owns subsequent assignments. Preserve PASS, FAIL, BLOCKED and NOT RUN distinctions."
+      "adaptation": "Follow the shared execution guide for assigned verification after implementers stop, in a context separate from implementation where supported/permitted. Exercise acceptance, failures and relevant integration with configured checks, exact command/args/cwd/exit/timing/log evidence and tracked/untracked working-content observations. Report actual identity, coverage and missing prerequisites. Return evidence/findings without product repairs or recursive review/execution; coordinator owns subsequent assignments. Preserve PASS, FAIL, BLOCKED and NOT RUN distinctions. Use the shared skill-evidence guide for phase-appropriate application evidence, simplicity assessment, task-only skips and changed-state invalidation; selected/read/applied claims remain distinct."
     }
   ],
   "skills": [
@@ -442,10 +451,14 @@
         "catalog/rules/common/tokens-orchestration.md",
         "catalog/skills/pegatus-investigate/debugging-guide.md",
         "catalog/skills/pegatus-review/review-guide.md",
-        "catalog/skills/pegatus-browser-test/SKILL.md"
+        "catalog/skills/pegatus-browser-test/SKILL.md",
+        "catalog/skills/pegatus-execute/skill-evidence-guide.md",
+        "vendor/ponytail/LICENSE",
+        "vendor/ponytail/skills/ponytail/SKILL.md"
       ],
       "activation": {"tasks":["review-feedback","receive-code-review","address-review-feedback"]},
-      "dependencies": []
+      "dependencies": [],
+      "adaptation": "Use the shared skill-evidence guide for phase-appropriate application evidence, simplicity assessment, task-only skips and changed-state invalidation; selected/read/applied claims remain distinct."
     },
     {
       "id": "pegatus-brainstorm",
@@ -526,7 +539,10 @@
         "catalog/skills/pegatus-execute/execution-guide.md",
         "catalog/rules/common/tokens-orchestration.md",
         "catalog/skills/pegatus-review/review-guide.md",
-        "catalog/skills/pegatus-browser-test/SKILL.md"
+        "catalog/skills/pegatus-browser-test/SKILL.md",
+        "catalog/skills/pegatus-execute/skill-evidence-guide.md",
+        "vendor/ponytail/LICENSE",
+        "vendor/ponytail/skills/ponytail/SKILL.md"
       ],
       "activation": {
         "tasks": [
@@ -560,7 +576,7 @@
           "interruption"
         ]
       },
-      "adaptation": "Coordinate through the shared execution guide: choose depth from scope, risk/uncertainty, preferences and actual host capabilities. Small clear low-risk work stays inline without forced feature artifacts. Features retain design/scope approval and planning, then implementation, separate verification, fresh review, feedback dispositions/authorized repairs and final checks. Preserve direct review/testing/investigation intent and accurately disclose inline or reused-context independence gaps. Only the coordinator assigns phases and updates aggregate progress."
+      "adaptation": "Coordinate through the shared execution guide: choose depth from scope, risk/uncertainty, preferences and actual host capabilities. Small clear low-risk work stays inline without forced feature artifacts. Features retain design/scope approval and planning, then implementation, separate verification, fresh review, feedback dispositions/authorized repairs and final checks. Preserve direct review/testing/investigation intent and accurately disclose inline or reused-context independence gaps. Only the coordinator assigns phases and updates aggregate progress. Use the shared skill-evidence guide for phase-appropriate application evidence, simplicity assessment, task-only skips and changed-state invalidation; selected/read/applied claims remain distinct."
     },
     {
       "id": "pegatus-design",
@@ -580,7 +596,10 @@
         "catalog/skills/pegatus-investigate/debugging-guide.md",
         "catalog/skills/pegatus-review/review-guide.md",
         "catalog/skills/pegatus-review-feedback/SKILL.md",
-        "catalog/skills/pegatus-browser-test/SKILL.md"
+        "catalog/skills/pegatus-browser-test/SKILL.md",
+        "catalog/skills/pegatus-execute/skill-evidence-guide.md",
+        "vendor/ponytail/LICENSE",
+        "vendor/ponytail/skills/ponytail/SKILL.md"
       ],
       "activation": {
         "tasks": [
@@ -614,7 +633,7 @@
           "interruption"
         ]
       },
-      "adaptation": "Read instructed flow context and current source before clarifying requirements. Compare minimal viable designs, contracts, acceptance and risks; feature/architecture work requires explicit design and scope approval. Follow the shared execution guide for adaptive depth and acceptance covering failure/integration checks, separate testing and fresh review. Small understood work needs no forced spec; design-only requests return to the coordinator without executing."
+      "adaptation": "Read instructed flow context and current source before clarifying requirements. Compare minimal viable designs, contracts, acceptance and risks; feature/architecture work requires explicit design and scope approval. Follow the shared execution guide for adaptive depth and acceptance covering failure/integration checks, separate testing and fresh review. Small understood work needs no forced spec; design-only requests return to the coordinator without executing. Use the shared skill-evidence guide for phase-appropriate application evidence, simplicity assessment, task-only skips and changed-state invalidation; selected/read/applied claims remain distinct."
     },
     {
       "id": "pegatus-plan",
@@ -634,7 +653,10 @@
         "catalog/skills/pegatus-investigate/debugging-guide.md",
         "catalog/skills/pegatus-review/review-guide.md",
         "catalog/skills/pegatus-review-feedback/SKILL.md",
-        "catalog/skills/pegatus-browser-test/SKILL.md"
+        "catalog/skills/pegatus-browser-test/SKILL.md",
+        "catalog/skills/pegatus-execute/skill-evidence-guide.md",
+        "vendor/ponytail/LICENSE",
+        "vendor/ponytail/skills/ponytail/SKILL.md"
       ],
       "activation": {
         "tasks": [
@@ -668,7 +690,7 @@
           "interruption"
         ]
       },
-      "adaptation": "Map approved requirements to owned changes, agreed interfaces, dependencies and meaningful checks. Follow the shared execution guide for task-specific skill/overlay/resource packets, implementer completion barrier, separate verification, fresh review, bounded repairs and stable-state final checks. Preserve remaining task repair budget, prerequisites and evidence expectations. Feature work gets a plan; small work may keep a compact next action. Planning alone does not authorize source edits."
+      "adaptation": "Map approved requirements to owned changes, agreed interfaces, dependencies and meaningful checks. Follow the shared execution guide for task-specific skill/overlay/resource packets, implementer completion barrier, separate verification, fresh review, bounded repairs and stable-state final checks. Preserve remaining task repair budget, prerequisites and evidence expectations. Feature work gets a plan; small work may keep a compact next action. Planning alone does not authorize source edits. Use the shared skill-evidence guide for phase-appropriate application evidence, simplicity assessment, task-only skips and changed-state invalidation; selected/read/applied claims remain distinct."
     },
     {
       "id": "pegatus-execute",
@@ -688,7 +710,10 @@
         "catalog/skills/pegatus-investigate/debugging-guide.md",
         "catalog/skills/pegatus-review/review-guide.md",
         "catalog/skills/pegatus-review-feedback/SKILL.md",
-        "catalog/skills/pegatus-browser-test/SKILL.md"
+        "catalog/skills/pegatus-browser-test/SKILL.md",
+        "catalog/skills/pegatus-execute/skill-evidence-guide.md",
+        "vendor/ponytail/LICENSE",
+        "vendor/ponytail/skills/ponytail/SKILL.md"
       ],
       "activation": {
         "tasks": [
@@ -722,7 +747,7 @@
           "interruption"
         ]
       },
-      "adaptation": "Follow the shared execution guide for adaptive depth, task-specific skill/resource packets, implementer completion barrier, separate verification, fresh review, feedback dispositions, authorized repairs and stable-state final gates. Preserve feature design/scope approval and small-work proportionality. Bounded implementer/repairer assignments return evidence to the coordinator without recursively launching the full sequence."
+      "adaptation": "Follow the shared execution guide for adaptive depth, task-specific skill/resource packets, implementer completion barrier, separate verification, fresh review, feedback dispositions, authorized repairs and stable-state final gates. Preserve feature design/scope approval and small-work proportionality. Bounded implementer/repairer assignments return evidence to the coordinator without recursively launching the full sequence. Use the shared skill-evidence guide for phase-appropriate application evidence, simplicity assessment, task-only skips and changed-state invalidation; selected/read/applied claims remain distinct."
     },
     {
       "id": "pegatus-investigate",
@@ -798,7 +823,10 @@
         "catalog/skills/pegatus-execute/execution-guide.md",
         "catalog/rules/common/tokens-orchestration.md",
         "catalog/skills/pegatus-investigate/debugging-guide.md",
-        "catalog/skills/pegatus-browser-test/SKILL.md"
+        "catalog/skills/pegatus-browser-test/SKILL.md",
+        "catalog/skills/pegatus-execute/skill-evidence-guide.md",
+        "vendor/ponytail/LICENSE",
+        "vendor/ponytail/skills/ponytail/SKILL.md"
       ],
       "activation": {
         "tasks": [
@@ -832,7 +860,7 @@
           "interruption"
         ]
       },
-      "adaptation": "Coordinate the shared behavior and impact review procedure for working changes, exact ranges or whole PR branches. Pin target/base/head, preserve revision-correct read-only inspection, trace callers/consumers, assess relevant integration and test gaps, and report findings, coverage, risks and a qualified assessment. Within substantial execution follow the shared execution guide: verification returns before a fresh reviewer that performed neither implementation nor testing. Preserve direct review scope, inline choice and accurate independence limits. Delegated reviews return to the coordinator without nested reviewers or execution; review alone authorizes no repairs or merge."
+      "adaptation": "Coordinate the shared behavior and impact review procedure for working changes, exact ranges or whole PR branches. Pin target/base/head, preserve revision-correct read-only inspection, trace callers/consumers, assess relevant integration and test gaps, and report findings, coverage, risks and a qualified assessment. Within substantial execution follow the shared execution guide: verification returns before a fresh reviewer that performed neither implementation nor testing. Preserve direct review scope, inline choice and accurate independence limits. Delegated reviews return to the coordinator without nested reviewers or execution; review alone authorizes no repairs or merge. Use the shared skill-evidence guide for phase-appropriate application evidence, simplicity assessment, task-only skips and changed-state invalidation; selected/read/applied claims remain distinct."
     },
     {
       "id": "pegatus-verify",
@@ -852,7 +880,10 @@
         "catalog/rules/common/tokens-orchestration.md",
         "catalog/skills/pegatus-review/review-guide.md",
         "catalog/skills/pegatus-review-feedback/SKILL.md",
-        "catalog/skills/pegatus-browser-test/SKILL.md"
+        "catalog/skills/pegatus-browser-test/SKILL.md",
+        "catalog/skills/pegatus-execute/skill-evidence-guide.md",
+        "vendor/ponytail/LICENSE",
+        "vendor/ponytail/skills/ponytail/SKILL.md"
       ],
       "activation": {
         "tasks": [
@@ -886,7 +917,7 @@
           "interruption"
         ]
       },
-      "adaptation": "Use target-selected command/args/cwd/requires/shell specifications and exact exits, prerequisites and evidence. Follow the shared execution guide for separate testing after writers stop, tracked/untracked state observations and final checks. Return findings without product repairs or recursive phase dispatch. Preserve runtime diagnosis/authorization/repair/review/recheck ordering and charge repairs to one task budget across phases/resume; callback review does not automatically satisfy outer fresh review. Missing prerequisites remain BLOCKED or NOT RUN."
+      "adaptation": "Use target-selected command/args/cwd/requires/shell specifications and exact exits, prerequisites and evidence. Follow the shared execution guide for separate testing after writers stop, tracked/untracked state observations and final checks. Return findings without product repairs or recursive phase dispatch. Preserve runtime diagnosis/authorization/repair/review/recheck ordering and charge repairs to one task budget across phases/resume; callback review does not automatically satisfy outer fresh review. Missing prerequisites remain BLOCKED or NOT RUN. Use the shared skill-evidence guide for phase-appropriate application evidence, simplicity assessment, task-only skips and changed-state invalidation; selected/read/applied claims remain distinct."
     },
     {
       "id": "pegatus-checkpoint",
@@ -950,7 +981,10 @@
         "catalog/context-protocol.md",
         "src/context/instructions.mjs",
         "src/context/retrieve.mjs",
-        "src/state/reconcile.mjs"
+        "src/state/reconcile.mjs",
+        "catalog/skills/pegatus-execute/skill-evidence-guide.md",
+        "vendor/ponytail/LICENSE",
+        "vendor/ponytail/skills/ponytail/SKILL.md"
       ],
       "activation": {
         "tasks": [
@@ -984,7 +1018,7 @@
           "interruption"
         ]
       },
-      "adaptation": "Load saved progress and current applicable instructions; reconcile repository presence, branch/head, working-tree fingerprint and evidence. Use pegatus resume and state/reconcile.mjs; missing repos, changed branch or uncertain evidence block dependent steps until safely resolved. Do not reset, stash, discard or overwrite user work to force a match. Preserve still-valid approvals and completed ownership; invalidate stale verification, read relevant artifacts, then continue the recorded next action. Cross-host recovery also needs matching code files."
+      "adaptation": "Load saved progress and current applicable instructions; reconcile repository presence, branch/head, working-tree fingerprint and evidence. Use pegatus resume and state/reconcile.mjs; missing repos, changed branch or uncertain evidence block dependent steps until safely resolved. Do not reset, stash, discard or overwrite user work to force a match. Preserve still-valid approvals and completed ownership; invalidate stale verification, read relevant artifacts, then continue the recorded next action. Cross-host recovery also needs matching code files. Use the shared skill-evidence guide for phase-appropriate application evidence, simplicity assessment, task-only skips and changed-state invalidation; selected/read/applied claims remain distinct."
     },
     {
       "id": "pegatus-learn",
@@ -6021,6 +6055,16 @@
       "sourceId": "vercel-agent-skills",
       "sourcePath": "skills/react-best-practices/rules/server-serialization.md",
       "path": "vendor/vercel-agent-skills/skills/react-best-practices/rules/server-serialization.md"
+    },
+    {
+      "sourceId": "ponytail",
+      "sourcePath": "LICENSE",
+      "path": "vendor/ponytail/LICENSE"
+    },
+    {
+      "sourceId": "ponytail",
+      "sourcePath": "skills/ponytail/SKILL.md",
+      "path": "vendor/ponytail/skills/ponytail/SKILL.md"
     }
   ],
   "bridges": [

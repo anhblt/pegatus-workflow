@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 
 const selected = {
+  ponytail: ["96608e078b2d5ea607c5c3b8b5a54d1c1fba6846",2,"84bdf8d3d4921df84d5582ac80289993a73d9ba567b38b8b35a01000cde99707","4b3a773d54c6fc51c44591ac1a743664e2e6390b02f7aaf3a13e9c65f63198e5",["LICENSE","skills/ponytail/SKILL.md"]],
   ecc: ['b92f181b3b748d1abbc2afd94af6aa7d8c8fca29', 133, '1883b305dda70cccf3bfc91a0848300208d6ae969c37200df29b14cfd3f91789', '42a138752f7a890163fcfb32f8c82e1aa471c9479751353f0844d5d0fbb22a4a', ['agents/planner.md', 'commands/plan.md', 'hooks/hooks.json', 'rules/common/agents.md', 'scripts/hooks/session-start.js', 'scripts/orchestrate-worktrees.js', 'skills/continuous-learning-v2/SKILL.md', 'skills/verification-loop/SKILL.md', 'skills/iterative-retrieval/SKILL.md', 'skills/security-scan/SKILL.md', 'docs/ANTIGRAVITY-GUIDE.md']],
   'dotnet-skills': ['9864ca798f9448ef954ad1f05baf0dfca6501d51', 138, '500b6d9c0665af17fdbe81faa0e44892e4bcb44beb305044b564b05850b3ace2', '1c476d35a4f400972e6ce87a1d720a49dd65aeae7420d248a0688ecb0997c792', ['plugins/dotnet/plugin.json', 'plugins/dotnet-advanced/plugin.json', 'plugins/dotnet-data/plugin.json', 'plugins/dotnet-test/plugin.json', 'plugins/dotnet-aspnetcore/plugin.json']],
   'vercel-agent-skills': ['063bee94c3f4df8453406c830b0a7df0f2860278', 91, '1bf61101d6d3643815c0a7abe692f5501625d4ad8e5de82b0dcc9ebb78885134', '6585b573716233a1bbbed5cbbe89013446645b511e8baf7e9cb350d572bdafba', ['skills/react-best-practices/SKILL.md', 'skills/composition-patterns/SKILL.md']],

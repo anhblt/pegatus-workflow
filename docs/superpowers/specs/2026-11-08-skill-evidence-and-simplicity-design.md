@@ -1,7 +1,7 @@
 # Skill-use evidence and Ponytail simplicity guidance
 
 Date: 2026-11-08
-Status: Draft for user approval; no implementation authorized by this document.
+Status: Approved by the user on 2026-11-08 ("Good to go."). Implemented at the portable catalog/resource level through the linked implementation plan; actual installed-host adherence remains unqualified. See [current validation](../../current-state.md).
 
 ## Intent
 
@@ -84,4 +84,4 @@ Run task-specific tests plus npm test, npm run lint and npm pack --dry-run as ap
 
 No product code, installation behavior or runtime schema is changed by drafting this document. No publishing, target-application modification or automatic remediation is included. Builder may choose exact shared-guidance placement, evidence formatting and tests within these contracts; changes to authority, skip semantics or default activation require renewed design review.
 
-After the user approves this full design, create the implementation plan through superpowers:writing-plans. The user authorized committing all pending files on 2026-11-08; this document is retained as a draft for review. Committing it does not approve this design or authorize its implementation.
+The user approved this full design on 2026-11-08 with "Good to go." The [implementation plan](../plans/2026-11-08-ponytail-integration.md) records the subsequent native execution. The earlier authorization to commit pending files did not itself approve this design; the subsequent explicit approval does. This approval does not authorize publication or changes to installed solutions.

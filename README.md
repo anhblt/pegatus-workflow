@@ -42,6 +42,8 @@ Pegatus is not a running server. It requires no database or separate model accou
 
 Solution instructions govern every phase, including clarification/design. Agents must follow instructed discovery, consult relevant business flows/code maps and confirm relevant source. Broad rescanning must not replace that procedure.
 
+Implementation workflows include proportional [skill-use evidence and simplicity review](catalog/skills/pegatus-execute/skill-evidence-guide.md). Reports distinguish technical skills selected, resources actually read and guidance applied to concrete code or decisions; loading a skill alone is not proof of adherence. Design/plan consider existing components and dependencies; review assesses unnecessary complexity while preserving correctness, architecture and meaningful checks. An explicit task-only skip may cover the added evidence, simplicity review or both, preserving mandatory project checks and ordinary guidance/review. Evidence and skips survive same-task resume and are reassessed after changed scope/source. This is agent-reported and reviewer-assessed host guidance, not native attestation. No separate Ponytail command or external installation is required.
+
 ## 2. Prerequisites and preparation
 
 | Requirement | Notes |

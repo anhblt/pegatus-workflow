@@ -1,5 +1,7 @@
 # Context before action
 
+For implementation and its design/plan/review/resume phases, follow the [skill-use evidence and simplicity guide](skills/pegatus-execute/skill-evidence-guide.md) within this context protocol. Catalog discovery does not establish version compatibility, actual reading or application. Preserve task-only skip scope and source-dependent evidence validity in existing records.
+
 Live-context capacity requests use [pegatus-context-budget](skills/pegatus-context-budget/SKILL.md) without tools or file reads. Explicit installed-component audits follow its named-root scope.
 
 Conversational brainstorming uses [pegatus-brainstorm](skills/pegatus-brainstorm/SKILL.md) on any subject without requiring a project root, discovery or task files. Respect applicable host/user instructions already in force. Do not inspect an unrelated workspace or create state/checkpoints for conversation alone. For project-dependent questions, follow the scoped discovery steps below before making dependent recommendations; this still does not authorize writes. Requested note saving follows destination instructions, without starting tracked work. Transition to formal project work only when requested, preserving its existing state and approval gates.

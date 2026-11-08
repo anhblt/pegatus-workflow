@@ -22,3 +22,5 @@ Output records: .pegatus/work/<task-id>/brief.md, progress.json, evidence/ and r
 Adapted from ECC agents/code-reviewer.md at b92f181b3b748d1abbc2afd94af6aa7d8c8fca29; [license](../../../vendor/ecc/LICENSE).
 
 Review-depth additions adapt the installed Superpowers 7.0.0 reviewer; see [reference and license](reference.md). No external skill is required.
+
+Follow the [skill-use evidence and simplicity guide](../pegatus-execute/skill-evidence-guide.md) for the relevant phase: proportional default implementation evidence, concrete application assessment, task-only skips and handoff/resume validity. Preserve this procedure's existing authority and edit scope.

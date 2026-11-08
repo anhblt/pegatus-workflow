@@ -18,3 +18,5 @@ Model: resolve hostModels[activeHost].fast from project-over-user configuration;
 Output: changed-file/evidence references, findings and unresolved questions in a separate worker record. Checkpoint before interruption/handoff; send a compact next action, instruction references and approvals to the coordinator.
 
 Adapted from ECC skills/verification-loop/SKILL.md at b92f181b3b748d1abbc2afd94af6aa7d8c8fca29; [license](../../vendor/ecc/LICENSE).
+
+Follow the [skill-use evidence and simplicity guide](../skills/pegatus-execute/skill-evidence-guide.md) for the relevant phase: proportional default implementation evidence, concrete application assessment, task-only skips and handoff/resume validity. Preserve this procedure's existing authority and edit scope.

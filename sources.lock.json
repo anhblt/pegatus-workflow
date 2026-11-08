@@ -783,6 +783,20 @@
         "src/scanner/paths.ts": "sha256:87487e0ba339cfde48e47976e785f84f7e3915451c749721376af3481d269ab9",
         "src/types.ts": "sha256:529619dab11f148839aa8523f177005ce13ed0b43f0bac83a516d9fd7ff7632e"
       }
+    },
+    {
+      "id": "ponytail",
+      "repository": "https://github.com/dietrichgebert/ponytail",
+      "revision": "96608e078b2d5ea607c5c3b8b5a54d1c1fba6846",
+      "paths": [
+        "LICENSE",
+        "skills/ponytail/SKILL.md"
+      ],
+      "license": "MIT",
+      "contentHashes": {
+        "LICENSE": "sha256:fb1bc6909ac3ef82d5c22106e32ef682b0cff66788fa915fb9b53b15c9d2f3ab",
+        "skills/ponytail/SKILL.md": "sha256:9badd22a32e19cb884e46dfa8d3aae82bb81dfa5484105b8b4f0262df823a509"
+      }
     }
   ],
   "packages": [
