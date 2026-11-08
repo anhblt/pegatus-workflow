@@ -218,7 +218,12 @@
         "catalog/skills/pegatus-review/SUPERPOWERS-LICENSE.txt",
         "catalog/context-protocol.md",
         "src/context/instructions.mjs",
-        "src/context/retrieve.mjs"
+        "src/context/retrieve.mjs",
+        "catalog/skills/pegatus-execute/execution-guide.md",
+        "catalog/rules/common/tokens-orchestration.md",
+        "catalog/skills/pegatus-investigate/debugging-guide.md",
+        "catalog/skills/pegatus-review-feedback/SKILL.md",
+        "catalog/skills/pegatus-browser-test/SKILL.md"
       ],
       "activation": {
         "tasks": [
@@ -253,7 +258,7 @@
           "evidence"
         ]
       },
-      "adaptation": "Follow the shared behavior and impact review guide: confirm pinned review scope, inspect revision-correct source, trace logic through callers and consumers, assess target compatibility and test sufficiency, and report concrete findings, coverage limits and a qualified verdict. Keep review read-only on source and Git state; preserve configured role tier and disclose independence limits."
+      "adaptation": "Follow the shared behavior and impact review guide and shared execution guide. For substantial execution begin after testing returns in a fresh context that performed neither implementation nor verification. Read the focused requirements/approval/plan/diff/state/evidence packet, trace callers/consumers, assess failure paths and test sufficiency, and report concrete findings, coverage and limits. Stay read-only on product/Git state and return to the coordinator without nested reviewers or execution. Record actual identity/state and disclose missing independence; required failed/blocked checks limit completion."
     },
     {
       "id": "security-reviewer",
@@ -319,7 +324,12 @@
         "catalog/skills/pegatus-investigate/SUPERPOWERS-LICENSE.txt",
         "catalog/context-protocol.md",
         "src/context/instructions.mjs",
-        "src/context/retrieve.mjs"
+        "src/context/retrieve.mjs",
+        "catalog/skills/pegatus-execute/execution-guide.md",
+        "catalog/rules/common/tokens-orchestration.md",
+        "catalog/skills/pegatus-review/review-guide.md",
+        "catalog/skills/pegatus-review-feedback/SKILL.md",
+        "catalog/skills/pegatus-browser-test/SKILL.md"
       ],
       "activation": {
         "tasks": [
@@ -354,7 +364,7 @@
           "evidence"
         ]
       },
-      "adaptation": "Follow the shared debugging guide: gather causal evidence, trace upstream values and component boundaries, compare working behavior and test a focused hypothesis before an authorized repair. Preserve read-only runtime diagnosis, configured repairLimit and unchanged-failure stops, final-state evidence and actual failed/blocked distinctions. No speculative fixes or automatic redesign."
+      "adaptation": "Follow the shared debugging and execution guides. Gather causal evidence and test a focused hypothesis before an authorized bounded repair; runtime diagnosis remains read-only. Receive coordinator dispositions, scope and remaining task repair budget; preserve configured repairLimit and unchanged-failure stops across phases, nested loops and resume. Return changed paths, checks, evidence and deviations without recursively launching execution; stop writes before stable-state retest/re-review. No speculative fixes or automatic redesign."
     },
     {
       "id": "verifier",
@@ -368,7 +378,13 @@
         "catalog/agents/verifier.md",
         "catalog/context-protocol.md",
         "src/context/instructions.mjs",
-        "src/context/retrieve.mjs"
+        "src/context/retrieve.mjs",
+        "catalog/skills/pegatus-execute/execution-guide.md",
+        "catalog/rules/common/tokens-orchestration.md",
+        "catalog/skills/pegatus-investigate/debugging-guide.md",
+        "catalog/skills/pegatus-review/review-guide.md",
+        "catalog/skills/pegatus-review-feedback/SKILL.md",
+        "catalog/skills/pegatus-browser-test/SKILL.md"
       ],
       "activation": {
         "tasks": [
@@ -403,7 +419,7 @@
           "evidence"
         ]
       },
-      "adaptation": "Run configured build, type, lint, tests, applicable security checks and diff review with project prerequisites and exact exit codes. Capture command/cwd/timing/output references and final repository fingerprint. Diagnose failures and hand off bounded repair; do not report missing Docker integration tests as pass. Report PASS, FAIL, BLOCKED or NOT RUN with reasons."
+      "adaptation": "Follow the shared execution guide for assigned verification after implementers stop, in a context separate from implementation where supported/permitted. Exercise acceptance, failures and relevant integration with configured checks, exact command/args/cwd/exit/timing/log evidence and tracked/untracked working-content observations. Report actual identity, coverage and missing prerequisites. Return evidence/findings without product repairs or recursive review/execution; coordinator owns subsequent assignments. Preserve PASS, FAIL, BLOCKED and NOT RUN distinctions."
     }
   ],
   "skills": [
@@ -412,7 +428,22 @@
       "path": "catalog/skills/pegatus-review-feedback/SKILL.md",
       "source": {"id":"pegatus","path":"catalog/skills/pegatus-review-feedback/SKILL.md"},
       "description": "Use when assessing or addressing received code-review findings or PR comments; validate claims before making authorized fixes.",
-      "resources": ["catalog/skills/pegatus-review-feedback/SKILL.md","catalog/skills/pegatus-review-feedback/reference.md","catalog/skills/pegatus-review-feedback/SUPERPOWERS-LICENSE.txt","catalog/context-protocol.md","src/context/instructions.mjs","src/context/retrieve.mjs","catalog/skills/pegatus-execute/SKILL.md","catalog/skills/pegatus-verify/SKILL.md","catalog/skills/pegatus-review/SKILL.md"],
+      "resources": [
+        "catalog/skills/pegatus-review-feedback/SKILL.md",
+        "catalog/skills/pegatus-review-feedback/reference.md",
+        "catalog/skills/pegatus-review-feedback/SUPERPOWERS-LICENSE.txt",
+        "catalog/context-protocol.md",
+        "src/context/instructions.mjs",
+        "src/context/retrieve.mjs",
+        "catalog/skills/pegatus-execute/SKILL.md",
+        "catalog/skills/pegatus-verify/SKILL.md",
+        "catalog/skills/pegatus-review/SKILL.md",
+        "catalog/skills/pegatus-execute/execution-guide.md",
+        "catalog/rules/common/tokens-orchestration.md",
+        "catalog/skills/pegatus-investigate/debugging-guide.md",
+        "catalog/skills/pegatus-review/review-guide.md",
+        "catalog/skills/pegatus-browser-test/SKILL.md"
+      ],
       "activation": {"tasks":["review-feedback","receive-code-review","address-review-feedback"]},
       "dependencies": []
     },
@@ -491,7 +522,11 @@
         "catalog/skills/pegatus-brainstorm/SKILL.md",
         "catalog/context-protocol.md",
         "src/context/instructions.mjs",
-        "src/context/retrieve.mjs"
+        "src/context/retrieve.mjs",
+        "catalog/skills/pegatus-execute/execution-guide.md",
+        "catalog/rules/common/tokens-orchestration.md",
+        "catalog/skills/pegatus-review/review-guide.md",
+        "catalog/skills/pegatus-browser-test/SKILL.md"
       ],
       "activation": {
         "tasks": [
@@ -525,7 +560,7 @@
           "interruption"
         ]
       },
-      "adaptation": "Route a natural-language task by impact and uncertainty. Small understood fixes inspect, implement, verify and report within existing authorization, omitting spec/plan artifacts. Features inspect, design, plan, implement, independently review, verify and report after explicit design and scope approval. Investigations gather evidence and recommend action; subsequent edits follow the appropriate path. Escalate on broader interfaces/data or uncertainty; approvals are preserved until material scope changes. Coordinate only independent lanes with agreed interfaces and distinct ownership; default two workers capped by host/config. If delegation is unavailable, work inline and label the review limitation. Only the coordinator writes aggregate progress."
+      "adaptation": "Coordinate through the shared execution guide: choose depth from scope, risk/uncertainty, preferences and actual host capabilities. Small clear low-risk work stays inline without forced feature artifacts. Features retain design/scope approval and planning, then implementation, separate verification, fresh review, feedback dispositions/authorized repairs and final checks. Preserve direct review/testing/investigation intent and accurately disclose inline or reused-context independence gaps. Only the coordinator assigns phases and updates aggregate progress."
     },
     {
       "id": "pegatus-design",
@@ -539,7 +574,13 @@
         "catalog/skills/pegatus-design/SKILL.md",
         "catalog/context-protocol.md",
         "src/context/instructions.mjs",
-        "src/context/retrieve.mjs"
+        "src/context/retrieve.mjs",
+        "catalog/skills/pegatus-execute/execution-guide.md",
+        "catalog/rules/common/tokens-orchestration.md",
+        "catalog/skills/pegatus-investigate/debugging-guide.md",
+        "catalog/skills/pegatus-review/review-guide.md",
+        "catalog/skills/pegatus-review-feedback/SKILL.md",
+        "catalog/skills/pegatus-browser-test/SKILL.md"
       ],
       "activation": {
         "tasks": [
@@ -573,7 +614,7 @@
           "interruption"
         ]
       },
-      "adaptation": "Read instructed flow context and current source before requirements questions. Distinguish current behavior, desired outcomes, constraints and assumptions. Compare the smallest viable design and alternatives; state component/data/API contracts, acceptance examples and risks. Write spec.md only for feature/architecture classification. Record explicit design and scope approval before implementation; a small understood fix needs no forced spec artifact."
+      "adaptation": "Read instructed flow context and current source before clarifying requirements. Compare minimal viable designs, contracts, acceptance and risks; feature/architecture work requires explicit design and scope approval. Follow the shared execution guide for adaptive depth and acceptance covering failure/integration checks, separate testing and fresh review. Small understood work needs no forced spec; design-only requests return to the coordinator without executing."
     },
     {
       "id": "pegatus-plan",
@@ -587,7 +628,13 @@
         "catalog/skills/pegatus-plan/SKILL.md",
         "catalog/context-protocol.md",
         "src/context/instructions.mjs",
-        "src/context/retrieve.mjs"
+        "src/context/retrieve.mjs",
+        "catalog/skills/pegatus-execute/execution-guide.md",
+        "catalog/rules/common/tokens-orchestration.md",
+        "catalog/skills/pegatus-investigate/debugging-guide.md",
+        "catalog/skills/pegatus-review/review-guide.md",
+        "catalog/skills/pegatus-review-feedback/SKILL.md",
+        "catalog/skills/pegatus-browser-test/SKILL.md"
       ],
       "activation": {
         "tasks": [
@@ -621,7 +668,7 @@
           "interruption"
         ]
       },
-      "adaptation": "Read the approved feature design/scope, or the bounded small-fix brief. Map acceptance criteria to owned file changes, dependency edges and meaningful checks. Keep interfaces agreed before parallel consumers; no overlapping writers. Write plan.md for feature work, with prerequisites and risk, while small work can retain a compact next-action record. Seek approval only for material scope/design change."
+      "adaptation": "Map approved requirements to owned changes, agreed interfaces, dependencies and meaningful checks. Follow the shared execution guide for task-specific skill/overlay/resource packets, implementer completion barrier, separate verification, fresh review, bounded repairs and stable-state final checks. Preserve remaining task repair budget, prerequisites and evidence expectations. Feature work gets a plan; small work may keep a compact next action. Planning alone does not authorize source edits."
     },
     {
       "id": "pegatus-execute",
@@ -635,7 +682,13 @@
         "catalog/skills/pegatus-execute/SKILL.md",
         "catalog/context-protocol.md",
         "src/context/instructions.mjs",
-        "src/context/retrieve.mjs"
+        "src/context/retrieve.mjs",
+        "catalog/skills/pegatus-execute/execution-guide.md",
+        "catalog/rules/common/tokens-orchestration.md",
+        "catalog/skills/pegatus-investigate/debugging-guide.md",
+        "catalog/skills/pegatus-review/review-guide.md",
+        "catalog/skills/pegatus-review-feedback/SKILL.md",
+        "catalog/skills/pegatus-browser-test/SKILL.md"
       ],
       "activation": {
         "tasks": [
@@ -669,7 +722,7 @@
           "interruption"
         ]
       },
-      "adaptation": "Require recorded feature design and scope approval; small authorized fixes proceed after inspection. Dispatch bounded independent work with applicable instruction references, approved artifacts, scope, ownership and checks. Default two workers subject to host capability. Integrate completed results, check combined behavior and obtain independent review for substantial work. Inline fallback must disclose its review limitation. Halt affected lanes on changed interfaces or overlapping edits. Never publish/deploy from design approval alone."
+      "adaptation": "Follow the shared execution guide for adaptive depth, task-specific skill/resource packets, implementer completion barrier, separate verification, fresh review, feedback dispositions, authorized repairs and stable-state final gates. Preserve feature design/scope approval and small-work proportionality. Bounded implementer/repairer assignments return evidence to the coordinator without recursively launching the full sequence."
     },
     {
       "id": "pegatus-investigate",
@@ -741,7 +794,11 @@
         "catalog/skills/pegatus-review/SUPERPOWERS-LICENSE.txt",
         "catalog/context-protocol.md",
         "src/context/instructions.mjs",
-        "src/context/retrieve.mjs"
+        "src/context/retrieve.mjs",
+        "catalog/skills/pegatus-execute/execution-guide.md",
+        "catalog/rules/common/tokens-orchestration.md",
+        "catalog/skills/pegatus-investigate/debugging-guide.md",
+        "catalog/skills/pegatus-browser-test/SKILL.md"
       ],
       "activation": {
         "tasks": [
@@ -775,7 +832,7 @@
           "interruption"
         ]
       },
-      "adaptation": "Coordinate the shared behavior and impact review procedure for working changes, exact ranges or whole PR branches. Pin target/base/head, preserve revision-correct read-only inspection, trace callers and consumers, assess relevant integration and test gaps, and report findings, coverage, unresolved risks and a qualified merge assessment. Select independent review when appropriate/supported; disclose inline limits. Review does not authorize repairs or merge."
+      "adaptation": "Coordinate the shared behavior and impact review procedure for working changes, exact ranges or whole PR branches. Pin target/base/head, preserve revision-correct read-only inspection, trace callers/consumers, assess relevant integration and test gaps, and report findings, coverage, risks and a qualified assessment. Within substantial execution follow the shared execution guide: verification returns before a fresh reviewer that performed neither implementation nor testing. Preserve direct review scope, inline choice and accurate independence limits. Delegated reviews return to the coordinator without nested reviewers or execution; review alone authorizes no repairs or merge."
     },
     {
       "id": "pegatus-verify",
@@ -790,7 +847,12 @@
         "catalog/skills/pegatus-investigate/debugging-guide.md",
         "catalog/context-protocol.md",
         "src/context/instructions.mjs",
-        "src/context/retrieve.mjs"
+        "src/context/retrieve.mjs",
+        "catalog/skills/pegatus-execute/execution-guide.md",
+        "catalog/rules/common/tokens-orchestration.md",
+        "catalog/skills/pegatus-review/review-guide.md",
+        "catalog/skills/pegatus-review-feedback/SKILL.md",
+        "catalog/skills/pegatus-browser-test/SKILL.md"
       ],
       "activation": {
         "tasks": [
@@ -824,7 +886,7 @@
           "interruption"
         ]
       },
-      "adaptation": "Use project-selected command/args/cwd/requires/shell specifications; never substitute hardcoded Bash pipelines or a universal coverage target. Run required build/type/lint/tests, changed-code review and applicable configuration security scans with exact exit codes and prerequisites. Preserve evidence tied to final repository state; edits invalidate affected evidence. Diagnose, bounded repair, review, recheck, report; default repairLimit three. A missing prerequisite is BLOCKED or NOT RUN, including unavailable Docker integration tests; never a clean pass."
+      "adaptation": "Use target-selected command/args/cwd/requires/shell specifications and exact exits, prerequisites and evidence. Follow the shared execution guide for separate testing after writers stop, tracked/untracked state observations and final checks. Return findings without product repairs or recursive phase dispatch. Preserve runtime diagnosis/authorization/repair/review/recheck ordering and charge repairs to one task budget across phases/resume; callback review does not automatically satisfy outer fresh review. Missing prerequisites remain BLOCKED or NOT RUN."
     },
     {
       "id": "pegatus-checkpoint",
@@ -6012,6 +6074,7 @@
           "design",
           "plan",
           "implement",
+          "verify",
           "review",
           "verify",
           "report"

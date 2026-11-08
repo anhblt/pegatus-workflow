@@ -1,8 +1,8 @@
 # Host capability contract (source review, 2026-10-12)
 
-## Current implementation overlay — 2026-10-27
+## Current implementation overlay — 2026-11-08
 
-The catalog has nine roles and seventeen host workflow aliases. ECC parity adds context-budget, file-cache and prompt-cache entry points on all three adapters; the shared runtime adds scoped `memory read <entry-id>`. Unconfigured tiers carry the coordinator-selection policy described in [token controls](../tokens.md). These implemented outputs and procedures add no native host qualification. The source-review table and dated trial observations below remain historical; see [current state](../current-state.md) and the [capability matrix](capability-matrix.md).
+The catalog has nine roles, twenty host workflow aliases and fifty-seven skills. Adaptive execution now explicitly coordinates separate verification before fresh review, skill/resource packets, bounded feedback repairs and stable-state evidence, while preserving small inline work. ECC optimization entry points, scoped `memory read <entry-id>` and the coordinator-selection policy in [token controls](../tokens.md) remain. These portable procedures and generated outputs add no native host qualification. The source-review table and dated trial observations below remain historical; see [current state](../current-state.md) and the [capability matrix](capability-matrix.md).
 
 ## Browser-testing extension (October 2026)
 

@@ -1,10 +1,22 @@
 # Current implementation and validation
 
-Documentation reconciled on 2026-10-27 for the local `0.1.0-rc.1` candidate. This checkout contains completed ECC workflow parity work and separate guided installation/uninstall changes. The changes remain uncommitted. No publication or release qualification is implied.
+Documentation reconciled on 2026-11-08 for the local `0.1.0-rc.1` candidate. ECC workflow parity, guided administration, brainstorming, deep review, review-feedback handling, evidence-led debugging and adaptive workflow integration are implemented at the portable catalog/runtime level. The user authorized committing all pending work, including the separately retained draft design; committing that draft does not approve or implement it. No publication or release qualification is implied.
+
+## Adaptive integration — 2026-11-08
+
+The [approved design](superpowers/specs/2026-11-08-adaptive-workflow-design.md) and [completed plan](superpowers/plans/2026-11-08-adaptive-workflow-integration.md) integrate the main workflow through one [shared execution guide](../catalog/skills/pegatus-execute/execution-guide.md). Small clear low-risk work stays inline. Substantial work uses bounded skill-aware implementation, stopped source writers, separate verification, then a fresh reviewer, feedback assessment, evidence-led repairs, retesting/scoped re-review and final gates. Approvals, completed work and a shared repair budget survive resume. Existing APIs transport referenced task packets; no runtime phase engine, launcher, command, role, dependency or state schema was added.
+
+Independent final-state verification passed 370/370 tests (zero failed/skipped/cancelled), catalog lint and package inventory checks. Twelve fresh-context instruction scenarios met their decision criteria; separate task and broad final reviews found no actionable findings. These results cover the integrated product state before this documentation/status reconciliation; commit-time checks qualify the documentation follow-up. Tests and generated packets do not prove native installed-host behavior or universal worker compliance.
+
+Selected generated configuration scans passed the existing critical-finding gate for project/user scopes: Claude and Codex each had three measured AgentShield files plus 26 supplemental files; Antigravity had 26 supplemental files only. Zero AgentShield coverage for Antigravity is not a clean AgentShield scan. Claude retained 27 noncritical findings (six high, fifteen medium, six low) per scope, identical to actual baseline scans of byte-identical role wrappers; no criticals or exceptions. The Vercel distribution-notice warning remains. Existing broad `docs` packaging includes planning drafts; ignored task evidence and raw logs are excluded. No installed solution, host setting or credential was changed.
+
+The [skill-use evidence/Ponytail simplicity design](superpowers/specs/2026-11-08-skill-evidence-and-simplicity-design.md) is committed as a draft only. Its additional policy and upstream integration are not implemented or approved by the adaptive task. Historical validation sections below retain their original dates and counts.
+
+Commit-time documentation reconciliation passed 21/21 focused adaptive/catalog/workflow/review checks, `npm run lint` with the existing notice warning, and `npm pack --dry-run --json` (2,701 files, required guide/current-state page present, no raw task evidence). The earlier 370/370 full-suite result is retained rather than presented as a rerun after these status/count corrections. This follow-up changes documentation only; runtime, dependencies, upstream locks and vendored bytes remain unchanged.
 
 ## Implemented workflow
 
-The [catalog manifest](../catalog/manifest.json) defines nine roles, seventeen host workflow aliases, fifty-four skills including selected stack guidance, and six rules. All eleven approved core categories remain represented. Host workflows run through the AI host; the CLI supplies concrete administration, state, memory, security and orchestration operations.
+The [catalog manifest](../catalog/manifest.json) defines nine roles, twenty host workflow aliases, fifty-seven skills including selected stack guidance, and six rules. All eleven approved core categories remain represented. Host workflows run through the AI host; the CLI supplies concrete administration, state, memory, security and orchestration operations.
 
 - `pegatus-context-budget` handles live context questions without tools or file scans. An installed-overhead audit requires an explicit request naming the host and root.
 - `pegatus-file-cache` supplies selected guidance for deterministic file-processing caches. `pegatus-prompt-cache` supplies selected guidance for repeated model requests. Neither adds an automatic runtime cache or establishes live context usage.

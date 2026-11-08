@@ -6,7 +6,7 @@ Default stack guidance targets **.NET 10, EF Core, SQL Server, React 19, and Typ
 
 > **Candidate status:** `0.1.0-rc.1` is private and not release-qualified. Start with a disposable pilot. Native acceptance across all three hosts/both operating systems, hosted CI, and the complete applicable Vercel license notice remain unfinished. A passing install/doctor result does not prove native behavior. See the [acceptance checklist](docs/acceptance/checklist.md).
 
-The catalog contains nine roles and twenty host workflow aliases, including general brainstorming, review-feedback handling, context-budget, file-cache and prompt-cache guidance, bounded retrieval/compaction procedures and scoped memory ID reads. The [implementation and validation record](docs/current-state.md) describes the evidence retained on 2026-10-27; its statements about uncommitted work and package counts describe that historical snapshot, not necessarily this checkout. Existing detached installations do not update automatically: use the normal update or reinstall flow when they need the current kit.
+The catalog contains nine roles, twenty host workflow aliases and fifty-seven skills, including general brainstorming, review-feedback handling, context-budget, file-cache and prompt-cache guidance, bounded retrieval/compaction procedures and scoped memory ID reads. The [implementation and validation record](docs/current-state.md) records the adaptive integration and its 2026-11-08 verification, alongside dated historical evidence and remaining qualification limits. Existing detached installations do not update automatically: use the normal update or reinstall flow when they need the current kit.
 
 ## Contents
 
@@ -399,6 +399,8 @@ and checkpoint with evidence and next action.
 
 Understood small fixes proceed within existing authorization; no feature spec/plan is required by default. Broader interfaces/data changes or uncertainty can require reclassification and approval.
 
+Pegatus chooses depth from scope, risk/uncertainty, your preferences and actual host tools. Small clear low-risk work can stay inline without extra agents; a tiny permission/data change is not automatically low risk. Explicit inline choice or unavailable delegation preserves relevant checks and reports which independent testing/review is absent. See the [shared execution guide](catalog/skills/pegatus-execute/execution-guide.md).
+
 ### Feature
 
 ```text
@@ -413,10 +415,10 @@ After reviewing and approving the actual design:
 ```text
 Use pegatus-plan for invoice-export with the approved design, then use
 pegatus-execute within that scope. Preserve approval evidence, use supported
-independent review, verify current code and produce the report.
+separate testing then fresh review, verify current code and produce the report.
 ```
 
-Feature sequence: context → design/scope approval → plan → implement → independent review where supported → verify → report. Material scope changes invalidate affected approvals. A checkpoint is not approval; agents cannot manufacture human authorization.
+Feature sequence: context → design/scope approval → plan → implement → separate verification → fresh review → final verification → report. Implementers finish before testing; the fresh reviewer performed neither implementation nor verification. Findings receive evidence-backed dispositions and justified authorized repairs, followed by affected retesting/re-review. Source writers stop before final testing/review, and edits invalidate affected evidence. One configured task repair budget survives phases/resume. Final checks can reuse evidence only when content state, scope, commands and prerequisites still match. Material scope changes invalidate affected approvals. A checkpoint is not approval; agents cannot manufacture human authorization. These are host procedures around existing APIs, not automatic native enforcement.
 
 ### Investigation
 
