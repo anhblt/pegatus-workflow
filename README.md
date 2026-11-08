@@ -657,20 +657,40 @@ Use a new unique ID for each new event; reuse only for exact retries. `complete`
 To clean up empty folders left by older uninstall versions, run from the target solution:
 
 ```powershell
-node 'C:\Workspace\PegatusWorkflow\bin\pegatus.mjs' cleanup
+pegatus cleanup
 ```
 
 Confirm the existing destination, review the empty-directory preview, then select Yes (No is the default). An explicit destination is supported with `cleanup --root C:\Workspace\CM`. Use `cleanup --root C:\Workspace\CM --dry-run` for a read-only preview without an interactive terminal. This works after reinstalling and needs no old ownership record. It removes only empty directories in legacy host runtimes, unreferenced shared runtime snapshots, and `pegatus-*` skills under `.claude/skills` or `.agents/skills`. Files, referenced snapshots, owned file ancestors, directory links, unrelated folders, history, configuration and shared container directories remain. Pending recovery or installation mutex records block the preview; resolve them through normal administration first. Cleanup never deletes obsolete files.
 
-Update from the approved new **kit checkout**, not an old detached catalog. Review changes/pins and prepare locked dependencies first. From the kit checkout:
+If you registered the terminal command with `scripts/setup-windows-command.ps1`, use **`pegatus`** for updates. It runs the linked checkout's current CLI; pulling that checkout does not update installed project/user runtimes automatically. Keep the checkout at its registered location. You do not need to rerun command registration after each pull.
 
-```text
-node bin/pegatus.mjs doctor --host claude --scope project --root C:/Samples/PegatusPilot
-node bin/pegatus.mjs update --host claude --scope project --root C:/Samples/PegatusPilot
-node bin/pegatus.mjs doctor --host claude --scope project --root C:/Samples/PegatusPilot
+After pulling approved changes, prepare locked dependencies from that **kit checkout**:
+
+```powershell
+Set-Location 'C:\Path\To\PegatusWorkflow'
+npm ci --ignore-scripts
 ```
 
-These roots are Windows examples. Linux uses its absolute root, e.g. `"$HOME/work/PegatusPilot"`. Quote spaces. Include `--user-root` consistently for inherited defaults.
+For a guided update, change to the target project and run:
+
+```powershell
+Set-Location 'C:\Path\To\YourProject'
+pegatus setup
+```
+
+Select the existing installation's host, scope and destination, review the preview, and confirm the update. Alternatively, use the explicit commands:
+
+```text
+pegatus doctor --host claude --scope project --root C:/Samples/PegatusPilot
+pegatus update --host claude --scope project --root C:/Samples/PegatusPilot
+pegatus doctor --host claude --scope project --root C:/Samples/PegatusPilot
+```
+
+Replace `claude` with the installed host (`claude`, `codex`, or `antigravity`) and repeat for each installed host. Match the original scope and destination; user-wide installations use `--scope user` and their existing root. Include `--user-root` consistently for projects inheriting user defaults. These roots are Windows examples. Linux uses its absolute root, e.g. `"$HOME/work/PegatusPilot"`. Quote spaces.
+
+If `pegatus` was not registered, run the same operations from the latest kit checkout using `node .\bin\pegatus.mjs` in place of `pegatus` (Linux: `node ./bin/pegatus.mjs`). For example, `node .\bin\pegatus.mjs update --host codex --scope project --root 'C:\Path\To\YourProject'`. Use the new checkout, not an old detached installed runtime. If PowerShell blocks the npm-generated `pegatus.ps1` launcher, use `pegatus.cmd`; no execution-policy change is needed.
+
+After updating, **reload the AI host or start a fresh session** so it discovers the updated workflow instructions.
 
 Update scans staged config and compares ownership. Edited managed files block: preserve edits/review conflicts before reconciliation. Do not erase ownership locks or force-copy catalog resources.
 
@@ -681,15 +701,15 @@ If choosing uninstall/reinstall instead, complete the normal uninstall below and
 For guided uninstall, run from the target solution in an interactive terminal:
 
 ```powershell
-node 'C:\Workspace\PegatusWorkflow\bin\pegatus.mjs' uninstall
+pegatus uninstall
 ```
 
 Choose project or user scope, confirm the existing destination, then select the hosts with ↑/↓ and Space. The menu lists hosts with Pegatus ownership or recovery records at that destination. Review the owned-file removals and confirm with **Yes**; **No** is selected by default. All selected hosts are previewed before any removal. Conflicts or pending recovery block the flow. Ctrl-C cancels; an active host transaction settles before stopping. Hosts apply sequentially, so completed removals remain if a later host blocks. Removing user defaults affects projects that inherit them; removing a project override preserves those defaults.
 
-For scripts, uninstall selected host/scope from the kit checkout:
+For scripts, uninstall the selected host/scope explicitly (the unregistered-command fallback above also applies):
 
 ```text
-node bin/pegatus.mjs uninstall --host claude --scope project --root C:/Samples/PegatusPilot
+pegatus uninstall --host claude --scope project --root C:/Samples/PegatusPilot
 ```
 
 Uninstall removes unchanged owned files; edits block the transaction. It protects unrelated files/instructions. Task history and team config are not disposable installation files. After successful uninstall, empty ancestors of removed owned files are pruned where possible; unrelated directories and nonempty folders are preserved. Removing a project override leaves global defaults intact.
@@ -698,7 +718,7 @@ Interrupted administration retains a journal and attempts guarded recovery on su
 
 ## 15. CLI reference
 
-Run `node <kit-or-installed-runtime>/bin/pegatus.mjs <operation> ...`. Task-state operations use the current solution directory.
+Run `pegatus <operation> ...` when the terminal command is registered. Otherwise use `node <kit-or-installed-runtime>/bin/pegatus.mjs <operation> ...`. Task-state operations use the current solution directory.
 
 | Operation | Inputs / behavior |
 | --- | --- |
