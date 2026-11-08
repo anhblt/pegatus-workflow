@@ -465,7 +465,8 @@
       "path": "catalog/skills/pegatus-brainstorm/SKILL.md",
       "source": {"id":"pegatus","path":"catalog/skills/pegatus-brainstorm/SKILL.md"},
       "description": "Use when brainstorming ideas, possibilities or decisions on any subject, including personal and non-software topics.",
-      "resources": ["catalog/skills/pegatus-brainstorm/SKILL.md","catalog/skills/pegatus-brainstorm/reference.md","catalog/skills/pegatus-brainstorm/SUPERPOWERS-LICENSE.txt","catalog/context-protocol.md"],
+      "resources": [
+        "catalog/skills/pegatus-execute/execution-guide.md","catalog/skills/pegatus-brainstorm/SKILL.md","catalog/skills/pegatus-brainstorm/reference.md","catalog/skills/pegatus-brainstorm/SUPERPOWERS-LICENSE.txt","catalog/context-protocol.md"],
       "activation": {"tasks":["brainstorm","brainstorming"]},
       "dependencies": []
     },
@@ -509,7 +510,8 @@
       "id": "pegatus-browser-test",
       "path": "catalog/skills/pegatus-browser-test/SKILL.md",
       "source": { "id": "pegatus", "path": "catalog/skills/pegatus-browser-test/SKILL.md" },
-      "resources": ["catalog/skills/pegatus-browser-test/SKILL.md", "catalog/agents/browser-tester.md", "catalog/context-protocol.md", "src/context/instructions.mjs", "src/context/retrieve.mjs", "docs/browser-testing.md"],
+      "resources": [
+        "catalog/skills/pegatus-execute/execution-guide.md","catalog/skills/pegatus-browser-test/SKILL.md", "catalog/agents/browser-tester.md", "catalog/context-protocol.md", "src/context/instructions.mjs", "src/context/retrieve.mjs", "docs/browser-testing.md"],
       "activation": { "tasks": ["browser-test"] },
       "dependencies": [],
       "workflow": {
@@ -759,6 +761,7 @@
         "path": "skills/iterative-retrieval/SKILL.md"
       },
       "resources": [
+        "catalog/skills/pegatus-execute/execution-guide.md",
         "catalog/skills/pegatus-investigate/SKILL.md",
         "catalog/skills/pegatus-investigate/debugging-guide.md",
         "catalog/skills/pegatus-investigate/reference.md",
@@ -977,6 +980,7 @@
         "path": "commands/resume-session.md"
       },
       "resources": [
+        "catalog/skills/pegatus-execute/execution-guide.md",
         "catalog/skills/pegatus-resume/SKILL.md",
         "catalog/context-protocol.md",
         "src/context/instructions.mjs",

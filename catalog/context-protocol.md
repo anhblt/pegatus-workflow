@@ -1,5 +1,7 @@
 # Context before action
 
+Follow the [human confirmation and execution-mode policy](skills/pegatus-execute/execution-guide.md#human-confirmation-and-execution-mode) alongside discovery. Required context and technical guidance remain required in Inline; a direct entry point or resumed task cannot bypass pending human confirmations.
+
 For implementation and its design/plan/review/resume phases, follow the [skill-use evidence and simplicity guide](skills/pegatus-execute/skill-evidence-guide.md) within this context protocol. Catalog discovery does not establish version compatibility, actual reading or application. Preserve task-only skip scope and source-dependent evidence validity in existing records.
 
 Live-context capacity requests use [pegatus-context-budget](skills/pegatus-context-budget/SKILL.md) without tools or file reads. Explicit installed-component audits follow its named-root scope.

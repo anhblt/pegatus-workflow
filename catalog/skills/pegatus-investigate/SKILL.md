@@ -3,6 +3,8 @@ name: pegatus-investigate
 description: Use when investigating a bug, failing check, performance issue or unexpected behavior to establish a supported cause before recommending a repair.
 ---
 
+Follow the [human confirmation and execution-mode policy](../pegatus-execute/execution-guide.md#human-confirmation-and-execution-mode) before advancing phases or spawning workers. Preserve pending confirmations and the user-selected mode through direct invocation and resume; Inline forbids subagents throughout the task while retaining all applicable skills, guards and checks. Native unavailability requires a user decision before switching modes unless automatic Inline fallback was explicitly approved for this task. Phase confirmations may be automated only for explicitly human-approved phases in this task; all skills, guards and checks remain required.
+
 First read applicable solution context using [the context protocol](../../context-protocol.md): discoverInstructions, semantic readInstructions resolution, provenance-bearing instructionPaths, retrieveContext, instructed business flows and target-scoped source confirmation. Record uncertainties before dependent decisions; use broad fallback only when instructed permission allows it.
 
 Inputs: task brief or saved task ID, classification/scope, discovered instruction locations, knowledge references, relevant approved artifacts and project-selected checks.

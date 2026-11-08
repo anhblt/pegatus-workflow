@@ -1,5 +1,7 @@
 # Pegatus V2 — installation and user guide
 
+Follow the [human confirmation and execution-mode policy](catalog/skills/pegatus-execute/execution-guide.md#human-confirmation-and-execution-mode). Every implementation requires explicit plan/brief approval and a **Native subagents** or **Inline** selection, regardless of task size. Inline spawns no subagents in any phase and retains all applicable skills, guards and checks. Confirm each applicable next phase with the user, preserve pending checkpoints on resume, and switch modes when native delegation is unavailable only with a user decision or explicitly preapproved task-scoped automatic fallback. Automatic phase progression is a separate human-approved option covering named phases of this task only; all guards and required checks remain. These are host procedures, not native enforcement or new CLI/runtime authorization gates.
+
 Pegatus is an installable workflow kit for **Claude Code, Codex, and Antigravity**, with a Node.js runtime for Windows and Linux. It supplies shared skills, roles, commands, rules, durable state, reviewed learning, verification, token controls, orchestration procedures, and AgentShield configuration checks.
 
 Default stack guidance targets **.NET 10, EF Core, SQL Server, React 19, and TypeScript**. Actual solution versions, architecture, test libraries, and instructions take precedence.
@@ -401,7 +403,7 @@ and checkpoint with evidence and next action.
 
 Understood small fixes proceed within existing authorization; no feature spec/plan is required by default. Broader interfaces/data changes or uncertainty can require reclassification and approval.
 
-Pegatus chooses depth from scope, risk/uncertainty, your preferences and actual host tools. Small clear low-risk work can stay inline without extra agents; a tiny permission/data change is not automatically low risk. Explicit inline choice or unavailable delegation preserves relevant checks and reports which independent testing/review is absent. See the [shared execution guide](catalog/skills/pegatus-execute/execution-guide.md).
+Pegatus chooses depth from scope, risk/uncertainty, your preferences and actual host tools. Small clear low-risk work needs no extra agents or formal feature artifacts, but still requires the human to select Native subagents or Inline; a tiny permission/data change is not automatically low risk. Unavailable Native delegation pauses dependent work unless task-scoped automatic Inline fallback was explicitly human-approved. Inline preserves relevant skills, guards and checks and reports absent independent testing/review. See the [shared execution guide](catalog/skills/pegatus-execute/execution-guide.md).
 
 ### Feature
 
@@ -600,7 +602,7 @@ Applicable instructions can cause `instruction-resolution-required`: the coordin
 
 Generated names/paths can differ: inspect doctor/catalog rather than assuming a host picker name. Role tiers are fixed by catalog/team config. Workers cannot choose models or write aggregate progress.
 
-Default parallelism is two. Delegate only independent lanes with agreed interfaces/disjoint ownership. Carry instructions and relevant approvals into handoffs. Overlap requires reconciliation. Unsupported delegation uses sequential inline work and discloses independent-review limitations.
+Default parallelism is two. Delegate only independent lanes with agreed interfaces/disjoint ownership. Carry instructions and relevant approvals into handoffs. Overlap requires reconciliation. Unsupported Native delegation pauses dependent work unless the human explicitly approved automatic Inline fallback for this task. Selected Inline mode or approved fallback uses sequential procedures without spawning and discloses independent-review limitations.
 
 Inspect a saved task schedule:
 

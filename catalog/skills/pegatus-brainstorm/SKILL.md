@@ -3,6 +3,8 @@ name: pegatus-brainstorm
 description: Use when exploring ideas, possibilities or decisions on any subject, including personal interests, creative projects, business and software, before committing to action.
 ---
 
+Follow the [human confirmation and execution-mode policy](../pegatus-execute/execution-guide.md#human-confirmation-and-execution-mode) before advancing phases or spawning workers. Preserve pending confirmations and the user-selected mode through direct invocation and resume; Inline forbids subagents throughout the task while retaining all applicable skills, guards and checks. Native unavailability requires a user decision before switching modes unless automatic Inline fallback was explicitly approved for this task. Phase confirmations may be automated only for explicitly human-approved phases in this task; all skills, guards and checks remain required.
+
 # Brainstorm any subject
 
 Explore what the user wants and why before settling on a direction. Personal decisions, creative interests, business and software all fit. This procedure needs no external skill, codebase, project root or task ID.
