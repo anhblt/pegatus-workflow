@@ -18,7 +18,7 @@ import { dispatchEvent } from '../src/hooks/dispatch.mjs';
 import { activationFor, mapNativeEvent, nativeResponse } from '../src/hooks/operations.mjs';
 import { runLearningCommand, learningCollector } from '../src/memory/cli.mjs';
 import { runOrchestrationCommand } from '../src/orchestration/cli.mjs';
-import { runSetup } from '../src/install/setup.mjs';
+import { runSetup, runUpdate } from '../src/install/setup.mjs';
 import { runUninstall } from '../src/install/uninstall.mjs';
 import { runCleanup } from '../src/install/cleanup.mjs';
 import { runHookActivation, previewHookSetup, applyHookSetup } from '../src/hooks/setup.mjs';
@@ -203,6 +203,7 @@ export async function main(argv, { cwd, home, securityPreflight, orchestrationCa
     throw new TypeError('main requires argv and cwd/home paths');
   }
   if (argv.length === 1 && ['install','setup'].includes(argv[0])) return runSetup({cwd,home});
+  if (argv.length === 1 && argv[0] === 'update') return runUpdate({cwd,home});
   if (argv.length === 1 && argv[0] === 'uninstall') return runUninstall({cwd,home});
   if (argv.length === 1 && argv[0] === 'hook-activation') return runHookActivation({cwd});
   if (argv[0] === 'cleanup') return runCleanup(argv.slice(1),{cwd});
@@ -211,7 +212,7 @@ export async function main(argv, { cwd, home, securityPreflight, orchestrationCa
     process.stdout.write('Commands:\n' + [
       ['setup', 'Open guided host detection, installation and update (interactive).'],
       ['install', 'Install workflows; no flags opens guided setup.'],
-      ['update', 'Update an owned host installation.'],
+      ['update', 'Update owned workflows; no flags opens guided update.'],
       ['doctor', 'Inspect an installation and report configuration issues.'],
       ['uninstall', 'Remove owned workflows; no flags opens guided removal.'],
       ['cleanup', 'Preview and confirm empty Pegatus folder cleanup.'],
@@ -230,6 +231,7 @@ export async function main(argv, { cwd, home, securityPreflight, orchestrationCa
       ['--help, -h', 'Show this help.'],
     ].map(([command, description]) => `  ${command.padEnd(18)} ${description}`).join('\n') + '\n\n');
     process.stdout.write('Run pegatus setup or install (no flags) in an interactive terminal for guided host detection and installation.\n');
+    process.stdout.write('Run pegatus update (no flags) for guided scope/root selection, installed host choices, update preview and confirmation.\n');
     process.stdout.write('Run pegatus uninstall (no flags) for guided scope/root selection, installed host choices, removal preview and confirmation.\n');
     process.stdout.write('Run pegatus cleanup [--root <existing-root>] to preview and confirm empty Pegatus folder cleanup; --dry-run previews without a terminal or changes.\n');
     process.stdout.write('Usage: pegatus <operation> [options]\nOperations: ' + [...operations].join(', ') + '\nHost workflows: invoke installed pegatus-start, pegatus-design, pegatus-plan, pegatus-execute, pegatus-investigate, pegatus-review, pegatus-verify skills in your host. These are not CLI subcommands.\nPortable roles: role --host <host> --scope project --root <project> --user-root <defaults> --role <role-id>; consume the returned procedure and fixed selection in the coordinator.\n');

@@ -83,7 +83,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup-windows-
 
 The script checks Node 22+, prepares locked dependencies with `npm ci --ignore-scripts`, and uses `npm link` to create npm's global Windows launchers pointing to this checkout. Rerunning it preserves an existing link to this checkout. It stops on conflicting or unexpected commands and destinations; inspect and resolve those before retrying. It does not modify PATH or a PowerShell profile. Ensure the npm global prefix printed by the script is on your user PATH, then open a new terminal and run `pegatus --help`. If PowerShell blocks `pegatus.ps1` under its execution policy, use `pegatus.cmd` or run the command in Command Prompt; no policy change is needed.
 
-From any directory, `pegatus` shows available commands and their descriptions. From the target project, `pegatus setup` opens guided setup and `pegatus uninstall` opens guided removal. Explicit commands such as `pegatus update --host claude --scope project --root 'C:\Samples\PegatusPilot'` retain their existing behavior and apply immediately. To update an installed workflow, first pull the approved changes in the linked checkout and run `npm ci --ignore-scripts` there, then run `pegatus setup` from the target project for a guided preview and update, or use the explicit update command. Reload the host afterward. The command uses the checkout's current files, not the project's detached runtime; moving or deleting the checkout breaks the link.
+From any directory, `pegatus` shows available commands and their descriptions. From the target project, `pegatus setup` opens guided setup, `pegatus update` opens guided update, and `pegatus uninstall` opens guided removal. Explicit commands such as `pegatus update --host claude --scope project --root 'C:\Samples\PegatusPilot'` retain their existing behavior and apply immediately. To update an installed workflow, first pull the approved changes in the linked checkout and run `npm ci --ignore-scripts` there, then run `pegatus update` from the target project for a guided preview and update, or use the explicit update command. Reload the host afterward. The command uses the checkout's current files, not the project's detached runtime; moving or deleting the checkout breaks the link.
 
 To remove only the npm command, first verify the global link belongs to this checkout, then run `npm unlink --global pegatus-workflow`. This does not uninstall workflows from projects; use `pegatus uninstall` before removing the command if those should also be removed. If moving the checkout, remove the old link first and run setup from the new location.
 
@@ -675,10 +675,12 @@ For a guided update, change to the target project and run:
 
 ```powershell
 Set-Location 'C:\Path\To\YourProject'
-pegatus setup
+pegatus update
 ```
 
-Select the existing installation's host, scope and destination, review the preview, and confirm the update. Alternatively, use the explicit commands:
+Choose the scope and existing destination (current project by default). Hosts with Pegatus ownership or recovery records at that destination are listed and preselected; change the selection if needed, review the preview, and confirm the update (No is the default). Application detection alone does not select a host for update. No records means no update; use `pegatus setup` for a new installation, or select the user scope/root to update inherited defaults. Task progress and artifacts in `.pegatus/work/`, existing configuration and solution instructions are preserved. Setup also supports reconciling an existing installation without resetting task progress.
+
+Alternatively, use the explicit commands:
 
 ```text
 pegatus doctor --host claude --scope project --root C:/Samples/PegatusPilot
@@ -694,7 +696,7 @@ After updating, **reload the AI host or start a fresh session** so it discovers 
 
 Update scans staged config and compares ownership. Edited managed files block: preserve edits/review conflicts before reconciliation. Do not erase ownership locks or force-copy catalog resources.
 
-For a guided read-only preview, run the setup wizard from the intended solution, select the existing host/scope/root and review the changes before its final confirmation. Setup also reconciles an existing installation. Preview does not scan or apply; confirmation starts the real security/ownership transaction. The explicit `update` command above applies immediately through those gates; it is not a preview command and has no CLI `--dry-run` flag.
+For a guided read-only preview, run `pegatus update` from the intended solution, select the existing scope/root/hosts and review the changes before its final confirmation. Preview does not scan or apply; confirmation starts the real security/ownership transaction. Explicit `update` commands with flags apply immediately through those gates; they are not preview commands and have no CLI `--dry-run` flag.
 
 If choosing uninstall/reinstall instead, complete the normal uninstall below and run guided setup again from this checkout. Uninstall preserves task history, team configuration and maintained instructions. Reinstall does not remove edited-file conflicts or activate hooks/MCP automatically. After either route, run doctor and reload the host. The unchanged candidate version alone does not prove that an older detached runtime contains the new workflow files.
 

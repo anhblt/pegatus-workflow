@@ -3,6 +3,7 @@ import {constants} from 'node:fs';
 import path from 'node:path';
 import {createSetupTerminal} from './terminal.mjs';
 import {createAdministrationSession} from './admin.mjs';
+import {fileBytes,lockPath} from './ownership.mjs';
 
 const hosts=[{id:'claude',label:'Claude Code',command:'claude',config:'.claude'},
   {id:'codex',label:'Codex',command:'codex',config:'.codex'},
@@ -45,11 +46,12 @@ export async function detectHosts({home,platform=process.platform,env=process.en
 
 /** Interactive front end only. All managed writes still pass through administration/scanning/CAS. */
 export async function runSetup({cwd,home,ask,signal,write=message=>process.stdout.write(message+'\n'),
-  detect=detectHosts,admin=createAdministrationSession()}={}) {
+  detect=detectHosts,admin=createAdministrationSession(),update=false}={}) {
+  const action=update?'update':'installation',title=update?'Update':'Setup';
   let terminal,interrupt;
   if(!ask) {
     if(!process.stdin.isTTY || !process.stdout.isTTY) {
-      process.stderr.write('Setup needs an interactive terminal. For scripts use install --host <host> --scope project|user --root <existing-root>; use --help for usage.\n');return 2;
+      process.stderr.write(`${title} needs an interactive terminal. For scripts use ${update?'update':'install'} --host <host> --scope project|user --root <existing-root>; use --help for usage.\n`);return 2;
     }
     terminal=createSetupTerminal();
     const controller=new AbortController();
@@ -62,30 +64,35 @@ export async function runSetup({cwd,home,ask,signal,write=message=>process.stdou
   const cancelled=()=>signal?.aborted;
 
   try {
-    write('Pegatus setup');
+    write(`Pegatus ${update?'update':'setup'}`);
     write('Shared workflows for your AI coding agents.');
     write('');
     write('Local qualification candidate; native acceptance and licensing gates remain open.');
-    const detected=await detect({home});
-    const labels={cli:'CLI detected',application:'application detected',configuration:'configuration found only (installation unconfirmed)','not-detected':'not detected — manual selection available'};
-    write(`Detected: ${detected.filter(host=>['cli','application'].includes(host.status)).map(host=>host.label).join(', ')||'no supported applications found'}`);
-    if(!terminal)detected.forEach((host,index)=>{write(`${index+1}. ${host.label}: ${labels[host.status]}`);for(const item of host.evidence)write(`   ${display(item)}`);});
-    write('Detection does not establish authentication, permissions or native qualification.');
-    const defaults=detected.flatMap((host,index)=>['cli','application'].includes(host.status)?[index+1]:[]).join(',');
-    let selected;
-    if(terminal)selected=await terminal.select('Which agents should use Pegatus?',detected.map((host,index)=>({value:index,label:`${host.label} (${labels[host.status]})`})),{multiple:true,initial:detected.flatMap((host,index)=>['cli','application'].includes(host.status)?[index]:[]),signal});
-    else for(;;) {
-      const answer=await ask(`Hosts (comma-separated numbers${defaults?`; Enter for ${defaults}`:''}, q to cancel): `);
-      if(answer===undefined || /^q$/i.test(answer.trim()))return 0;
-      const input=answer.trim()||defaults;
-      if(/^\d+(?:\s*,\s*\d+)*$/.test(input)) {
-        selected=[...new Set(input.split(',').map(value=>Number(value)-1))];
-        if(selected.every(index=>index>=0&&index<detected.length))break;
+    let detected,selected;
+    async function selectHosts(detected) {
+      const labels={cli:'CLI detected',application:'application detected',configuration:'configuration found only (installation unconfirmed)','not-detected':'not detected — manual selection available',installed:'ownership or recovery record found'};
+      const preferred=detected.flatMap((host,index)=>['cli','application','installed'].includes(host.status)?[index]:[]);
+      if(!update)write(`Detected: ${detected.filter(host=>['cli','application'].includes(host.status)).map(host=>host.label).join(', ')||'no supported applications found'}`);
+      if(!terminal)detected.forEach((host,index)=>{write(`${index+1}. ${host.label}: ${labels[host.status]}`);for(const item of host.evidence??[])write(`   ${display(item)}`);});
+      write(update?'Installation records are menu hints; ownership and security checks validate each update.':'Detection does not establish authentication, permissions or native qualification.');
+      const defaults=preferred.map(index=>index+1).join(',');
+      let selected;
+      if(terminal)selected=await terminal.select(update?'Which installed agents should be updated?':'Which agents should use Pegatus?',detected.map((host,index)=>({value:index,label:`${host.label} (${labels[host.status]})`})),{multiple:true,initial:preferred,signal});
+      else for(;;) {
+        const answer=await ask(`Hosts (comma-separated numbers${defaults?`; Enter for ${defaults}`:''}, q to cancel): `);
+        if(answer===undefined || /^q$/i.test(answer.trim()))return null;
+        const input=answer.trim()||defaults;
+        if(/^\d+(?:\s*,\s*\d+)*$/.test(input)) {
+          selected=[...new Set(input.split(',').map(value=>Number(value)-1))];
+          if(selected.every(index=>index>=0&&index<detected.length))break;
+        }
+        write('Select at least one listed host number.');
       }
-      write('Select at least one listed host number.');
+      return selected;
     }
+    if(!update){detected=await detect({home});selected=await selectHosts(detected);if(selected===null)return 0;}
     let scope;
-    if(terminal)[scope]=await terminal.select('Where should Pegatus be installed?',[{label:'Current project',value:'project'},{label:'User-wide defaults',value:'user'}],{initial:['project'],signal});
+    if(terminal)[scope]=await terminal.select(update?'Where should Pegatus be updated?':'Where should Pegatus be installed?',[{label:'Current project',value:'project'},{label:'User-wide defaults',value:'user'}],{initial:['project'],signal});
     else for(;;){const answer=await ask('Scope: 1 current project, 2 user-wide defaults [1] (q to cancel): ');
       if(answer===undefined || /^q$/i.test(answer.trim()))return 0;
       if(['','1','2'].includes(answer.trim())){scope=answer.trim()==='2'?'user':'project';break;}write('Choose 1 or 2.');}
@@ -100,15 +107,26 @@ export async function runSetup({cwd,home,ask,signal,write=message=>process.stdou
       if(answer===undefined || /^q$/i.test(answer.trim()))return 0;
       if(answer.trim()){userRoot=path.resolve(cwd,answer.trim());if(!await isDirectory(userRoot)){write('Blocked: user defaults root must exist.');return 2;}}
     }
+    if(update) {
+      detected=[];
+      for(const host of hosts) {
+        if(await fileBytes(root,lockPath(host.id),{internal:true})!==null
+          || await fileBytes(root,`.pegatus/install-journal-${host.id}.json`,{internal:true})!==null
+          || await fileBytes(root,`.pegatus/install-busy-${host.id}.json`,{internal:true})!==null)detected.push({...host,status:'installed'});
+      }
+      if(!detected.length){write('No Pegatus installation records found at this destination. Use pegatus setup for a new installation, or select the user root for inherited defaults.');return 0;}
+      selected=await selectHosts(detected);if(selected===null)return 0;
+    }
     write('');
-    write(`◇ Review installation: ${scope} at ${display(root)}`);
+    write(`◇ Review ${action}: ${scope} at ${display(root)}`);
     if(userRoot)write(`Inherit defaults: ${display(userRoot)}`);
     write('Existing solution instructions, unrelated settings and hooks are preserved. Security checks run before each apply.');
+    if(update)write('Task progress and artifacts in .pegatus/work/ and existing configuration are preserved.');
     write('Selected hosts apply sequentially, not as one cross-host transaction; earlier successful hosts remain if a later host blocks.');
     const requests=[],projectedRuntimes=new Map();
     for(const index of selected) {
-      if(cancelled()){write('Cancelled; no installation applied.');return 0;}
-      const host=detected[index],args=['install','--host',host.id,'--scope',scope,'--root',root,...(userRoot?['--user-root',userRoot]:[])];
+      if(cancelled()){write(`Cancelled; no ${action} applied.`);return 0;}
+      const host=detected[index],args=[update?'update':'install','--host',host.id,'--scope',scope,'--root',root,...(userRoot?['--user-root',userRoot]:[])];
       const preview=await admin(args,{cwd,dryRun:true,projectedRuntimes,onPreviewPlan:runtime=>projectedRuntimes.set(host.id,runtime)});
       write(`${host.label}: ${preview.status}; ${preview.preview?.writes.length??0} writes, ${preview.preview?.removes.length??0} removals.`);
       const groups=new Map();
@@ -116,14 +134,14 @@ export async function runSetup({cwd,home,ask,signal,write=message=>process.stdou
       for(const [group,count] of groups)write(`  ${display(group)}/: ${count} files to write`);
       for(const file of preview.preview?.removes??[])write(`  Remove owned file: ${display(file)}`);
       for(const reason of preview.reasons??[])write(`  ${display(reason)}`);
-      if(!['passed','skipped'].includes(preview.status)){write('No installation applied. Resolve the reported conflict/recovery condition first.');return 3;}
+      if(!['passed','skipped'].includes(preview.status)){write(`No ${action} applied. Resolve the reported conflict/recovery condition first.`);return 3;}
       requests.push({host,args,preview:preview.preview});
     }
-    const confirmation=terminal?(await terminal.select('Apply this installation?',[{label:'Yes',value:'yes'},{label:'No',value:'no'}],{initial:['no'],signal}))[0]:await ask('Apply the preview? [y/N]: ');
-    if(!/^y(?:es)?$/i.test(confirmation?.trim()??'')){write('Cancelled; no installation applied.');return 0;}
+    const confirmation=terminal?(await terminal.select(`Apply this ${action}?`,[{label:'Yes',value:'yes'},{label:'No',value:'no'}],{initial:['no'],signal}))[0]:await ask('Apply the preview? [y/N]: ');
+    if(!/^y(?:es)?$/i.test(confirmation?.trim()??'')){write(`Cancelled; no ${action} applied.`);return 0;}
     for(const {host,args,preview} of requests) {
       if(cancelled()){write('Cancelled. Earlier successful host installations are retained.');return 0;}
-      write(`Installing ${host.label}…`);
+      write(`${update?'Updating':'Installing'} ${host.label}…`);
       const result=await admin(args,{cwd,approvedPreview:preview});
       write(`${host.label}: ${result.status}`);
       for(const reason of result.reasons??[])write(`  ${display(reason)}`);
@@ -143,10 +161,12 @@ export async function runSetup({cwd,home,ask,signal,write=message=>process.stdou
       if(doctor.status==='blocked'){write('Doctor blocked activation; reconcile before use.');return 3;}
       write('Open/reload the selected host in your solution and invoke pegatus-start. Review doctor snippets; hooks are not automatically enabled.');
     }
-    write('◇ Setup complete.');
+    write(`◇ ${title} complete.`);
     return 0;
   } catch(error) {
     if(signal?.aborted || ['ABORT_ERR','ERR_USE_AFTER_CLOSE'].includes(error.code)){write('Cancelled.');return 0;}
-    write(`Setup failed: ${display(error.message)}. Inspect installation state with doctor before retrying.`);return 1;
+    write(`${title} failed: ${display(error.message)}. Inspect installation state with doctor before retrying.`);return 1;
   } finally {if(interrupt)process.removeListener('SIGINT',interrupt);}
 }
+
+export function runUpdate(options={}) {return runSetup({...options,update:true});}
