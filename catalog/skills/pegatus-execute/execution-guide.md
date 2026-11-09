@@ -61,6 +61,8 @@ Default concurrency is two, capped by configuration and actual host support. Sep
 
 ## Prepare a bounded task packet
 
+For now, exclude frontend automated test creation/modification from plans, implementation packets, verification repairs and review requirements unless the user explicitly requests it. Skip supporting skills' frontend test-writing/TDD instructions and do not delegate test authoring elsewhere. Preserve existing tests and applicable existing checks, including build, lint, type checks and selected browser verification; report coverage gaps rather than requiring new frontend tests. Backend testing requirements remain unchanged. Carry this scope through handoffs and resume.
+
 Read target path instructions and prescribed knowledge before selecting roles or skills. Detect actual framework/version and test tooling; the kit's default .NET/React advice is not the target's stack. Use existing `selectSkills(catalog, task)` for discovery assistance, read selected overlays first, and apply semantic relevance plus `selectResources(skill, task)` and required dependencies/linked resources. Do not load all stack packs. If no skill fits, record that and follow target conventions rather than inventing a skill or installing a dependency.
 
 Each task packet identifies:

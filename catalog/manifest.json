@@ -201,7 +201,7 @@
           "evidence"
         ]
       },
-      "adaptation": "Implement assigned React/TypeScript behavior using existing component contracts. Check hook order/dependencies and cleanup, stable keys, state mutation, accessibility and client secret boundaries. Apply Next.js/RSC advice only to matching framework; do not redesign for a generic preference."
+      "adaptation": "Implement assigned React/TypeScript behavior using existing component contracts. Check hook order/dependencies and cleanup, stable keys, state mutation, accessibility and client secret boundaries. Apply Next.js/RSC advice only to matching framework; do not redesign for a generic preference. For now, do not create or modify frontend automated tests unless the user explicitly requests them; skip supporting test-writing/TDD instructions, preserve existing tests and run applicable existing checks. Do not install test tooling or delegate frontend test authoring elsewhere."
     },
     {
       "id": "code-reviewer",
