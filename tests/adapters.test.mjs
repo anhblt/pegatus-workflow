@@ -8,6 +8,24 @@ import { planInstall } from '../src/install/plan.mjs';
 const root=fileURLToPath(new URL('../',import.meta.url));
 const catalog=await loadCatalog(root);
 
+test('selected skill wrappers link their overlay before the body in detached runtime layouts',()=>{
+  const runtimePath='.pegatus/runtime/shared/test-snapshot';
+  for(const host of ['claude','codex']) for(const scope of ['project','user']) {
+    const generated=generateHost(catalog,{host,scope,root,runtimePath});
+    const files=new Set(generated.operations.map(op=>op.relativePath));
+    for(const skill of catalog.skills) {
+      const name=skill.id.startsWith('pegatus-')?skill.id:`pegatus-${skill.id}`;
+      const op=generated.operations.find(op=>!op.relativePath.startsWith('.pegatus/') && op.relativePath.endsWith(`/skills/${name}/SKILL.md`));
+      assert.ok(op,`${host}/${scope}: ${name}`);
+      const targets=[...op.content.matchAll(/\[[^\]]*\]\(([^)]+)\)/g)].map(match=>
+        path.posix.normalize(path.posix.join(path.posix.dirname(op.relativePath),match[1])));
+      assert.deepEqual(targets,skill.overlay?[`${runtimePath}/${skill.overlay}`,`${runtimePath}/${skill.path}`]:[`${runtimePath}/${skill.path}`],
+        `${host}/${scope}: ${name} loads only its overlay and body, in order`);
+      for(const target of targets) assert.ok(files.has(target),`${host}/${scope}: ${target}`);
+    }
+  }
+});
+
 test('Claude workflows have one slash entry point per alias',()=>{
   for(const scope of ['project','user']) {
     const generated=generateHost(catalog,{host:'claude',scope,root});

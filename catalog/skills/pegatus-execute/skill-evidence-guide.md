@@ -22,6 +22,8 @@ Never remove required architecture, trust-boundary validation, data-loss handlin
 
 Distinguish **selected**, **read** and **applied**. A manifest match, resource reference or loaded file proves neither application nor adherence. Record only what actually happened; evidence is agent-reported and reviewer-assessed, not proof from the host.
 
+Keep the record specific to the worker's assigned task. Report applicable paths actually read, concrete guidance applied to changes/decisions, and unused selections or gaps without inventing application. Do not expand reading to a role-wide skill bundle to fill the report. Before accepting results, the coordinator assesses the record against the returned changes and follows up on missing mandatory reads or unverified application; supplying guidance later requires reviewing affected existing changes. Line ranges may help locate evidence but are not a mandatory receipt format or native attestation.
+
 Use the existing task report/evidence and checkpoint references. A tracked task may use `.pegatus/work/<task-id>/evidence/skill-use.md`; an artifact-light task can use a few lines in its existing report. This is an example format, not a mandatory schema or a new required file:
 
 ```markdown

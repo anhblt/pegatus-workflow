@@ -83,6 +83,21 @@ function packetContext() {
 const task = {id: 'tests', scope: 'Approved task-specific regression coverage', paths: ['tests/FeatureTests.cs'],
   dependsOn: [], checks: ['target-unit']};
 
+test('a C# implementation handoff carries its selected guidance without a role-wide test bundle', () => {
+  const target = {stack: 'dotnet', framework: '.net', version: 10, task: 'csharp-implementation'};
+  const selected = selectSkills(catalog, target);
+  assert.deepEqual(selected.map(skill => skill.id), ['dotnet-csharp-expert']);
+  const resources = [...new Set(selected.flatMap(skill => selectResources(skill, target)))];
+  const context = {...packetContext(), resources: ['.pegatus/work/feature/evidence/task-packet-csharp.md', ...resources]};
+  const brief = buildHandoff({...task, id: 'implementation', scope: 'Assigned C# implementation', paths: ['src/Feature.cs']}, context);
+  assert.equal(brief.status, 'passed');
+  const refs = brief.contextManifest.dynamic.filter(entry => entry.kind === 'resource').map(entry => entry.ref);
+  assert.deepEqual(refs, context.resources);
+  assert.ok(refs.includes('catalog/stack-overlays/dotnet-csharp-expert.md'));
+  assert.ok(refs.includes('vendor/dotnet-skills/plugins/dotnet/skills/csharp-expert/SKILL.md'));
+  assert.ok(!refs.some(ref => /dotnet-test|vercel|react-best-practices/.test(ref)));
+});
+
 // Catches guidance omitted from the actual dispatch manifest, including required dependency/overlay references.
 test('task handoff transports a supplemental packet and selected stack closure without flattening', () => {
   const context = packetContext();

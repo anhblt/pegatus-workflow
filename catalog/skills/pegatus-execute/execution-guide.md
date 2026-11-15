@@ -65,17 +65,23 @@ For now, exclude frontend automated test creation/modification from plans, imple
 
 Read target path instructions and prescribed knowledge before selecting roles or skills. Detect actual framework/version and test tooling; the kit's default .NET/React advice is not the target's stack. Use existing `selectSkills(catalog, task)` for discovery assistance, read selected overlays first, and apply semantic relevance plus `selectResources(skill, task)` and required dependencies/linked resources. Do not load all stack packs. If no skill fits, record that and follow target conventions rather than inventing a skill or installing a dependency.
 
+Select for the assigned work and owned paths, not a fixed bundle for the role. A schema task does not automatically need test-authoring, refactoring or frontend skills. Packaged resource availability and inherited skill listings are discovery aids, not a requirement to read every file. Add guidance when a concrete new task need appears; reassess the packet before dependent action.
+
 Each task packet identifies:
 
 - Applicable instruction paths and what the receiver must read; authoritative knowledge/source references and remaining uncertainties.
 - Requirements/acceptance, approved artifacts and preserved approval evidence.
 - Scope, owned paths, interfaces, dependency records, prerequisites and project-selected checks.
-- Selected skill IDs/paths and reasons, required overlays, dependencies and resource references.
+- Selected skill IDs and applicability reasons; exact runtime reading paths in overlay-first, skill-body, then applicable dependency/resource order. Resolve IDs through the catalog rather than guessing paths from generated names. Record no suitable skill when that is the outcome.
 - Expected changes/evidence, report destination, stop conditions and remaining task repair budget.
 
 Store supplemental detail as an ordinary referenced task artifact, for example `.pegatus/work/<task-id>/evidence/task-packet.md`. Carry its path and selected guidance in existing `resources`, evidence references and context manifests through `buildHandoff(task, context)`. Do not add runtime fields, embed entire logs or flatten skills away from required resources. A reference's presence proves neither reading nor application; the receiver must read its relevant packet and references before acting and report gaps. Required context overflow or unavailable guidance blocks dependent dispatch. Narrow retrieval without dropping mandatory context; unrelated safe work can continue. Existing handoff approval requirements remain; do not fabricate a design approval for a small inline task just to use the orchestration API.
 
 Follow the configured role tiers and [model-selection policy](../../rules/common/tokens-orchestration.md). The trusted coordinator records an actual supported model/effort selection or host-default fallback; workers do not select replacements.
+
+Before dispatch and on resume, check the actual host's role registration, delegation and worker tool access. Conversation-local registrations, inherited skill visibility and parent reads must not be assumed to persist or reach a worker. Give each receiver its packet and applicable instruction/rule paths explicitly. Missing mandatory guidance blocks dependent action; ask for the missing references rather than guessing. Do not enable broader permissions automatically to make a role work. If Native delegation is unavailable, preserve the existing fallback/confirmation requirements.
+
+Before accepting a worker result, assess its selected/read/applied evidence against the assigned work and returned changes. Follow up on missing reads, unused selections and application gaps; review affected existing changes after supplying missing guidance. A path/line-range receipt or passing smoke test does not prove adherence. Use existing reports and evidence references; no new receipt schema or compulsory report filename is introduced.
 
 ## Substantial implementation through completion
 
