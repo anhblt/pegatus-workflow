@@ -25,6 +25,8 @@ Group the delta into meaningful behavior changes. For each material group:
 3. Follow affected outputs to consumers: persisted-data readers, events/subscribers, jobs, API clients or UI state. Check the actual consumer before assuming a downstream effect is safe or broken.
 4. Challenge at least the important realistic lifecycle/failure scenarios for that change. Explain existing guards and whether they cover the failure path. Stop expanding when the affected contract and consumers are understood; record any material boundary you could not inspect.
 
+Within this review, look for unnecessary additions and redundant or unreachable branches in changed code unless the user explicitly skipped the added simplicity review for this task. Cite the caller, invariant or control flow that proves a branch finding. Keep ordinary correctness and trust-boundary review in scope.
+
 Select impact lanes by relevance, not by a universal checklist quota:
 
 | Changed behavior | Investigate when affected |

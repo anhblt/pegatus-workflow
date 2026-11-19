@@ -71,7 +71,7 @@ Each task packet identifies:
 
 - Applicable instruction paths and what the receiver must read; authoritative knowledge/source references and remaining uncertainties.
 - Requirements/acceptance, approved artifacts and preserved approval evidence.
-- Scope, owned paths, interfaces, dependency records, prerequisites and project-selected checks.
+- Scope, owned paths, interfaces, dependency records, prerequisites and project-selected checks. For a proposed guard, name the concrete failure or threat it addresses. Generic labels such as “double-check” or “defense-in-depth” are insufficient.
 - Selected skill IDs and applicability reasons; exact runtime reading paths in overlay-first, skill-body, then applicable dependency/resource order. Resolve IDs through the catalog rather than guessing paths from generated names. Record no suitable skill when that is the outcome.
 - Expected changes/evidence, report destination, stop conditions and remaining task repair budget.
 
@@ -82,6 +82,14 @@ Follow the configured role tiers and [model-selection policy](../../rules/common
 Before dispatch and on resume, check the actual host's role registration, delegation and worker tool access. Conversation-local registrations, inherited skill visibility and parent reads must not be assumed to persist or reach a worker. Give each receiver its packet and applicable instruction/rule paths explicitly. Missing mandatory guidance blocks dependent action; ask for the missing references rather than guessing. Do not enable broader permissions automatically to make a role work. If Native delegation is unavailable, preserve the existing fallback/confirmation requirements.
 
 Before accepting a worker result, assess its selected/read/applied evidence against the assigned work and returned changes. Follow up on missing reads, unused selections and application gaps; review affected existing changes after supplying missing guidance. A path/line-range receipt or passing smoke test does not prove adherence. Use existing reports and evidence references; no new receipt schema or compulsory report filename is introduced.
+
+## Implementation handoff
+
+Before handing off implementation, name the input that triggers each added or changed guard and the layer that owns its rule. Drop a duplicate guard when that layer already guarantees the rule on every supported path. Preserve checks required at separate trust boundaries. Use the existing handoff or Inline report.
+
+## Verify new throws
+
+For each new throw, cite a test that exercises it or ask for one within the authorized test scope. When a test cannot be supplied, record the reason and coverage gap.
 
 ## Substantial implementation through completion
 

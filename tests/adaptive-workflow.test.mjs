@@ -10,7 +10,8 @@ const root = fileURLToPath(new URL('../', import.meta.url));
 const catalog = await loadCatalog(root);
 const guide = 'catalog/skills/pegatus-execute/execution-guide.md';
 const consumers = ['pegatus-start', 'pegatus-design', 'pegatus-plan', 'pegatus-execute', 'pegatus-verify',
-  'pegatus-review', 'pegatus-review-feedback', 'verifier', 'code-reviewer', 'build-test-repairer'];
+  'pegatus-review', 'pegatus-review-feedback', 'verifier', 'code-reviewer', 'build-test-repairer',
+  'backend-implementer', 'frontend-implementer'];
 const links = (file, bytes) => [...bytes.toString().matchAll(/\[[^\]]*\]\(([^)]+)\)/g)]
   .map(match => match[1].split('#')[0]).filter(ref => ref && !/^[a-z]+:/i.test(ref))
   .map(ref => path.posix.normalize(path.posix.join(path.posix.dirname(file), ref)));
