@@ -59,6 +59,10 @@ Record a short decision: requested scope, risk and uncertainty, relevant user/de
 
 Default concurrency is two, capped by configuration and actual host support. Separate seats need not run simultaneously. Parallel implementation requires agreed interfaces, independent dependencies and disjoint ownership. Preserve existing authority through routine phase changes and resume; honor each applicable phase confirmation unless covered by explicit task-scoped automatic progression, and seek a decision for missing authority or consequential scope/design changes. Design approval does not authorize publication, deployment or other external actions.
 
+## Before editing code
+
+In Inline and Native implementation, including authorized repairs, read and apply the [original pinned PonyTail skill](../../../vendor/ponytail/skills/ponytail/SKILL.md) before editing. Use its default coding guidance within the task and follow project instructions, host authority and authorized test scope. On resume, confirm the active implementer has read it before continuing edits.
+
 ## Prepare a bounded task packet
 
 For now, exclude frontend automated test creation/modification from plans, implementation packets, verification repairs and review requirements unless the user explicitly requests it. Skip supporting skills' frontend test-writing/TDD instructions and do not delegate test authoring elsewhere. Preserve existing tests and applicable existing checks, including build, lint, type checks and selected browser verification; report coverage gaps rather than requiring new frontend tests. Backend testing requirements remain unchanged. Carry this scope through handoffs and resume.
@@ -73,6 +77,7 @@ Each task packet identifies:
 - Requirements/acceptance, approved artifacts and preserved approval evidence.
 - Scope, owned paths, interfaces, dependency records, prerequisites and project-selected checks. For a proposed guard, name the concrete failure or threat it addresses. Generic labels such as “double-check” or “defense-in-depth” are insufficient.
 - Selected skill IDs and applicability reasons; exact runtime reading paths in overlay-first, skill-body, then applicable dependency/resource order. Resolve IDs through the catalog rather than guessing paths from generated names. Record no suitable skill when that is the outcome.
+- For implementation and repair assignments, include the exact runtime path to the pinned PonyTail skill above as required reading in the packet and carry it through the existing `resources` references, even when no stack skill applies.
 - Expected changes/evidence, report destination, stop conditions and remaining task repair budget.
 
 Store supplemental detail as an ordinary referenced task artifact, for example `.pegatus/work/<task-id>/evidence/task-packet.md`. Carry its path and selected guidance in existing `resources`, evidence references and context manifests through `buildHandoff(task, context)`. Do not add runtime fields, embed entire logs or flatten skills away from required resources. A reference's presence proves neither reading nor application; the receiver must read its relevant packet and references before acting and report gaps. Required context overflow or unavailable guidance blocks dependent dispatch. Narrow retrieval without dropping mandatory context; unrelated safe work can continue. Existing handoff approval requirements remain; do not fabricate a design approval for a small inline task just to use the orchestration API.

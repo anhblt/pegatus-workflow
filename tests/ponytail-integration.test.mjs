@@ -44,7 +44,7 @@ test('ponytail source retains exact core bytes and MIT notice', () => {
   assert.ok(lintCatalog(altered).some(item => item.code === 'source-hash-mismatch' && item.location === raw));
 });
 
-test('all host scopes retain reachable evidence guidance and passive upstream resources', () => {
+test('all host scopes retain reachable evidence guidance and pinned upstream resources', () => {
   const entries = consumers.map(id => [...catalog.skills, ...catalog.agents].find(item => item.id === id));
   for (const entry of entries) {
     const resources = selectResources(entry, {task: 'execute'});
@@ -65,6 +65,18 @@ test('all host scopes retain reachable evidence guidance and passive upstream re
     }
     assert.ok(!generated.operations.some(op => !op.relativePath.startsWith('.pegatus/') && /ponytail/.test(op.relativePath)));
   }
+});
+
+test('implementation and repair entry points expose the pinned Ponytail reading', () => {
+  const executionGuide = 'catalog/skills/pegatus-execute/execution-guide.md';
+  for (const id of ['pegatus-execute', 'backend-implementer', 'frontend-implementer', 'build-test-repairer']) {
+    const entry = [...catalog.skills, ...catalog.agents].find(item => item.id === id);
+    const resources = selectResources(entry, {task: 'execute'});
+    assert.ok(resources.includes(raw), `${id}: pinned skill`);
+    assert.ok(resources.includes(license), `${id}: upstream notice`);
+    assert.ok(links(entry.path, catalog.files[entry.path]).includes(executionGuide), `${id}: execution guide`);
+  }
+  assert.ok(links(executionGuide, catalog.files[executionGuide]).includes(raw), 'execution guide links the pinned skill');
 });
 
 test('handoff carries evidence references without changing state contracts', () => {

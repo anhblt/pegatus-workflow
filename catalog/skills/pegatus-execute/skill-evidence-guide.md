@@ -8,7 +8,7 @@ Follow the [context protocol](../../context-protocol.md) for instruction, knowle
 
 ## Smallest complete implementation
 
-Use the simplest readable approach that fully solves the task. Reuse project code, platform features or installed dependencies where they fit. Cover affected callers, tests, fixtures, configuration and exports. Preserve required architecture, trust-boundary validation, data-loss handling, security, accessibility and meaningful checks.
+Implementers follow the [before-editing procedure](execution-guide.md#before-editing-code) to read and apply the pinned PonyTail skill.
 
 Apply this in the existing [task packet](execution-guide.md#prepare-a-bounded-task-packet), [implementation handoff](execution-guide.md#implementation-handoff), [verification](execution-guide.md#verify-new-throws) and [code review](../pegatus-review/review-guide.md#2-trace-behavior-beyond-changed-lines).
 
@@ -41,6 +41,4 @@ Handoff and resume preserve evidence references, actual review status and the ap
 
 ## Pinned upstream and owned adaptation
 
-This procedure adapts the passive [Ponytail core reference](../../../vendor/ponytail/skills/ponytail/SKILL.md) at revision `96608e078b2d5ea607c5c3b8b5a54d1c1fba6846`, with its actual [MIT license](../../../vendor/ponytail/LICENSE), Copyright (c) 2026 DietrichGebert. Original bytes and hashes are preserved; the copied skill is not separately registered or invoked.
-
-Apply the Pegatus guidance within project and host authority. The detached runtime includes the reference and notice for provenance.
+The detached runtime preserves the original [PonyTail skill](../../../vendor/ponytail/skills/ponytail/SKILL.md) bytes and hashes at revision `96608e078b2d5ea607c5c3b8b5a54d1c1fba6846`, with its [MIT license](../../../vendor/ponytail/LICENSE), Copyright (c) 2026 DietrichGebert. Pegatus supplies the task-scoped reading procedure.

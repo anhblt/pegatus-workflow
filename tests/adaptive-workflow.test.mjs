@@ -88,7 +88,8 @@ test('a C# implementation handoff carries its selected guidance without a role-w
   const target = {stack: 'dotnet', framework: '.net', version: 10, task: 'csharp-implementation'};
   const selected = selectSkills(catalog, target);
   assert.deepEqual(selected.map(skill => skill.id), ['dotnet-csharp-expert']);
-  const resources = [...new Set(selected.flatMap(skill => selectResources(skill, target)))];
+  const role = catalog.agents.find(entry => entry.id === 'backend-implementer');
+  const resources = [...new Set([role, ...selected].flatMap(entry => selectResources(entry, target)))];
   const context = {...packetContext(), resources: ['.pegatus/work/feature/evidence/task-packet-csharp.md', ...resources]};
   const brief = buildHandoff({...task, id: 'implementation', scope: 'Assigned C# implementation', paths: ['src/Feature.cs']}, context);
   assert.equal(brief.status, 'passed');
@@ -96,6 +97,7 @@ test('a C# implementation handoff carries its selected guidance without a role-w
   assert.deepEqual(refs, context.resources);
   assert.ok(refs.includes('catalog/stack-overlays/dotnet-csharp-expert.md'));
   assert.ok(refs.includes('vendor/dotnet-skills/plugins/dotnet/skills/csharp-expert/SKILL.md'));
+  assert.ok(refs.includes('vendor/ponytail/skills/ponytail/SKILL.md'));
   assert.ok(!refs.some(ref => /dotnet-test|vercel|react-best-practices/.test(ref)));
 });
 

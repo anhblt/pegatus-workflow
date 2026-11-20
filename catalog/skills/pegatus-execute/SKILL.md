@@ -13,6 +13,8 @@ Before dispatch, follow the model-selection policy in [tokens and orchestration]
 
 Follow the [shared execution guide](execution-guide.md) for the adaptive decision, task-specific skill/resource packets, implementation completion barrier, separate verification, fresh review, feedback dispositions, authorized repairs and stable-state final gates. Preserve feature design/scope approval and small-work proportionality. A bounded implementer/repairer assignment performs its assigned work and returns evidence to the coordinator; it does not recursively launch the coordinator sequence.
 
+Follow the [before-editing procedure](execution-guide.md#before-editing-code) for implementation and repairs in either execution mode.
+
 Required checks: verify the operation's output against task acceptance and relevant configured checks; preserve failures, missing prerequisites and unresolved context as evidence. Reconfirm source when documentation is stale. Use the implemented runtime APIs for installation, hooks, reviewed learning and configuration scanning where applicable. Distinguish host guidance and generated entry points from actual native execution or enforcement; report unavailable tools and continue only independent safe actions.
 
 Output records: .pegatus/work/<task-id>/brief.md, progress.json, evidence/ and report.md as applicable; spec.md/plan.md only when required by feature classification; lessons/ holds proposals. Use atomic state APIs and coordinator-only aggregate writes. Checkpoint after meaningful work and before handoff/compaction/interruption with approvals, next action and uncertainties.
