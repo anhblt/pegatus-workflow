@@ -30,7 +30,9 @@ test('every coordinator entry point ships a reachable confirmation policy in all
         assert.equal(target, prefix + guide);
         assert.ok(files.has(target), target);
       }
-      const wrappers = generated.operations.filter(op => !op.relativePath.startsWith('.pegatus/'));
+      // Caveman only changes chat prose and never coordinates a project phase.
+      const wrappers = generated.operations.filter(op => !op.relativePath.startsWith('.pegatus/') &&
+        !op.relativePath.endsWith('/pegatus-caveman/SKILL.md') && !op.relativePath.endsWith('/pegatus-caveman.md'));
       assert.ok(wrappers.length);
       for (const wrapper of wrappers) {
         assert.ok(wrapper.content.includes('Inline forbids all subagent spawning, including testing and review'), wrapper.relativePath);

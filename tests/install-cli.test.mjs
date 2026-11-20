@@ -4,6 +4,7 @@ import {mkdtemp,mkdir,writeFile,readFile,rm} from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import {runAdministration} from '../src/install/admin.mjs';
+const {version}=JSON.parse(await readFile(new URL('../package.json',import.meta.url),'utf8'));
 const passed={status:'passed',evidence:[],reasons:[]};
 async function roots(t) {
   const parent=await mkdtemp(path.join(os.tmpdir(),'pegatus-admin-'));
@@ -21,7 +22,7 @@ test('CLI default security scans installs and doctor reports explicit-call',asyn
   const installed=await runAdministration(['install',...args],options);
   assert.equal(installed.status,'passed');assert.ok(installed.security.coverage.agentShield.length);
   const doctor=await runAdministration(['doctor',...args],options);
-  assert.equal(doctor.capabilities.security,'explicit-call');assert.equal(doctor.installedVersion,'0.1.0-rc.1');
+  assert.equal(doctor.capabilities.security,'explicit-call');assert.equal(doctor.installedVersion,version);
 });
 test('project configuration wins while user/project installations deduplicate',async t=>{
   const options=await roots(t),user=['--host','codex','--scope','user','--root',options.home];
@@ -31,7 +32,7 @@ test('project configuration wins while user/project installations deduplicate',a
   assert.equal(duplicate.status,'skipped');assert.equal(duplicate.inheritedRoot,options.home);
   const inherited=await runAdministration(['doctor',...project],options);
   assert.equal(inherited.inherited,true);assert.equal(inherited.inheritedRoot,options.home);
-  assert.equal(inherited.installedVersion,'0.1.0-rc.1');assert.ok(inherited.commandLocations.length);
+  assert.equal(inherited.installedVersion,version);assert.ok(inherited.commandLocations.length);
   for(const file of inherited.commandLocations) {
     assert.ok(file.startsWith(options.home+path.sep));await readFile(file);
   }

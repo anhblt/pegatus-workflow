@@ -38,6 +38,42 @@ test('Claude workflows have one slash entry point per alias',()=>{
   }
 });
 
+test('Caveman generates explicit chat-only entry points',()=>{
+  const command=catalog.commands.find(entry=>entry.id==='command-caveman');
+  assert.equal(command?.skill,'pegatus-caveman');
+  const skill=catalog.skills.find(entry=>entry.id===command.skill);
+  assert.deepEqual(skill.activation.tasks,['pegatus-caveman']);
+
+  const entryPoints=[
+    ['claude','project','.claude/skills/pegatus-caveman/SKILL.md'],
+    ['claude','user','.claude/skills/pegatus-caveman/SKILL.md'],
+    ['codex','project','.agents/skills/pegatus-caveman/SKILL.md'],
+    ['codex','user','.agents/skills/pegatus-caveman/SKILL.md'],
+    ['antigravity','project','.agents/workflows/pegatus-caveman.md'],
+    ['antigravity','user','.gemini/config/global_workflows/pegatus-caveman.md'],
+  ];
+  for(const [host,scope,file] of entryPoints) {
+    const {operations}=generateHost(catalog,{host,scope,root});
+    const files=new Map(operations.map(operation=>[operation.relativePath,operation.content]));
+    const wrapper=files.get(file);
+    assert.ok(wrapper,`${host}/${scope}`);
+    assert.match(wrapper,/`ultra`/);
+    assert.match(wrapper,/`off`/);
+    assert.doesNotMatch(wrapper,/Read applicable solution instructions and follow their discovery procedure first/);
+
+    const runtime=`.pegatus/runtime/${host}`;
+    const procedure=`${runtime}/${host==='antigravity'?command.path:skill.path}`;
+    const link=path.posix.relative(path.posix.dirname(file),procedure);
+    assert.ok(wrapper.includes(`](${link})`));
+    assert.ok(files.has(procedure));
+    if(host==='antigravity') {
+      const skillLink=path.posix.relative(path.posix.dirname(command.path),skill.path);
+      assert.ok(files.get(procedure).toString().includes(`](${skillLink})`));
+      assert.ok(files.has(`${runtime}/${skill.path}`));
+    }
+  }
+});
+
 test('Claude update removes owned legacy aliases but preserves edited aliases',()=>{
   const generated=generateHost(catalog,{host:'claude',scope:'project',root});
   const current=generated.operations.map(op=>({path:op.path,installedHash:op.hash,actualHash:op.hash}));

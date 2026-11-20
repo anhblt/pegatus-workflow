@@ -477,6 +477,15 @@
       "dependencies": []
     },
     {
+      "id": "pegatus-caveman",
+      "path": "catalog/skills/pegatus-caveman/SKILL.md",
+      "source": {"id":"pegatus","path":"catalog/skills/pegatus-caveman/SKILL.md"},
+      "description": "Explicitly select Caveman, Ultracave, or ordinary coordinator replies for this chat.",
+      "resources": ["catalog/skills/pegatus-caveman/SKILL.md"],
+      "activation": {"tasks":["pegatus-caveman"]},
+      "dependencies": []
+    },
+    {
       "id": "pegatus-context-budget",
       "path": "catalog/skills/pegatus-context-budget/SKILL.md",
       "source": {"id":"pegatus","path":"catalog/skills/pegatus-context-budget/SKILL.md"},
@@ -4475,6 +4484,7 @@
     {"id":"command-review-feedback","path":"catalog/commands/review-feedback.md","source":{"id":"pegatus","path":"catalog/commands/review-feedback.md"},"skill":"pegatus-review-feedback","resources":["catalog/commands/review-feedback.md","catalog/skills/pegatus-review-feedback/SKILL.md","catalog/context-protocol.md"],"activation":{"tasks":["review-feedback","receive-code-review","address-review-feedback"]},"dependencies":["pegatus-review-feedback"]},
     {"id":"command-brainstorm","path":"catalog/commands/brainstorm.md","source":{"id":"pegatus","path":"catalog/commands/brainstorm.md"},"skill":"pegatus-brainstorm","resources":["catalog/commands/brainstorm.md","catalog/skills/pegatus-brainstorm/SKILL.md","catalog/context-protocol.md"],"activation":{"tasks":["brainstorm","brainstorming"]},"dependencies":["pegatus-brainstorm"]},
     {"id":"command-hook-activation","path":"catalog/commands/hook-activation.md","source":{"id":"pegatus","path":"catalog/commands/hook-activation.md"},"skill":"pegatus-hook-activation","resources":["catalog/commands/hook-activation.md","catalog/skills/pegatus-hook-activation/SKILL.md"],"activation":{"tasks":["hook-activation"]},"dependencies":["pegatus-hook-activation"]},
+    {"id":"command-caveman","path":"catalog/commands/caveman.md","source":{"id":"pegatus","path":"catalog/commands/caveman.md"},"skill":"pegatus-caveman","resources":["catalog/commands/caveman.md","catalog/skills/pegatus-caveman/SKILL.md"],"activation":{"tasks":["pegatus-caveman"]},"dependencies":["pegatus-caveman"]},
     {"id":"command-context-budget","path":"catalog/commands/context-budget.md","source":{"id":"pegatus","path":"catalog/commands/context-budget.md"},"skill":"pegatus-context-budget","resources":["catalog/commands/context-budget.md","catalog/skills/pegatus-context-budget/SKILL.md"],"activation":{"tasks":["context-budget"]},"dependencies":["pegatus-context-budget"]},
     {"id":"command-file-cache","path":"catalog/commands/file-cache.md","source":{"id":"pegatus","path":"catalog/commands/file-cache.md"},"skill":"pegatus-file-cache","resources":["catalog/commands/file-cache.md","catalog/skills/pegatus-file-cache/SKILL.md"],"activation":{"tasks":["file-processing-cache"]},"dependencies":["pegatus-file-cache"]},
     {"id":"command-prompt-cache","path":"catalog/commands/prompt-cache.md","source":{"id":"pegatus","path":"catalog/commands/prompt-cache.md"},"skill":"pegatus-prompt-cache","resources":["catalog/commands/prompt-cache.md","catalog/skills/pegatus-prompt-cache/SKILL.md"],"activation":{"tasks":["prompt-cache"]},"dependencies":["pegatus-prompt-cache"]},

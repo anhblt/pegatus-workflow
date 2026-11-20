@@ -52,9 +52,9 @@ test('all host scopes retain reachable evidence guidance and pinned upstream res
     assert.ok(links(entry.path, catalog.files[entry.path]).includes(guide), `${entry.id}: linked guide`);
   }
   assert.ok(![...catalog.skills, ...catalog.agents, ...catalog.commands].some(item => /ponytail/.test(item.id)));
-  assert.equal(catalog.skills.length, 57);
+  assert.equal(catalog.skills.length, 58);
   assert.equal(catalog.agents.length, 9);
-  assert.equal(catalog.commands.length, 20);
+  assert.equal(catalog.commands.length, 21);
   for (const host of ['claude', 'codex', 'antigravity']) for (const scope of ['project', 'user']) {
     const generated = generateHost(catalog, {host, scope, root});
     const files = new Map(generated.operations.map(op => [op.relativePath, Buffer.from(op.content)]));

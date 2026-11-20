@@ -1,0 +1,23 @@
+# Pegatus release notes
+
+## 0.1.0-rc.2 — 2026-11-21
+
+This private release candidate summarizes changes since `0.1.0-rc.1`.
+
+### Chat and workflow
+
+- Use `pegatus-caveman` for shorter coordinator progress updates and final replies, `pegatus-caveman ultra` for tighter replies, and `pegatus-caveman off` to restore ordinary replies. The setting lasts for the current chat.
+- Use `pegatus-brainstorm` for conversational exploration and `pegatus-review-feedback` to assess received findings and carry out approved fixes. Investigation and code review now give more explicit guidance on gathering and tracing evidence.
+- Choose Inline or Native subagents before implementation. Pegatus asks for confirmation at applicable phase boundaries unless the user approves automatic progression for those phases.
+- Implementation and repair procedures include the pinned PonyTail skill. Frontend automated test authoring requires an explicit request. Existing checks still apply.
+
+### Installation and tools
+
+- Guided setup and update handle installed host workflows. Windows setup can register the `pegatus` command. Installations in the same root can share a detached runtime. Claude Code exposes one slash entry point per workflow alias.
+- `pegatus-browser-test` supports standalone checks through host-level Playwright MCP. File-cache and prompt-cache guidance can be selected for relevant tasks.
+
+### Update and qualification
+
+Update the kit checkout, then run `pegatus update` from the installed project and reload the host. [Installation and update guide](../README.md#14-update-and-uninstall)
+
+Both Caveman modes were exercised in the Codex CLI. Claude Code and Antigravity entry points were checked through generated adapter output. Cross-host and OS acceptance, hosted CI, and the Vercel license notice remain open release gates. [Acceptance checklist](acceptance/checklist.md)
