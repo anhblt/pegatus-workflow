@@ -27,6 +27,8 @@ Group the delta into meaningful behavior changes. For each material group:
 
 Within this review, look for unnecessary additions and redundant or unreachable branches in changed code unless the user explicitly skipped the added simplicity review for this task. For an unnecessary abstraction, cite the call site and explain how a simpler implementation would make the flow easier to follow. Cite the caller, invariant or control flow that proves a branch finding. Keep ordinary correctness and trust-boundary review in scope.
 
+As part of the simplicity review, check whether changed logic duplicates behavior or repeats a business rule in related methods or files. Confirm that the sites are meant to enforce the same behavior. Flag duplication when it creates a concrete risk of inconsistent outcomes or requires coordinated changes to keep the rule in sync. Cite the relevant locations and explain the impact. Leave incidental similarity and intentional repetition alone. Recommend reusing existing logic or consolidating only when it simplifies the code and preserves the relevant boundaries.
+
 Select impact lanes by relevance, not by a universal checklist quota:
 
 | Changed behavior | Investigate when affected |

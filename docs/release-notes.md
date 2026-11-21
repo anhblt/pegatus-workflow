@@ -10,6 +10,7 @@ This private release candidate summarizes changes since `0.1.0-rc.1`.
 - Use `pegatus-brainstorm` for conversational exploration and `pegatus-review-feedback` to assess received findings and carry out approved fixes. Investigation and code review now give more explicit guidance on gathering and tracing evidence.
 - Choose Inline or Native subagents before implementation. Pegatus asks for confirmation at applicable phase boundaries unless the user approves automatic progression for those phases.
 - Implementation and repair procedures include the pinned PonyTail skill. Frontend automated test authoring requires an explicit request. Existing checks still apply.
+- Code review flags duplicated logic and repeated business rules across related methods or files when they can drift or require coordinated updates. Reviewers recommend consolidation only when it simplifies the code and preserves existing boundaries.
 
 ### Installation and tools
 
