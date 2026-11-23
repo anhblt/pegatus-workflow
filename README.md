@@ -8,7 +8,7 @@ Default stack guidance targets **.NET 10, EF Core, SQL Server, React 19, and Typ
 
 For now, frontend implementation skips creating or modifying automated tests unless you explicitly request them, including test-writing/TDD instructions in supporting skills. Existing tests are preserved; applicable existing checks, build, lint, type checks and selected browser verification remain in scope. Backend testing requirements are unchanged.
 
-> **Candidate status:** `0.1.0-rc.2` is private and not release-qualified. Start with a disposable pilot. Native acceptance across all three hosts/both operating systems, hosted CI, and the complete applicable Vercel license notice remain unfinished. See the [release notes](docs/release-notes.md) and [acceptance checklist](docs/acceptance/checklist.md).
+> **Candidate status:** `0.1.0-rc.3` is private and not release-qualified. Start with a disposable pilot. Native acceptance across all three hosts/both operating systems, hosted CI, and the complete applicable Vercel license notice remain unfinished. See the [release notes](docs/release-notes.md) and [acceptance checklist](docs/acceptance/checklist.md).
 
 The catalog contains nine roles, twenty-one host workflow aliases and fifty-eight skills, including general brainstorming, review-feedback handling, context-budget, file-cache and prompt-cache guidance, bounded retrieval/compaction procedures and scoped memory ID reads. The [implementation and validation record](docs/current-state.md) records the adaptive integration and its 2026-11-08 verification, alongside dated historical evidence and remaining qualification limits. Existing detached installations do not update automatically: use the normal update or reinstall flow when they need the current kit.
 
