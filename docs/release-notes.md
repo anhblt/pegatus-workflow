@@ -11,6 +11,7 @@ This private release candidate summarizes changes since `0.1.0-rc.1`.
 - Choose Inline or Native subagents before implementation. Pegatus asks for confirmation at applicable phase boundaries unless the user approves automatic progression for those phases.
 - Implementation and repair procedures include the pinned PonyTail skill. Frontend automated test authoring requires an explicit request. Existing checks still apply.
 - Code review flags duplicated logic and repeated business rules across related methods or files when they can drift or require coordinated updates. Reviewers recommend consolidation only when it simplifies the code and preserves existing boundaries.
+- C# implementation and review check that enums start at `0` with implicit sequential values, each `.cs` file contains exactly one type declaration, and code contains no local functions. Explicit enum values and changes to existing members' numeric values require human approval. Project instructions govern file naming and placement.
 
 ### Installation and tools
 

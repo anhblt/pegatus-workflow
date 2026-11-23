@@ -50,6 +50,8 @@ Before the report, recheck available source refs. If head or target moved, retai
 
 ## 4. Challenge verification evidence
 
+For changed C# files in the reviewed scope, check the [C# implementation and review rules](../../rules/backend/dotnet.md#c-implementation-and-review-rules). Compare existing enum members' numeric values across the reviewed change and confirm any required human approval. Check the entire changed file for type declaration count, apply project instructions for naming and placement, and inspect changed code for local functions. Report violations as actionable findings with file and line references.
+
 Read relevant tests and assertions. Map important changed behavior and failure scenarios to actual coverage. Identify tests that only assert implementation details, overly mocked paths, or omitted consumers and lifecycle cases. A passing suite does not establish retry safety, migration compatibility or domain correctness it never exercised. Missing tests become actionable findings when tied to a concrete important risk, not merely a coverage preference.
 
 Use project-selected checks and prerequisites, within the authorized environment. Record exact commands, results and the revision/content state they exercised. Checks on a dirty or different checkout do not prove the pinned committed branch. If running a check would require changing source, dependencies or the review environment, report the limitation and request that scope separately. Do not present proposed tests, CI status not inspected, unavailable services, or a build-only check as passing behavioral validation.

@@ -63,6 +63,8 @@ Default concurrency is two, capped by configuration and actual host support. Sep
 
 In Inline and Native implementation, including authorized repairs, read and apply the [original pinned PonyTail skill](../../../vendor/ponytail/skills/ponytail/SKILL.md) before editing. Use its default coding guidance within the task and follow project instructions, host authority and authorized test scope. On resume, confirm the active implementer has read it before continuing edits.
 
+For C# changes, read and apply the [C# implementation and review rules](../../rules/backend/dotnet.md#c-implementation-and-review-rules) alongside applicable project instructions. Check the changed C# against all three rules before handing off implementation or repairs.
+
 ## Prepare a bounded task packet
 
 For now, exclude frontend automated test creation/modification from plans, implementation packets, verification repairs and review requirements unless the user explicitly requests it. Skip supporting skills' frontend test-writing/TDD instructions and do not delegate test authoring elsewhere. Preserve existing tests and applicable existing checks, including build, lint, type checks and selected browser verification; report coverage gaps rather than requiring new frontend tests. Backend testing requirements remain unchanged. Carry this scope through handoffs and resume.
